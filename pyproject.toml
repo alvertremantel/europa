@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mathadder"
+version = "0.1.0"
+description = "Synthetic arithmetic data generation and small-language-model training"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy>=2,<3",
+    "torch>=2.11,<3",
+    "matplotlib>=3.5,<4",
+    "transformer-lens>=3.2.1",
+    "fastapi>=0.136.1",
+    "uvicorn>=0.46.0",
+    "pydantic>=2.13.4",
+]
+
+[project.scripts]
+generate = "generator.main:main"
+train = "trainer.main:main"
+evaluate = "evaluator.main:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.10",
+]
+
+[tool.uv]
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["generator", "trainer", "evaluator"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
