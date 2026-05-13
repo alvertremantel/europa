@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { AttentionHeads, TextNeuronActivations } from 'circuitsvis';
 import { Play, Loader2, BarChart3, Cpu, MessageSquare } from 'lucide-react';
@@ -39,8 +39,8 @@ function App() {
   return (
     <div className="app-container">
       <header>
-        <h1>MathAdder Explorer</h1>
-        <p>Mechanistic Interpretability for Arithmetic Transformers</p>
+        <h1>Europa ALM-IS Explorer</h1>
+        <p>Europa Arithmetic Language Model Interpretability Suite</p>
       </header>
 
       <main>

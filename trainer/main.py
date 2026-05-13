@@ -11,7 +11,7 @@ from .utils import configure_runtime, resolve_device
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Train or query a small arithmetic language model."
+        description="Train or query a small arithmetic language model (Europa ALM-IS)."
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

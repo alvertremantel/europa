@@ -9,7 +9,7 @@ from .core import Config, generate_dataset
 
 def parse_args() -> Config:
     parser = argparse.ArgumentParser(
-        description="Generate a stratified arithmetic dataset."
+        description="Generate a stratified arithmetic dataset for Europa ALM-IS."
     )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output-dir", type=str, default="data")

@@ -46,7 +46,7 @@ ALL_SPLITS = ("train", "val", "test")
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Evaluate a saved arithmetic model across sampled problem strata."
+        description="Evaluate a saved Europa ALM-IS model across sampled problem strata."
     )
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--data-dir", type=str, default=None)

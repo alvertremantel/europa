@@ -1,6 +1,6 @@
-# MathAdder
+# Europa Arithmetic Language Model Interpretability Suite
 
-Synthetic arithmetic data generation and small-language-model training.
+Europa ALM-IS (europa-is) — synthetic arithmetic data generation and small-language-model training with mechanistic interpretability tooling.
 
 ## Setup
 

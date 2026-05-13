@@ -1,6 +1,6 @@
-# mathadder
+# Europa ALM-IS
 
-Synthetic arithmetic dataset generation and small language-model training.
+Europa Arithmetic Language Model Interpretability Suite — synthetic arithmetic dataset generation and small language-model training.
 
 The project trains a narrow decoder-only language model on symbolic arithmetic text. The current dataset format is fixed-width, reversed-digit, and infix.
 

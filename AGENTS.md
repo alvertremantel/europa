@@ -1,4 +1,4 @@
-# AGENTS.md — MathAdder
+# AGENTS.md — Europa ALM-IS
 
 ## Quick setup
 

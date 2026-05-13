@@ -332,6 +332,39 @@ wheels = [
 ]
 
 [[package]]
+name = "europa-is"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "fastapi" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "pydantic" },
+    { name = "torch" },
+    { name = "transformer-lens" },
+    { name = "uvicorn" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", specifier = ">=0.136.1" },
+    { name = "matplotlib", specifier = ">=3.5,<4" },
+    { name = "numpy", specifier = ">=2,<3" },
+    { name = "pydantic", specifier = ">=2.13.4" },
+    { name = "torch", specifier = ">=2.11,<3", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "transformer-lens", specifier = ">=3.2.1" },
+    { name = "uvicorn", specifier = ">=0.46.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.15.10" }]
+
+[[package]]
 name = "fancy-einsum"
 version = "0.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -608,39 +641,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/aa/5b/bec5aa9bbbb2c946ca2733ef9c4ca91c91b6a24580193e891b5f7dbe8e1e/markupsafe-3.0.3-cp312-cp312-win_amd64.whl", hash = "sha256:26a5784ded40c9e318cfc2bdb30fe164bdb8665ded9cd64d500a34fb42067b1c", size = 15105, upload-time = "2025-09-27T18:36:39.701Z" },
     { url = "https://files.pythonhosted.org/packages/e5/f1/216fc1bbfd74011693a4fd837e7026152e89c4bcf3e77b6692fba9923123/markupsafe-3.0.3-cp312-cp312-win_arm64.whl", hash = "sha256:35add3b638a5d900e807944a078b51922212fb3dedb01633a8defc4b01a3c85f", size = 13906, upload-time = "2025-09-27T18:36:40.689Z" },
 ]
-
-[[package]]
-name = "mathadder"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "fastapi" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "pydantic" },
-    { name = "torch" },
-    { name = "transformer-lens" },
-    { name = "uvicorn" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastapi", specifier = ">=0.136.1" },
-    { name = "matplotlib", specifier = ">=3.5,<4" },
-    { name = "numpy", specifier = ">=2,<3" },
-    { name = "pydantic", specifier = ">=2.13.4" },
-    { name = "torch", specifier = ">=2.11,<3", index = "https://download.pytorch.org/whl/cu128" },
-    { name = "transformer-lens", specifier = ">=3.2.1" },
-    { name = "uvicorn", specifier = ">=0.46.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "ruff", specifier = ">=0.15.10" }]
 
 [[package]]
 name = "matplotlib"
