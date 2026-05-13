@@ -1,57 +1,256 @@
-# Europa Arithmetic Language Model Interpretability Suite
+# Europa Interpretability Suite
 
-Europa ALM-IS (europa-is) — synthetic arithmetic data generation and small-language-model training with mechanistic interpretability tooling.
+<div align="center">
 
-## Setup
+![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
+![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![CUDA 12.8](https://img.shields.io/badge/CUDA-12.8-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
+![TransformerLens](https://img.shields.io/badge/TransformerLens-7B68EE?style=for-the-badge&logo=pytorch&logoColor=white)
 
-This project uses `uv` for dependency management. To sync the environment:
+**Synthetic arithmetic data generation + small causal transformer training + mechanistic interpretability tooling**
+
+</div>
+
+---
+
+Europa ALM-IS (europa-is) is a research-grade toolkit for training and interpreting small language models on synthetic arithmetic tasks. It generates stratified datasets of reversed-digit math problems, trains a configurable causal transformer, evaluates performance across fine-grained problem strata, and provides deep mechanistic interpretability tools — all backed by a web UI for interactive analysis.
+
+## Quick Start
 
 ```bash
-uv sync
+uv sync          # Python 3.12, requires CUDA for PyTorch (cu128)
 ```
+
+Three CLI entrypoints are defined — **do not** run `python generate.py` etc. (those scripts don't exist):
+
+```bash
+uv run generate --output-dir data/my-dataset          # generate dataset
+uv run train train --data-dir data/my-dataset --output-dir runs/my-run  # train
+uv run train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "03000000 + 03000000 = <ans>"
+uv run evaluate --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
+```
+
+Lint: `uv run ruff check .`
+
+---
 
 ## Workflow
 
 ### 1. Generate Data
 
-Generate a stratified arithmetic dataset for training and evaluation.
+Generate a stratified arithmetic dataset with four problem categories across magnitude bands (small: 0–20, medium: 21–100, large: 101–500).
 
 ```bash
-uv run generate --output-dir data/my-dataset
+uv run generate --output-dir data/my-dataset --seed 42
 ```
 
-Options:
-- `--seed`: Random seed (default: 42)
-- `--output-dir`: Directory to save the dataset
-- `--no-validate`: Skip output validation
+| Option | Default | Description |
+|---|---|---|
+| `--seed` | `42` | Random seed for reproducibility |
+| `--output-dir` | `data` | Directory to save `train.txt`, `val.txt`, `test.txt`, `meta.json` |
+| `--no-validate` | — | Skip post-generation validation pass |
+
+**Problem categories:**
+
+| Category | Description | Strategy | Operations |
+|---|---|---|---|
+| `binary` | `A op B` with 2 operands | Exhaustive | `+`, `-`, `*`, `/` |
+| `three_input` | `A op B op C` (same op) | Sampled | `+`, `-`, `*` |
+| `parentheses` | `(A op B) op C` or `A op (B op C)` | Sampled | `+`, `-`, `*` (inner × outer) |
+| `negative_input` | `(-A) op B` or `A op (-B)` | Sampled | `+`, `-`, `*` |
+
+Numbers are **8-digit zero-padded decimals, reversed** (e.g. 6 → `60000000`). Negatives: `(-60000000)`. The `<ans>` token marks the prompt/answer boundary.
 
 ### 2. Train a Model
 
 Train a small causal transformer on the generated data.
 
 ```bash
-uv run train train --data-dir data/my-dataset --output-dir runs/my-run
+uv run train train \
+  --data-dir data/my-dataset \
+  --output-dir runs/my-run \
+  --epochs 5 \
+  --batch-size 128 \
+  --learning-rate 3e-4
 ```
 
-You can also query a saved checkpoint:
+**Training options:**
+
+| Option | Default | Description |
+|---|---|---|
+| `--data-dir` | `data-1m` | Path to generated dataset |
+| `--output-dir` | `runs/arithmetic-small` | Checkpoint & log output directory |
+| `--sequence-length` | `64` | Max context window |
+| `--batch-size` | `128` | Training batch size |
+| `--epochs` | `5` | Number of training epochs |
+| `--learning-rate` | `3e-4` | AdamW learning rate |
+| `--weight-decay` | `0.1` | AdamW weight decay |
+| `--grad-clip` | `1.0` | Gradient clipping norm |
+| `--log-interval` | `100` | Steps between log prints |
+| `--eval-batches` | `50` | Validation batches per eval |
+| `--exact-match-samples` | `256` | Samples for exact-match eval |
+| `--seed` | `42` | Random seed |
+| `--device` | `cuda` | Device (`cuda`, `cpu`, `auto`) |
+
+**Model architecture options:**
+
+| Option | Default | Description |
+|---|---|---|
+| `--d-model` | `256` | Embedding dimension |
+| `--n-heads` | `4` | Number of attention heads |
+| `--n-layers` | `6` | Number of transformer blocks |
+| `--mlp-hidden` | `1024` | MLP hidden dimension |
+| `--dropout` | `0.1` | Dropout rate |
+
+~4.76M parameters at default config.
+
+### 3. Predict / Inference
+
+Query a saved checkpoint with a custom prompt:
 
 ```bash
-uv run train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "1 2 3 + 4 5 6 ="
+uv run train predict \
+  --checkpoint runs/my-run/checkpoint-best.pt \
+  --prompt "03000000 + 03000000 = <ans>" \
+  --max-new-tokens 24
 ```
 
-### 3. Evaluate a Model
+| Option | Default | Description |
+|---|---|---|
+| `--checkpoint` | *(required)* | Path to `.pt` checkpoint file |
+| `--prompt` | *(required)* | Input prompt string |
+| `--max-new-tokens` | `24` | Max tokens to generate |
+| `--device` | `auto` | Device override |
 
-Evaluate a model across sampled problem strata.
+### 4. Evaluate a Model
+
+Run stratified evaluation across problem kinds with detailed per-category and per-kind reporting.
 
 ```bash
-uv run evaluate --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
+uv run evaluate \
+  --checkpoint runs/my-run/checkpoint-best.pt \
+  --data-dir data/my-dataset
 ```
 
-The evaluation results (summary, CSV, and errors) will be saved alongside the checkpoint.
+**Evaluation options:**
+
+| Option | Default | Description |
+|---|---|---|
+| `--checkpoint` | *(required)* | Path to `.pt` checkpoint |
+| `--data-dir` | *(from checkpoint)* | Dataset directory (optional if embedded) |
+| `--splits` | `train val test` | Splits to draw sample pool from |
+| `--device` | `auto` | Device override |
+| `--max-new-tokens` | *(from checkpoint)* | Generation limit |
+| `--sample-size-per-kind` | `50` | Examples sampled per kind |
+| `--sample-seed` | `42` | Sampling seed |
+| `--output-prefix` | *(auto)* | Output file prefix (defaults to `<checkpoint-stem>-strata-eval`) |
+| `--failures-per-kind` | `3` | Max failure examples saved per kind |
+| `--progress-interval-kinds` | `0` | Print progress every N kinds (0 = silent) |
+
+**Outputs** (saved next to the checkpoint):
+
+| File | Format | Contents |
+|---|---|---|
+| `*.summary.json` | JSON | Overall stats, category accuracy, top/bottom 10 kinds, device info |
+| `*.kinds.csv` | CSV | Per-kind rows with accuracy, canonical prediction rate, available counts |
+| `*.errors.jsonl` | JSONL | Individual error cases with prompt, expected, and prediction |
+
+---
+
+## Mechanistic Interpretability
+
+Europa ALM-IS ships with built-in tools for understanding *how* the model solves arithmetic:
+
+### `MechanisticInterpreter`
+
+High-level wrapper in `trainer/interpreter.py` for loading checkpoints and running interpretability analyses:
+
+```python
+from trainer.interpreter import MechanisticInterpreter
+
+with MechanisticInterpreter("runs/my-run/checkpoint-best.pt") as interp:
+    logits, capture = interp.forward_with_capture(token_ids)
+    interp.visualize_summary()
+    interp.visualize_activations()
+    interp.visualize_attention()
+    interp.visualize_logits()
+    interp.visualize_mlp()
+    interp.visualize_layer_transition(layer_idx=2)
+    interp.visualize_position_influence(pos=5)
+    interp.explore_step_by_step(token_ids)  # interactive mode
+```
+
+### `HookRegistry` & `ActivationCapture`
+
+Forward-hook system (`trainer/hooks.py`) that captures all intermediate states:
+
+- **Embeddings**: token, positional, combined
+- **Per-layer**: inputs, outputs, attention outputs, MLP outputs, norm outputs
+- **Final**: hidden state, norm output, logits
+
+### `InterpreterVisualizer`
+
+Matplotlib-based visualizations (`trainer/visualizer.py`):
+
+- Activation heatmaps (per-layer and overview)
+- Attention pattern grids
+- Logit trajectory & prediction confidence plots
+- MLP contribution heatmaps
+- Layer transition (input vs output vs delta)
+- Token position influence bar charts
+- Interactive exploration mode
+
+### Web UI
+
+A FastAPI + React/Vite application for interactive model analysis:
+
+```bash
+# Backend (serves /api/analyze and /api/health)
+uv run uvicorn web_app.backend.main:app --reload
+
+# Frontend (cd into web_app/frontend/)
+cd web_app/frontend && npm install && npm run dev
+```
+
+The backend hardcodes the checkpoint at `runs/test-extended-plus/checkpoint-best.pt`. The `/api/analyze` endpoint returns attention patterns, layer activations, logits, and top predictions for use with `circuitsvis` components.
+
+---
 
 ## Project Structure
 
-- `generator/`: Synthetic data generation logic.
-- `trainer/`: Model architecture, training loop, and inference utilities.
-- `evaluator/`: Stratified evaluation and error analysis.
-- `scripts/`: Misc utility scripts for data and result analysis.
+```
+├── generator/          # Stratified arithmetic data generation
+│   ├── core.py         # KindSpec, sampling, formatting, validation
+│   └── main.py         # CLI entrypoint
+├── trainer/            # Model, training, inference, interpretability
+│   ├── config.py       # ModelConfig + TrainConfig dataclasses
+│   ├── model.py        # SmallCausalTransformer (pre-norm, tied embeddings)
+│   ├── core.py         # Training loop, checkpoint save/load
+│   ├── data.py         # ArithmeticTokenizer, dataset loading
+│   ├── inference.py    # generate_completion, evaluate_loss, evaluate_exact_match
+│   ├── hooks.py        # HookRegistry + ActivationCapture
+│   ├── interpreter.py  # MechanisticInterpreter high-level API
+│   ├── visualizer.py   # Matplotlib visualization suite
+│   └── main.py         # CLI entrypoint (train / predict subcommands)
+├── evaluator/          # Stratified evaluation & error analysis
+│   ├── core.py         # BucketStats, row builders
+│   └── main.py         # CLI entrypoint
+├── web_app/            # Interactive analysis web interface
+│   ├── backend/        # FastAPI API server
+│   └── frontend/       # React + Vite + circuitsvis SPA
+└── scripts/            # Utilities
+    ├── math/           # promptize_math.py, count_problem_sets.py
+    ├── promptize.sh    # Shell wrapper for prompt conversion
+    └── verify/         # analyze_strata_eval.py, check_length_safety.py, verify_tl_parity.py
+```
+
+---
+
+## Key Constraints
+
+- **No resume training** — optimizer state is not saved. Only model weights + config are checkpointed.
+- **Checkpoints are self-contained** — they embed the tokenizer and model architecture; incompatible across code changes.
+- **GPU expected** — PyTorch is pinned to `pytorch-cu128` (CUDA 12.8). CPU fallback works but is slow.
+- **No test suite** — the project has no automated tests.
+- **Project venv** is `.venv/` (gitignored). Use `uv run` for all commands.
+- `data/old/`, `runs/old/`, `.agents/*/old` are gitignored scratch directories.
