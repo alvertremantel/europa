@@ -1,0 +1,27 @@
+{
+  "checkpoint": "data/models/europa-atm-1.1/checkpoint-best.pt",
+  "data_dir": "data/training/europa-1-basic-large-95",
+  "sequence_length": 64,
+  "max_new_tokens": 24,
+  "max_prompt_tokens": 25,
+  "max_line_tokens": 45,
+  "max_answer_tokens": 19,
+  "max_generation_steps": 20,
+  "max_context_at_last_answer_token": 43,
+  "max_context_at_eos": 44,
+  "prompt_exceeds_sequence_count": 0,
+  "line_exceeds_sequence_count": 0,
+  "answer_context_exceeds_sequence_count": 0,
+  "eos_context_exceeds_sequence_count": 0,
+  "generation_steps_exceed_max_new_tokens_count": 0,
+  "answer_kind_counts": {
+    "number": 1507278,
+    "undefined": 10507,
+    "remainder": 985095
+  },
+  "split_counts": {
+    "train": 2253466,
+    "val": 124578,
+    "test": 124836
+  }
+}
