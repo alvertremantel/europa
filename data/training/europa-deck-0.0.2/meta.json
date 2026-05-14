@@ -1,0 +1,5362 @@
+{
+  "format": "fixed-width-reversed-infix",
+  "number_width": 8,
+  "number_encoding": "zero-padded decimal reversed",
+  "categories": [
+    "binary",
+    "three_input",
+    "parentheses",
+    "negative_input"
+  ],
+  "binary_operations": [
+    "+",
+    "-",
+    "*",
+    "/"
+  ],
+  "composite_operations": [
+    "+",
+    "-",
+    "*"
+  ],
+  "special_tokens": [
+    "<ans>"
+  ],
+  "operator_tokens": [
+    "+",
+    "-",
+    "*",
+    "/",
+    "=",
+    "(",
+    ")"
+  ],
+  "bands": {
+    "small": [
+      0,
+      20
+    ],
+    "medium": [
+      21,
+      100
+    ],
+    "large": [
+      101,
+      500
+    ]
+  },
+  "kind_definitions": {
+    "binary::small-small::+": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 441
+    },
+    "binary::small-small::-": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 231
+    },
+    "binary::small-small::*": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 441
+    },
+    "binary::small-small::/": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "/",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 86
+    },
+    "binary::small-medium::+": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 3360
+    },
+    "binary::small-medium::-": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 1680
+    },
+    "binary::small-medium::*": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 3360
+    },
+    "binary::small-medium::/": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "/",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 368
+    },
+    "binary::small-large::+": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 16800
+    },
+    "binary::small-large::-": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 8400
+    },
+    "binary::small-large::*": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 16800
+    },
+    "binary::small-large::/": {
+      "category": "binary",
+      "band_pattern": [
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "/",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 1838
+    },
+    "binary::medium-medium::+": {
+      "category": "binary",
+      "band_pattern": [
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 6400
+    },
+    "binary::medium-medium::-": {
+      "category": "binary",
+      "band_pattern": [
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 3240
+    },
+    "binary::medium-medium::*": {
+      "category": "binary",
+      "band_pattern": [
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 6400
+    },
+    "binary::medium-medium::/": {
+      "category": "binary",
+      "band_pattern": [
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "/",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 128
+    },
+    "binary::medium-large::+": {
+      "category": "binary",
+      "band_pattern": [
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 64000
+    },
+    "binary::medium-large::-": {
+      "category": "binary",
+      "band_pattern": [
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 32000
+    },
+    "binary::medium-large::*": {
+      "category": "binary",
+      "band_pattern": [
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 64000
+    },
+    "binary::medium-large::/": {
+      "category": "binary",
+      "band_pattern": [
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "exhaustive",
+      "op": "/",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 629
+    },
+    "binary::large-large::+": {
+      "category": "binary",
+      "band_pattern": [
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160000
+    },
+    "binary::large-large::-": {
+      "category": "binary",
+      "band_pattern": [
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 80200
+    },
+    "binary::large-large::*": {
+      "category": "binary",
+      "band_pattern": [
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160000
+    },
+    "binary::large-large::/": {
+      "category": "binary",
+      "band_pattern": [
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "exhaustive",
+      "op": "/",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 641
+    },
+    "three_input::small-small-small::+": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-small-small::-": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-small-small::*": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-small-medium::+": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-small-medium::-": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-small-medium::*": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-small-large::+": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-small-large::-": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-small-large::*": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-medium-medium::+": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-medium-medium::-": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-medium-medium::*": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-medium-large::+": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-medium-large::-": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-medium-large::*": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-large-large::+": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-large-large::-": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::small-large-large::*": {
+      "category": "three_input",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::medium-medium-medium::+": {
+      "category": "three_input",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::medium-medium-medium::-": {
+      "category": "three_input",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::medium-medium-medium::*": {
+      "category": "three_input",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::medium-medium-large::+": {
+      "category": "three_input",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::medium-medium-large::-": {
+      "category": "three_input",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::medium-medium-large::*": {
+      "category": "three_input",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::medium-large-large::+": {
+      "category": "three_input",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::medium-large-large::-": {
+      "category": "three_input",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::medium-large-large::*": {
+      "category": "three_input",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::large-large-large::+": {
+      "category": "three_input",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::large-large-large::-": {
+      "category": "three_input",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "three_input::large-large-large::*": {
+      "category": "three_input",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-small::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-small::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-small::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-small::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-small::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-small::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-small::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-small::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-small::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-small::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-small::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-small::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-small::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-small::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-small::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-small::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-small::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-small::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-medium::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-medium::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-medium::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-medium::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-medium::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-medium::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-medium::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-medium::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-medium::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-medium::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-medium::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-medium::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-medium::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-medium::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-medium::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-medium::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-medium::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-medium::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-large::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-small-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-large::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-small-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-medium::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-medium::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-medium::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-medium::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-medium::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-medium::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-medium::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-medium::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-medium::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-medium::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-medium::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-medium::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-medium::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-medium::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-medium::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-medium::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-medium::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-medium::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-large::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-medium-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-large::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-medium-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-large-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-large-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-large-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-large-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-large-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-large-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-large-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-large-large::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::small-large-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-large-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-large-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-large-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-large-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-large-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-large-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-large-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-large-large::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::small-large-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "small",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-medium::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-medium::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-medium::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-medium::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-medium::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-medium::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-medium::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-medium::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-medium::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-medium::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-medium::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-medium::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-medium::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-medium::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-medium::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-medium::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-medium::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-large::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-medium-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-medium-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-large-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-large-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-large-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-large-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-large-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-large-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-large-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-large-large::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::medium-large-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-large-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-large-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-large-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-large-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-large-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-large-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-large-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::medium-large-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "medium",
+        "large",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::large-large-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::large-large-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::large-large-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::large-large-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::large-large-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::large-large-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::large-large-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::large-large-large::*-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "-",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::left::large-large-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "left",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::large-large-large::++": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::large-large-large::+-": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::large-large-large::+*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "+",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::large-large-large::-+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::large-large-large::--": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "-",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::large-large-large::-*": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "-",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::large-large-large::*+": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "+",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "parentheses::right::large-large-large::**": {
+      "category": "parentheses",
+      "band_pattern": [
+        "large",
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": null,
+      "inner_op": "*",
+      "outer_op": "*",
+      "shape": "right",
+      "sign_side": null,
+      "selected_count": 160
+    },
+    "negative_input::small-small::+::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::small-small::+::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::small-small::-::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::small-small::-::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::small-small::*::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::small-small::*::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "small"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::small-medium::+::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::small-medium::+::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::small-medium::-::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::small-medium::-::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::small-medium::*::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::small-medium::*::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "medium"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::small-large::+::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::small-large::+::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::small-large::-::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::small-large::-::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::small-large::*::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::small-large::*::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "small",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::medium-medium::+::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::medium-medium::+::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::medium-medium::-::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::medium-medium::-::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::medium-medium::*::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::medium-medium::*::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "medium"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::medium-large::+::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::medium-large::+::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::medium-large::-::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::medium-large::-::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::medium-large::*::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::medium-large::*::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "medium",
+        "large"
+      ],
+      "wildcard": true,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::large-large::+::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::large-large::+::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "+",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::large-large::-::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::large-large::-::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "-",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    },
+    "negative_input::large-large::*::neg_left": {
+      "category": "negative_input",
+      "band_pattern": [
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "left",
+      "selected_count": 160
+    },
+    "negative_input::large-large::*::neg_right": {
+      "category": "negative_input",
+      "band_pattern": [
+        "large",
+        "large"
+      ],
+      "wildcard": false,
+      "strategy": "sampled",
+      "op": "*",
+      "inner_op": null,
+      "outer_op": null,
+      "shape": null,
+      "sign_side": "right",
+      "selected_count": 160
+    }
+  },
+  "candidate_counts": {
+    "binary::small-small::+": 441,
+    "binary::small-small::-": 231,
+    "binary::small-small::*": 441,
+    "binary::small-small::/": 86,
+    "binary::small-medium::+": 3360,
+    "binary::small-medium::-": 1680,
+    "binary::small-medium::*": 3360,
+    "binary::small-medium::/": 368,
+    "binary::small-large::+": 16800,
+    "binary::small-large::-": 8400,
+    "binary::small-large::*": 16800,
+    "binary::small-large::/": 1838,
+    "binary::medium-medium::+": 6400,
+    "binary::medium-medium::-": 3240,
+    "binary::medium-medium::*": 6400,
+    "binary::medium-medium::/": 128,
+    "binary::medium-large::+": 64000,
+    "binary::medium-large::-": 32000,
+    "binary::medium-large::*": 64000,
+    "binary::medium-large::/": 629,
+    "binary::large-large::+": 160000,
+    "binary::large-large::-": 80200,
+    "binary::large-large::*": 160000,
+    "binary::large-large::/": 641,
+    "three_input::small-small-small::+": 160,
+    "three_input::small-small-small::-": 160,
+    "three_input::small-small-small::*": 160,
+    "three_input::small-small-medium::+": 160,
+    "three_input::small-small-medium::-": 160,
+    "three_input::small-small-medium::*": 160,
+    "three_input::small-small-large::+": 160,
+    "three_input::small-small-large::-": 160,
+    "three_input::small-small-large::*": 160,
+    "three_input::small-medium-medium::+": 160,
+    "three_input::small-medium-medium::-": 160,
+    "three_input::small-medium-medium::*": 160,
+    "three_input::small-medium-large::+": 160,
+    "three_input::small-medium-large::-": 160,
+    "three_input::small-medium-large::*": 160,
+    "three_input::small-large-large::+": 160,
+    "three_input::small-large-large::-": 160,
+    "three_input::small-large-large::*": 160,
+    "three_input::medium-medium-medium::+": 160,
+    "three_input::medium-medium-medium::-": 160,
+    "three_input::medium-medium-medium::*": 160,
+    "three_input::medium-medium-large::+": 160,
+    "three_input::medium-medium-large::-": 160,
+    "three_input::medium-medium-large::*": 160,
+    "three_input::medium-large-large::+": 160,
+    "three_input::medium-large-large::-": 160,
+    "three_input::medium-large-large::*": 160,
+    "three_input::large-large-large::+": 160,
+    "three_input::large-large-large::-": 160,
+    "three_input::large-large-large::*": 160,
+    "parentheses::left::small-small-small::++": 160,
+    "parentheses::left::small-small-small::+-": 160,
+    "parentheses::left::small-small-small::+*": 160,
+    "parentheses::left::small-small-small::-+": 160,
+    "parentheses::left::small-small-small::--": 160,
+    "parentheses::left::small-small-small::-*": 160,
+    "parentheses::left::small-small-small::*+": 160,
+    "parentheses::left::small-small-small::*-": 160,
+    "parentheses::left::small-small-small::**": 160,
+    "parentheses::right::small-small-small::++": 160,
+    "parentheses::right::small-small-small::+-": 160,
+    "parentheses::right::small-small-small::+*": 160,
+    "parentheses::right::small-small-small::-+": 160,
+    "parentheses::right::small-small-small::--": 160,
+    "parentheses::right::small-small-small::-*": 160,
+    "parentheses::right::small-small-small::*+": 160,
+    "parentheses::right::small-small-small::*-": 160,
+    "parentheses::right::small-small-small::**": 160,
+    "parentheses::left::small-small-medium::++": 160,
+    "parentheses::left::small-small-medium::+-": 160,
+    "parentheses::left::small-small-medium::+*": 160,
+    "parentheses::left::small-small-medium::-+": 160,
+    "parentheses::left::small-small-medium::--": 160,
+    "parentheses::left::small-small-medium::-*": 160,
+    "parentheses::left::small-small-medium::*+": 160,
+    "parentheses::left::small-small-medium::*-": 160,
+    "parentheses::left::small-small-medium::**": 160,
+    "parentheses::right::small-small-medium::++": 160,
+    "parentheses::right::small-small-medium::+-": 160,
+    "parentheses::right::small-small-medium::+*": 160,
+    "parentheses::right::small-small-medium::-+": 160,
+    "parentheses::right::small-small-medium::--": 160,
+    "parentheses::right::small-small-medium::-*": 160,
+    "parentheses::right::small-small-medium::*+": 160,
+    "parentheses::right::small-small-medium::*-": 160,
+    "parentheses::right::small-small-medium::**": 160,
+    "parentheses::left::small-small-large::++": 160,
+    "parentheses::left::small-small-large::+-": 160,
+    "parentheses::left::small-small-large::+*": 160,
+    "parentheses::left::small-small-large::-+": 160,
+    "parentheses::left::small-small-large::--": 160,
+    "parentheses::left::small-small-large::-*": 160,
+    "parentheses::left::small-small-large::*+": 160,
+    "parentheses::left::small-small-large::*-": 160,
+    "parentheses::left::small-small-large::**": 160,
+    "parentheses::right::small-small-large::++": 160,
+    "parentheses::right::small-small-large::+-": 160,
+    "parentheses::right::small-small-large::+*": 160,
+    "parentheses::right::small-small-large::-+": 160,
+    "parentheses::right::small-small-large::--": 160,
+    "parentheses::right::small-small-large::-*": 160,
+    "parentheses::right::small-small-large::*+": 160,
+    "parentheses::right::small-small-large::*-": 160,
+    "parentheses::right::small-small-large::**": 160,
+    "parentheses::left::small-medium-medium::++": 160,
+    "parentheses::left::small-medium-medium::+-": 160,
+    "parentheses::left::small-medium-medium::+*": 160,
+    "parentheses::left::small-medium-medium::-+": 160,
+    "parentheses::left::small-medium-medium::--": 160,
+    "parentheses::left::small-medium-medium::-*": 160,
+    "parentheses::left::small-medium-medium::*+": 160,
+    "parentheses::left::small-medium-medium::*-": 160,
+    "parentheses::left::small-medium-medium::**": 160,
+    "parentheses::right::small-medium-medium::++": 160,
+    "parentheses::right::small-medium-medium::+-": 160,
+    "parentheses::right::small-medium-medium::+*": 160,
+    "parentheses::right::small-medium-medium::-+": 160,
+    "parentheses::right::small-medium-medium::--": 160,
+    "parentheses::right::small-medium-medium::-*": 160,
+    "parentheses::right::small-medium-medium::*+": 160,
+    "parentheses::right::small-medium-medium::*-": 160,
+    "parentheses::right::small-medium-medium::**": 160,
+    "parentheses::left::small-medium-large::++": 160,
+    "parentheses::left::small-medium-large::+-": 160,
+    "parentheses::left::small-medium-large::+*": 160,
+    "parentheses::left::small-medium-large::-+": 160,
+    "parentheses::left::small-medium-large::--": 160,
+    "parentheses::left::small-medium-large::-*": 160,
+    "parentheses::left::small-medium-large::*+": 160,
+    "parentheses::left::small-medium-large::*-": 160,
+    "parentheses::left::small-medium-large::**": 160,
+    "parentheses::right::small-medium-large::++": 160,
+    "parentheses::right::small-medium-large::+-": 160,
+    "parentheses::right::small-medium-large::+*": 160,
+    "parentheses::right::small-medium-large::-+": 160,
+    "parentheses::right::small-medium-large::--": 160,
+    "parentheses::right::small-medium-large::-*": 160,
+    "parentheses::right::small-medium-large::*+": 160,
+    "parentheses::right::small-medium-large::*-": 160,
+    "parentheses::right::small-medium-large::**": 160,
+    "parentheses::left::small-large-large::++": 160,
+    "parentheses::left::small-large-large::+-": 160,
+    "parentheses::left::small-large-large::+*": 160,
+    "parentheses::left::small-large-large::-+": 160,
+    "parentheses::left::small-large-large::--": 160,
+    "parentheses::left::small-large-large::-*": 160,
+    "parentheses::left::small-large-large::*+": 160,
+    "parentheses::left::small-large-large::*-": 160,
+    "parentheses::left::small-large-large::**": 160,
+    "parentheses::right::small-large-large::++": 160,
+    "parentheses::right::small-large-large::+-": 160,
+    "parentheses::right::small-large-large::+*": 160,
+    "parentheses::right::small-large-large::-+": 160,
+    "parentheses::right::small-large-large::--": 160,
+    "parentheses::right::small-large-large::-*": 160,
+    "parentheses::right::small-large-large::*+": 160,
+    "parentheses::right::small-large-large::*-": 160,
+    "parentheses::right::small-large-large::**": 160,
+    "parentheses::left::medium-medium-medium::++": 160,
+    "parentheses::left::medium-medium-medium::+-": 160,
+    "parentheses::left::medium-medium-medium::+*": 160,
+    "parentheses::left::medium-medium-medium::-+": 160,
+    "parentheses::left::medium-medium-medium::--": 160,
+    "parentheses::left::medium-medium-medium::-*": 160,
+    "parentheses::left::medium-medium-medium::*+": 160,
+    "parentheses::left::medium-medium-medium::*-": 160,
+    "parentheses::left::medium-medium-medium::**": 160,
+    "parentheses::right::medium-medium-medium::++": 160,
+    "parentheses::right::medium-medium-medium::+-": 160,
+    "parentheses::right::medium-medium-medium::+*": 160,
+    "parentheses::right::medium-medium-medium::-+": 160,
+    "parentheses::right::medium-medium-medium::--": 160,
+    "parentheses::right::medium-medium-medium::-*": 160,
+    "parentheses::right::medium-medium-medium::*+": 160,
+    "parentheses::right::medium-medium-medium::**": 160,
+    "parentheses::left::medium-medium-large::++": 160,
+    "parentheses::left::medium-medium-large::+-": 160,
+    "parentheses::left::medium-medium-large::+*": 160,
+    "parentheses::left::medium-medium-large::-+": 160,
+    "parentheses::left::medium-medium-large::--": 160,
+    "parentheses::left::medium-medium-large::-*": 160,
+    "parentheses::left::medium-medium-large::*+": 160,
+    "parentheses::left::medium-medium-large::*-": 160,
+    "parentheses::left::medium-medium-large::**": 160,
+    "parentheses::right::medium-medium-large::++": 160,
+    "parentheses::right::medium-medium-large::+-": 160,
+    "parentheses::right::medium-medium-large::+*": 160,
+    "parentheses::right::medium-medium-large::-+": 160,
+    "parentheses::right::medium-medium-large::--": 160,
+    "parentheses::right::medium-medium-large::-*": 160,
+    "parentheses::right::medium-medium-large::*+": 160,
+    "parentheses::right::medium-medium-large::**": 160,
+    "parentheses::left::medium-large-large::++": 160,
+    "parentheses::left::medium-large-large::+-": 160,
+    "parentheses::left::medium-large-large::+*": 160,
+    "parentheses::left::medium-large-large::-+": 160,
+    "parentheses::left::medium-large-large::--": 160,
+    "parentheses::left::medium-large-large::-*": 160,
+    "parentheses::left::medium-large-large::*+": 160,
+    "parentheses::left::medium-large-large::*-": 160,
+    "parentheses::left::medium-large-large::**": 160,
+    "parentheses::right::medium-large-large::++": 160,
+    "parentheses::right::medium-large-large::+-": 160,
+    "parentheses::right::medium-large-large::+*": 160,
+    "parentheses::right::medium-large-large::-+": 160,
+    "parentheses::right::medium-large-large::--": 160,
+    "parentheses::right::medium-large-large::-*": 160,
+    "parentheses::right::medium-large-large::*+": 160,
+    "parentheses::right::medium-large-large::**": 160,
+    "parentheses::left::large-large-large::++": 160,
+    "parentheses::left::large-large-large::+-": 160,
+    "parentheses::left::large-large-large::+*": 160,
+    "parentheses::left::large-large-large::-+": 160,
+    "parentheses::left::large-large-large::--": 160,
+    "parentheses::left::large-large-large::-*": 160,
+    "parentheses::left::large-large-large::*+": 160,
+    "parentheses::left::large-large-large::*-": 160,
+    "parentheses::left::large-large-large::**": 160,
+    "parentheses::right::large-large-large::++": 160,
+    "parentheses::right::large-large-large::+-": 160,
+    "parentheses::right::large-large-large::+*": 160,
+    "parentheses::right::large-large-large::-+": 160,
+    "parentheses::right::large-large-large::--": 160,
+    "parentheses::right::large-large-large::-*": 160,
+    "parentheses::right::large-large-large::*+": 160,
+    "parentheses::right::large-large-large::**": 160,
+    "negative_input::small-small::+::neg_left": 160,
+    "negative_input::small-small::+::neg_right": 160,
+    "negative_input::small-small::-::neg_left": 160,
+    "negative_input::small-small::-::neg_right": 160,
+    "negative_input::small-small::*::neg_left": 160,
+    "negative_input::small-small::*::neg_right": 160,
+    "negative_input::small-medium::+::neg_left": 160,
+    "negative_input::small-medium::+::neg_right": 160,
+    "negative_input::small-medium::-::neg_left": 160,
+    "negative_input::small-medium::-::neg_right": 160,
+    "negative_input::small-medium::*::neg_left": 160,
+    "negative_input::small-medium::*::neg_right": 160,
+    "negative_input::small-large::+::neg_left": 160,
+    "negative_input::small-large::+::neg_right": 160,
+    "negative_input::small-large::-::neg_left": 160,
+    "negative_input::small-large::-::neg_right": 160,
+    "negative_input::small-large::*::neg_left": 160,
+    "negative_input::small-large::*::neg_right": 160,
+    "negative_input::medium-medium::+::neg_left": 160,
+    "negative_input::medium-medium::+::neg_right": 160,
+    "negative_input::medium-medium::-::neg_left": 160,
+    "negative_input::medium-medium::-::neg_right": 160,
+    "negative_input::medium-medium::*::neg_left": 160,
+    "negative_input::medium-medium::*::neg_right": 160,
+    "negative_input::medium-large::+::neg_left": 160,
+    "negative_input::medium-large::+::neg_right": 160,
+    "negative_input::medium-large::-::neg_left": 160,
+    "negative_input::medium-large::-::neg_right": 160,
+    "negative_input::medium-large::*::neg_left": 160,
+    "negative_input::medium-large::*::neg_right": 160,
+    "negative_input::large-large::+::neg_left": 160,
+    "negative_input::large-large::+::neg_right": 160,
+    "negative_input::large-large::-::neg_left": 160,
+    "negative_input::large-large::-::neg_right": 160,
+    "negative_input::large-large::*::neg_left": 160,
+    "negative_input::large-large::*::neg_right": 160
+  },
+  "category_candidate_counts": {
+    "binary": 631443,
+    "three_input": 4800,
+    "parentheses": 28160,
+    "negative_input": 5760
+  },
+  "skipped_kinds": {
+    "parentheses::right::medium-medium-medium::*-": "kind parentheses::right::medium-medium-medium::*- only yielded 0 unique samples after sampling",
+    "parentheses::right::medium-medium-large::*-": "kind parentheses::right::medium-medium-large::*- only yielded 6 unique samples after sampling",
+    "parentheses::right::medium-large-large::*-": "kind parentheses::right::medium-large-large::*- only yielded 0 unique samples after sampling",
+    "parentheses::right::large-large-large::*-": "kind parentheses::right::large-large-large::*- only yielded 0 unique samples after sampling"
+  },
+  "split_counts": {
+    "train": 661651,
+    "val": 4256,
+    "test": 4256
+  },
+  "split_category_counts": {
+    "train": {
+      "binary": 630675,
+      "three_input": 3840,
+      "parentheses": 22528,
+      "negative_input": 4608
+    },
+    "val": {
+      "binary": 384,
+      "three_input": 480,
+      "parentheses": 2816,
+      "negative_input": 576
+    },
+    "test": {
+      "binary": 384,
+      "three_input": 480,
+      "parentheses": 2816,
+      "negative_input": 576
+    }
+  },
+  "split_kind_counts": {
+    "train": {
+      "binary::small-small::+": 409,
+      "binary::small-small::-": 199,
+      "binary::small-small::*": 409,
+      "binary::small-small::/": 54,
+      "binary::small-medium::+": 3328,
+      "binary::small-medium::-": 1648,
+      "binary::small-medium::*": 3328,
+      "binary::small-medium::/": 336,
+      "binary::small-large::+": 16768,
+      "binary::small-large::-": 8368,
+      "binary::small-large::*": 16768,
+      "binary::small-large::/": 1806,
+      "binary::medium-medium::+": 6368,
+      "binary::medium-medium::-": 3208,
+      "binary::medium-medium::*": 6368,
+      "binary::medium-medium::/": 96,
+      "binary::medium-large::+": 63968,
+      "binary::medium-large::-": 31968,
+      "binary::medium-large::*": 63968,
+      "binary::medium-large::/": 597,
+      "binary::large-large::+": 159968,
+      "binary::large-large::-": 80168,
+      "binary::large-large::*": 159968,
+      "binary::large-large::/": 609,
+      "three_input::small-small-small::+": 128,
+      "three_input::small-small-small::-": 128,
+      "three_input::small-small-small::*": 128,
+      "three_input::small-small-medium::+": 128,
+      "three_input::small-small-medium::-": 128,
+      "three_input::small-small-medium::*": 128,
+      "three_input::small-small-large::+": 128,
+      "three_input::small-small-large::-": 128,
+      "three_input::small-small-large::*": 128,
+      "three_input::small-medium-medium::+": 128,
+      "three_input::small-medium-medium::-": 128,
+      "three_input::small-medium-medium::*": 128,
+      "three_input::small-medium-large::+": 128,
+      "three_input::small-medium-large::-": 128,
+      "three_input::small-medium-large::*": 128,
+      "three_input::small-large-large::+": 128,
+      "three_input::small-large-large::-": 128,
+      "three_input::small-large-large::*": 128,
+      "three_input::medium-medium-medium::+": 128,
+      "three_input::medium-medium-medium::-": 128,
+      "three_input::medium-medium-medium::*": 128,
+      "three_input::medium-medium-large::+": 128,
+      "three_input::medium-medium-large::-": 128,
+      "three_input::medium-medium-large::*": 128,
+      "three_input::medium-large-large::+": 128,
+      "three_input::medium-large-large::-": 128,
+      "three_input::medium-large-large::*": 128,
+      "three_input::large-large-large::+": 128,
+      "three_input::large-large-large::-": 128,
+      "three_input::large-large-large::*": 128,
+      "parentheses::left::small-small-small::++": 128,
+      "parentheses::left::small-small-small::+-": 128,
+      "parentheses::left::small-small-small::+*": 128,
+      "parentheses::left::small-small-small::-+": 128,
+      "parentheses::left::small-small-small::--": 128,
+      "parentheses::left::small-small-small::-*": 128,
+      "parentheses::left::small-small-small::*+": 128,
+      "parentheses::left::small-small-small::*-": 128,
+      "parentheses::left::small-small-small::**": 128,
+      "parentheses::right::small-small-small::++": 128,
+      "parentheses::right::small-small-small::+-": 128,
+      "parentheses::right::small-small-small::+*": 128,
+      "parentheses::right::small-small-small::-+": 128,
+      "parentheses::right::small-small-small::--": 128,
+      "parentheses::right::small-small-small::-*": 128,
+      "parentheses::right::small-small-small::*+": 128,
+      "parentheses::right::small-small-small::*-": 128,
+      "parentheses::right::small-small-small::**": 128,
+      "parentheses::left::small-small-medium::++": 128,
+      "parentheses::left::small-small-medium::+-": 128,
+      "parentheses::left::small-small-medium::+*": 128,
+      "parentheses::left::small-small-medium::-+": 128,
+      "parentheses::left::small-small-medium::--": 128,
+      "parentheses::left::small-small-medium::-*": 128,
+      "parentheses::left::small-small-medium::*+": 128,
+      "parentheses::left::small-small-medium::*-": 128,
+      "parentheses::left::small-small-medium::**": 128,
+      "parentheses::right::small-small-medium::++": 128,
+      "parentheses::right::small-small-medium::+-": 128,
+      "parentheses::right::small-small-medium::+*": 128,
+      "parentheses::right::small-small-medium::-+": 128,
+      "parentheses::right::small-small-medium::--": 128,
+      "parentheses::right::small-small-medium::-*": 128,
+      "parentheses::right::small-small-medium::*+": 128,
+      "parentheses::right::small-small-medium::*-": 128,
+      "parentheses::right::small-small-medium::**": 128,
+      "parentheses::left::small-small-large::++": 128,
+      "parentheses::left::small-small-large::+-": 128,
+      "parentheses::left::small-small-large::+*": 128,
+      "parentheses::left::small-small-large::-+": 128,
+      "parentheses::left::small-small-large::--": 128,
+      "parentheses::left::small-small-large::-*": 128,
+      "parentheses::left::small-small-large::*+": 128,
+      "parentheses::left::small-small-large::*-": 128,
+      "parentheses::left::small-small-large::**": 128,
+      "parentheses::right::small-small-large::++": 128,
+      "parentheses::right::small-small-large::+-": 128,
+      "parentheses::right::small-small-large::+*": 128,
+      "parentheses::right::small-small-large::-+": 128,
+      "parentheses::right::small-small-large::--": 128,
+      "parentheses::right::small-small-large::-*": 128,
+      "parentheses::right::small-small-large::*+": 128,
+      "parentheses::right::small-small-large::*-": 128,
+      "parentheses::right::small-small-large::**": 128,
+      "parentheses::left::small-medium-medium::++": 128,
+      "parentheses::left::small-medium-medium::+-": 128,
+      "parentheses::left::small-medium-medium::+*": 128,
+      "parentheses::left::small-medium-medium::-+": 128,
+      "parentheses::left::small-medium-medium::--": 128,
+      "parentheses::left::small-medium-medium::-*": 128,
+      "parentheses::left::small-medium-medium::*+": 128,
+      "parentheses::left::small-medium-medium::*-": 128,
+      "parentheses::left::small-medium-medium::**": 128,
+      "parentheses::right::small-medium-medium::++": 128,
+      "parentheses::right::small-medium-medium::+-": 128,
+      "parentheses::right::small-medium-medium::+*": 128,
+      "parentheses::right::small-medium-medium::-+": 128,
+      "parentheses::right::small-medium-medium::--": 128,
+      "parentheses::right::small-medium-medium::-*": 128,
+      "parentheses::right::small-medium-medium::*+": 128,
+      "parentheses::right::small-medium-medium::*-": 128,
+      "parentheses::right::small-medium-medium::**": 128,
+      "parentheses::left::small-medium-large::++": 128,
+      "parentheses::left::small-medium-large::+-": 128,
+      "parentheses::left::small-medium-large::+*": 128,
+      "parentheses::left::small-medium-large::-+": 128,
+      "parentheses::left::small-medium-large::--": 128,
+      "parentheses::left::small-medium-large::-*": 128,
+      "parentheses::left::small-medium-large::*+": 128,
+      "parentheses::left::small-medium-large::*-": 128,
+      "parentheses::left::small-medium-large::**": 128,
+      "parentheses::right::small-medium-large::++": 128,
+      "parentheses::right::small-medium-large::+-": 128,
+      "parentheses::right::small-medium-large::+*": 128,
+      "parentheses::right::small-medium-large::-+": 128,
+      "parentheses::right::small-medium-large::--": 128,
+      "parentheses::right::small-medium-large::-*": 128,
+      "parentheses::right::small-medium-large::*+": 128,
+      "parentheses::right::small-medium-large::*-": 128,
+      "parentheses::right::small-medium-large::**": 128,
+      "parentheses::left::small-large-large::++": 128,
+      "parentheses::left::small-large-large::+-": 128,
+      "parentheses::left::small-large-large::+*": 128,
+      "parentheses::left::small-large-large::-+": 128,
+      "parentheses::left::small-large-large::--": 128,
+      "parentheses::left::small-large-large::-*": 128,
+      "parentheses::left::small-large-large::*+": 128,
+      "parentheses::left::small-large-large::*-": 128,
+      "parentheses::left::small-large-large::**": 128,
+      "parentheses::right::small-large-large::++": 128,
+      "parentheses::right::small-large-large::+-": 128,
+      "parentheses::right::small-large-large::+*": 128,
+      "parentheses::right::small-large-large::-+": 128,
+      "parentheses::right::small-large-large::--": 128,
+      "parentheses::right::small-large-large::-*": 128,
+      "parentheses::right::small-large-large::*+": 128,
+      "parentheses::right::small-large-large::*-": 128,
+      "parentheses::right::small-large-large::**": 128,
+      "parentheses::left::medium-medium-medium::++": 128,
+      "parentheses::left::medium-medium-medium::+-": 128,
+      "parentheses::left::medium-medium-medium::+*": 128,
+      "parentheses::left::medium-medium-medium::-+": 128,
+      "parentheses::left::medium-medium-medium::--": 128,
+      "parentheses::left::medium-medium-medium::-*": 128,
+      "parentheses::left::medium-medium-medium::*+": 128,
+      "parentheses::left::medium-medium-medium::*-": 128,
+      "parentheses::left::medium-medium-medium::**": 128,
+      "parentheses::right::medium-medium-medium::++": 128,
+      "parentheses::right::medium-medium-medium::+-": 128,
+      "parentheses::right::medium-medium-medium::+*": 128,
+      "parentheses::right::medium-medium-medium::-+": 128,
+      "parentheses::right::medium-medium-medium::--": 128,
+      "parentheses::right::medium-medium-medium::-*": 128,
+      "parentheses::right::medium-medium-medium::*+": 128,
+      "parentheses::right::medium-medium-medium::**": 128,
+      "parentheses::left::medium-medium-large::++": 128,
+      "parentheses::left::medium-medium-large::+-": 128,
+      "parentheses::left::medium-medium-large::+*": 128,
+      "parentheses::left::medium-medium-large::-+": 128,
+      "parentheses::left::medium-medium-large::--": 128,
+      "parentheses::left::medium-medium-large::-*": 128,
+      "parentheses::left::medium-medium-large::*+": 128,
+      "parentheses::left::medium-medium-large::*-": 128,
+      "parentheses::left::medium-medium-large::**": 128,
+      "parentheses::right::medium-medium-large::++": 128,
+      "parentheses::right::medium-medium-large::+-": 128,
+      "parentheses::right::medium-medium-large::+*": 128,
+      "parentheses::right::medium-medium-large::-+": 128,
+      "parentheses::right::medium-medium-large::--": 128,
+      "parentheses::right::medium-medium-large::-*": 128,
+      "parentheses::right::medium-medium-large::*+": 128,
+      "parentheses::right::medium-medium-large::**": 128,
+      "parentheses::left::medium-large-large::++": 128,
+      "parentheses::left::medium-large-large::+-": 128,
+      "parentheses::left::medium-large-large::+*": 128,
+      "parentheses::left::medium-large-large::-+": 128,
+      "parentheses::left::medium-large-large::--": 128,
+      "parentheses::left::medium-large-large::-*": 128,
+      "parentheses::left::medium-large-large::*+": 128,
+      "parentheses::left::medium-large-large::*-": 128,
+      "parentheses::left::medium-large-large::**": 128,
+      "parentheses::right::medium-large-large::++": 128,
+      "parentheses::right::medium-large-large::+-": 128,
+      "parentheses::right::medium-large-large::+*": 128,
+      "parentheses::right::medium-large-large::-+": 128,
+      "parentheses::right::medium-large-large::--": 128,
+      "parentheses::right::medium-large-large::-*": 128,
+      "parentheses::right::medium-large-large::*+": 128,
+      "parentheses::right::medium-large-large::**": 128,
+      "parentheses::left::large-large-large::++": 128,
+      "parentheses::left::large-large-large::+-": 128,
+      "parentheses::left::large-large-large::+*": 128,
+      "parentheses::left::large-large-large::-+": 128,
+      "parentheses::left::large-large-large::--": 128,
+      "parentheses::left::large-large-large::-*": 128,
+      "parentheses::left::large-large-large::*+": 128,
+      "parentheses::left::large-large-large::*-": 128,
+      "parentheses::left::large-large-large::**": 128,
+      "parentheses::right::large-large-large::++": 128,
+      "parentheses::right::large-large-large::+-": 128,
+      "parentheses::right::large-large-large::+*": 128,
+      "parentheses::right::large-large-large::-+": 128,
+      "parentheses::right::large-large-large::--": 128,
+      "parentheses::right::large-large-large::-*": 128,
+      "parentheses::right::large-large-large::*+": 128,
+      "parentheses::right::large-large-large::**": 128,
+      "negative_input::small-small::+::neg_left": 128,
+      "negative_input::small-small::+::neg_right": 128,
+      "negative_input::small-small::-::neg_left": 128,
+      "negative_input::small-small::-::neg_right": 128,
+      "negative_input::small-small::*::neg_left": 128,
+      "negative_input::small-small::*::neg_right": 128,
+      "negative_input::small-medium::+::neg_left": 128,
+      "negative_input::small-medium::+::neg_right": 128,
+      "negative_input::small-medium::-::neg_left": 128,
+      "negative_input::small-medium::-::neg_right": 128,
+      "negative_input::small-medium::*::neg_left": 128,
+      "negative_input::small-medium::*::neg_right": 128,
+      "negative_input::small-large::+::neg_left": 128,
+      "negative_input::small-large::+::neg_right": 128,
+      "negative_input::small-large::-::neg_left": 128,
+      "negative_input::small-large::-::neg_right": 128,
+      "negative_input::small-large::*::neg_left": 128,
+      "negative_input::small-large::*::neg_right": 128,
+      "negative_input::medium-medium::+::neg_left": 128,
+      "negative_input::medium-medium::+::neg_right": 128,
+      "negative_input::medium-medium::-::neg_left": 128,
+      "negative_input::medium-medium::-::neg_right": 128,
+      "negative_input::medium-medium::*::neg_left": 128,
+      "negative_input::medium-medium::*::neg_right": 128,
+      "negative_input::medium-large::+::neg_left": 128,
+      "negative_input::medium-large::+::neg_right": 128,
+      "negative_input::medium-large::-::neg_left": 128,
+      "negative_input::medium-large::-::neg_right": 128,
+      "negative_input::medium-large::*::neg_left": 128,
+      "negative_input::medium-large::*::neg_right": 128,
+      "negative_input::large-large::+::neg_left": 128,
+      "negative_input::large-large::+::neg_right": 128,
+      "negative_input::large-large::-::neg_left": 128,
+      "negative_input::large-large::-::neg_right": 128,
+      "negative_input::large-large::*::neg_left": 128,
+      "negative_input::large-large::*::neg_right": 128
+    },
+    "val": {
+      "binary::small-small::+": 16,
+      "binary::small-small::-": 16,
+      "binary::small-small::*": 16,
+      "binary::small-small::/": 16,
+      "binary::small-medium::+": 16,
+      "binary::small-medium::-": 16,
+      "binary::small-medium::*": 16,
+      "binary::small-medium::/": 16,
+      "binary::small-large::+": 16,
+      "binary::small-large::-": 16,
+      "binary::small-large::*": 16,
+      "binary::small-large::/": 16,
+      "binary::medium-medium::+": 16,
+      "binary::medium-medium::-": 16,
+      "binary::medium-medium::*": 16,
+      "binary::medium-medium::/": 16,
+      "binary::medium-large::+": 16,
+      "binary::medium-large::-": 16,
+      "binary::medium-large::*": 16,
+      "binary::medium-large::/": 16,
+      "binary::large-large::+": 16,
+      "binary::large-large::-": 16,
+      "binary::large-large::*": 16,
+      "binary::large-large::/": 16,
+      "three_input::small-small-small::+": 16,
+      "three_input::small-small-small::-": 16,
+      "three_input::small-small-small::*": 16,
+      "three_input::small-small-medium::+": 16,
+      "three_input::small-small-medium::-": 16,
+      "three_input::small-small-medium::*": 16,
+      "three_input::small-small-large::+": 16,
+      "three_input::small-small-large::-": 16,
+      "three_input::small-small-large::*": 16,
+      "three_input::small-medium-medium::+": 16,
+      "three_input::small-medium-medium::-": 16,
+      "three_input::small-medium-medium::*": 16,
+      "three_input::small-medium-large::+": 16,
+      "three_input::small-medium-large::-": 16,
+      "three_input::small-medium-large::*": 16,
+      "three_input::small-large-large::+": 16,
+      "three_input::small-large-large::-": 16,
+      "three_input::small-large-large::*": 16,
+      "three_input::medium-medium-medium::+": 16,
+      "three_input::medium-medium-medium::-": 16,
+      "three_input::medium-medium-medium::*": 16,
+      "three_input::medium-medium-large::+": 16,
+      "three_input::medium-medium-large::-": 16,
+      "three_input::medium-medium-large::*": 16,
+      "three_input::medium-large-large::+": 16,
+      "three_input::medium-large-large::-": 16,
+      "three_input::medium-large-large::*": 16,
+      "three_input::large-large-large::+": 16,
+      "three_input::large-large-large::-": 16,
+      "three_input::large-large-large::*": 16,
+      "parentheses::left::small-small-small::++": 16,
+      "parentheses::left::small-small-small::+-": 16,
+      "parentheses::left::small-small-small::+*": 16,
+      "parentheses::left::small-small-small::-+": 16,
+      "parentheses::left::small-small-small::--": 16,
+      "parentheses::left::small-small-small::-*": 16,
+      "parentheses::left::small-small-small::*+": 16,
+      "parentheses::left::small-small-small::*-": 16,
+      "parentheses::left::small-small-small::**": 16,
+      "parentheses::right::small-small-small::++": 16,
+      "parentheses::right::small-small-small::+-": 16,
+      "parentheses::right::small-small-small::+*": 16,
+      "parentheses::right::small-small-small::-+": 16,
+      "parentheses::right::small-small-small::--": 16,
+      "parentheses::right::small-small-small::-*": 16,
+      "parentheses::right::small-small-small::*+": 16,
+      "parentheses::right::small-small-small::*-": 16,
+      "parentheses::right::small-small-small::**": 16,
+      "parentheses::left::small-small-medium::++": 16,
+      "parentheses::left::small-small-medium::+-": 16,
+      "parentheses::left::small-small-medium::+*": 16,
+      "parentheses::left::small-small-medium::-+": 16,
+      "parentheses::left::small-small-medium::--": 16,
+      "parentheses::left::small-small-medium::-*": 16,
+      "parentheses::left::small-small-medium::*+": 16,
+      "parentheses::left::small-small-medium::*-": 16,
+      "parentheses::left::small-small-medium::**": 16,
+      "parentheses::right::small-small-medium::++": 16,
+      "parentheses::right::small-small-medium::+-": 16,
+      "parentheses::right::small-small-medium::+*": 16,
+      "parentheses::right::small-small-medium::-+": 16,
+      "parentheses::right::small-small-medium::--": 16,
+      "parentheses::right::small-small-medium::-*": 16,
+      "parentheses::right::small-small-medium::*+": 16,
+      "parentheses::right::small-small-medium::*-": 16,
+      "parentheses::right::small-small-medium::**": 16,
+      "parentheses::left::small-small-large::++": 16,
+      "parentheses::left::small-small-large::+-": 16,
+      "parentheses::left::small-small-large::+*": 16,
+      "parentheses::left::small-small-large::-+": 16,
+      "parentheses::left::small-small-large::--": 16,
+      "parentheses::left::small-small-large::-*": 16,
+      "parentheses::left::small-small-large::*+": 16,
+      "parentheses::left::small-small-large::*-": 16,
+      "parentheses::left::small-small-large::**": 16,
+      "parentheses::right::small-small-large::++": 16,
+      "parentheses::right::small-small-large::+-": 16,
+      "parentheses::right::small-small-large::+*": 16,
+      "parentheses::right::small-small-large::-+": 16,
+      "parentheses::right::small-small-large::--": 16,
+      "parentheses::right::small-small-large::-*": 16,
+      "parentheses::right::small-small-large::*+": 16,
+      "parentheses::right::small-small-large::*-": 16,
+      "parentheses::right::small-small-large::**": 16,
+      "parentheses::left::small-medium-medium::++": 16,
+      "parentheses::left::small-medium-medium::+-": 16,
+      "parentheses::left::small-medium-medium::+*": 16,
+      "parentheses::left::small-medium-medium::-+": 16,
+      "parentheses::left::small-medium-medium::--": 16,
+      "parentheses::left::small-medium-medium::-*": 16,
+      "parentheses::left::small-medium-medium::*+": 16,
+      "parentheses::left::small-medium-medium::*-": 16,
+      "parentheses::left::small-medium-medium::**": 16,
+      "parentheses::right::small-medium-medium::++": 16,
+      "parentheses::right::small-medium-medium::+-": 16,
+      "parentheses::right::small-medium-medium::+*": 16,
+      "parentheses::right::small-medium-medium::-+": 16,
+      "parentheses::right::small-medium-medium::--": 16,
+      "parentheses::right::small-medium-medium::-*": 16,
+      "parentheses::right::small-medium-medium::*+": 16,
+      "parentheses::right::small-medium-medium::*-": 16,
+      "parentheses::right::small-medium-medium::**": 16,
+      "parentheses::left::small-medium-large::++": 16,
+      "parentheses::left::small-medium-large::+-": 16,
+      "parentheses::left::small-medium-large::+*": 16,
+      "parentheses::left::small-medium-large::-+": 16,
+      "parentheses::left::small-medium-large::--": 16,
+      "parentheses::left::small-medium-large::-*": 16,
+      "parentheses::left::small-medium-large::*+": 16,
+      "parentheses::left::small-medium-large::*-": 16,
+      "parentheses::left::small-medium-large::**": 16,
+      "parentheses::right::small-medium-large::++": 16,
+      "parentheses::right::small-medium-large::+-": 16,
+      "parentheses::right::small-medium-large::+*": 16,
+      "parentheses::right::small-medium-large::-+": 16,
+      "parentheses::right::small-medium-large::--": 16,
+      "parentheses::right::small-medium-large::-*": 16,
+      "parentheses::right::small-medium-large::*+": 16,
+      "parentheses::right::small-medium-large::*-": 16,
+      "parentheses::right::small-medium-large::**": 16,
+      "parentheses::left::small-large-large::++": 16,
+      "parentheses::left::small-large-large::+-": 16,
+      "parentheses::left::small-large-large::+*": 16,
+      "parentheses::left::small-large-large::-+": 16,
+      "parentheses::left::small-large-large::--": 16,
+      "parentheses::left::small-large-large::-*": 16,
+      "parentheses::left::small-large-large::*+": 16,
+      "parentheses::left::small-large-large::*-": 16,
+      "parentheses::left::small-large-large::**": 16,
+      "parentheses::right::small-large-large::++": 16,
+      "parentheses::right::small-large-large::+-": 16,
+      "parentheses::right::small-large-large::+*": 16,
+      "parentheses::right::small-large-large::-+": 16,
+      "parentheses::right::small-large-large::--": 16,
+      "parentheses::right::small-large-large::-*": 16,
+      "parentheses::right::small-large-large::*+": 16,
+      "parentheses::right::small-large-large::*-": 16,
+      "parentheses::right::small-large-large::**": 16,
+      "parentheses::left::medium-medium-medium::++": 16,
+      "parentheses::left::medium-medium-medium::+-": 16,
+      "parentheses::left::medium-medium-medium::+*": 16,
+      "parentheses::left::medium-medium-medium::-+": 16,
+      "parentheses::left::medium-medium-medium::--": 16,
+      "parentheses::left::medium-medium-medium::-*": 16,
+      "parentheses::left::medium-medium-medium::*+": 16,
+      "parentheses::left::medium-medium-medium::*-": 16,
+      "parentheses::left::medium-medium-medium::**": 16,
+      "parentheses::right::medium-medium-medium::++": 16,
+      "parentheses::right::medium-medium-medium::+-": 16,
+      "parentheses::right::medium-medium-medium::+*": 16,
+      "parentheses::right::medium-medium-medium::-+": 16,
+      "parentheses::right::medium-medium-medium::--": 16,
+      "parentheses::right::medium-medium-medium::-*": 16,
+      "parentheses::right::medium-medium-medium::*+": 16,
+      "parentheses::right::medium-medium-medium::**": 16,
+      "parentheses::left::medium-medium-large::++": 16,
+      "parentheses::left::medium-medium-large::+-": 16,
+      "parentheses::left::medium-medium-large::+*": 16,
+      "parentheses::left::medium-medium-large::-+": 16,
+      "parentheses::left::medium-medium-large::--": 16,
+      "parentheses::left::medium-medium-large::-*": 16,
+      "parentheses::left::medium-medium-large::*+": 16,
+      "parentheses::left::medium-medium-large::*-": 16,
+      "parentheses::left::medium-medium-large::**": 16,
+      "parentheses::right::medium-medium-large::++": 16,
+      "parentheses::right::medium-medium-large::+-": 16,
+      "parentheses::right::medium-medium-large::+*": 16,
+      "parentheses::right::medium-medium-large::-+": 16,
+      "parentheses::right::medium-medium-large::--": 16,
+      "parentheses::right::medium-medium-large::-*": 16,
+      "parentheses::right::medium-medium-large::*+": 16,
+      "parentheses::right::medium-medium-large::**": 16,
+      "parentheses::left::medium-large-large::++": 16,
+      "parentheses::left::medium-large-large::+-": 16,
+      "parentheses::left::medium-large-large::+*": 16,
+      "parentheses::left::medium-large-large::-+": 16,
+      "parentheses::left::medium-large-large::--": 16,
+      "parentheses::left::medium-large-large::-*": 16,
+      "parentheses::left::medium-large-large::*+": 16,
+      "parentheses::left::medium-large-large::*-": 16,
+      "parentheses::left::medium-large-large::**": 16,
+      "parentheses::right::medium-large-large::++": 16,
+      "parentheses::right::medium-large-large::+-": 16,
+      "parentheses::right::medium-large-large::+*": 16,
+      "parentheses::right::medium-large-large::-+": 16,
+      "parentheses::right::medium-large-large::--": 16,
+      "parentheses::right::medium-large-large::-*": 16,
+      "parentheses::right::medium-large-large::*+": 16,
+      "parentheses::right::medium-large-large::**": 16,
+      "parentheses::left::large-large-large::++": 16,
+      "parentheses::left::large-large-large::+-": 16,
+      "parentheses::left::large-large-large::+*": 16,
+      "parentheses::left::large-large-large::-+": 16,
+      "parentheses::left::large-large-large::--": 16,
+      "parentheses::left::large-large-large::-*": 16,
+      "parentheses::left::large-large-large::*+": 16,
+      "parentheses::left::large-large-large::*-": 16,
+      "parentheses::left::large-large-large::**": 16,
+      "parentheses::right::large-large-large::++": 16,
+      "parentheses::right::large-large-large::+-": 16,
+      "parentheses::right::large-large-large::+*": 16,
+      "parentheses::right::large-large-large::-+": 16,
+      "parentheses::right::large-large-large::--": 16,
+      "parentheses::right::large-large-large::-*": 16,
+      "parentheses::right::large-large-large::*+": 16,
+      "parentheses::right::large-large-large::**": 16,
+      "negative_input::small-small::+::neg_left": 16,
+      "negative_input::small-small::+::neg_right": 16,
+      "negative_input::small-small::-::neg_left": 16,
+      "negative_input::small-small::-::neg_right": 16,
+      "negative_input::small-small::*::neg_left": 16,
+      "negative_input::small-small::*::neg_right": 16,
+      "negative_input::small-medium::+::neg_left": 16,
+      "negative_input::small-medium::+::neg_right": 16,
+      "negative_input::small-medium::-::neg_left": 16,
+      "negative_input::small-medium::-::neg_right": 16,
+      "negative_input::small-medium::*::neg_left": 16,
+      "negative_input::small-medium::*::neg_right": 16,
+      "negative_input::small-large::+::neg_left": 16,
+      "negative_input::small-large::+::neg_right": 16,
+      "negative_input::small-large::-::neg_left": 16,
+      "negative_input::small-large::-::neg_right": 16,
+      "negative_input::small-large::*::neg_left": 16,
+      "negative_input::small-large::*::neg_right": 16,
+      "negative_input::medium-medium::+::neg_left": 16,
+      "negative_input::medium-medium::+::neg_right": 16,
+      "negative_input::medium-medium::-::neg_left": 16,
+      "negative_input::medium-medium::-::neg_right": 16,
+      "negative_input::medium-medium::*::neg_left": 16,
+      "negative_input::medium-medium::*::neg_right": 16,
+      "negative_input::medium-large::+::neg_left": 16,
+      "negative_input::medium-large::+::neg_right": 16,
+      "negative_input::medium-large::-::neg_left": 16,
+      "negative_input::medium-large::-::neg_right": 16,
+      "negative_input::medium-large::*::neg_left": 16,
+      "negative_input::medium-large::*::neg_right": 16,
+      "negative_input::large-large::+::neg_left": 16,
+      "negative_input::large-large::+::neg_right": 16,
+      "negative_input::large-large::-::neg_left": 16,
+      "negative_input::large-large::-::neg_right": 16,
+      "negative_input::large-large::*::neg_left": 16,
+      "negative_input::large-large::*::neg_right": 16
+    },
+    "test": {
+      "binary::small-small::+": 16,
+      "binary::small-small::-": 16,
+      "binary::small-small::*": 16,
+      "binary::small-small::/": 16,
+      "binary::small-medium::+": 16,
+      "binary::small-medium::-": 16,
+      "binary::small-medium::*": 16,
+      "binary::small-medium::/": 16,
+      "binary::small-large::+": 16,
+      "binary::small-large::-": 16,
+      "binary::small-large::*": 16,
+      "binary::small-large::/": 16,
+      "binary::medium-medium::+": 16,
+      "binary::medium-medium::-": 16,
+      "binary::medium-medium::*": 16,
+      "binary::medium-medium::/": 16,
+      "binary::medium-large::+": 16,
+      "binary::medium-large::-": 16,
+      "binary::medium-large::*": 16,
+      "binary::medium-large::/": 16,
+      "binary::large-large::+": 16,
+      "binary::large-large::-": 16,
+      "binary::large-large::*": 16,
+      "binary::large-large::/": 16,
+      "three_input::small-small-small::+": 16,
+      "three_input::small-small-small::-": 16,
+      "three_input::small-small-small::*": 16,
+      "three_input::small-small-medium::+": 16,
+      "three_input::small-small-medium::-": 16,
+      "three_input::small-small-medium::*": 16,
+      "three_input::small-small-large::+": 16,
+      "three_input::small-small-large::-": 16,
+      "three_input::small-small-large::*": 16,
+      "three_input::small-medium-medium::+": 16,
+      "three_input::small-medium-medium::-": 16,
+      "three_input::small-medium-medium::*": 16,
+      "three_input::small-medium-large::+": 16,
+      "three_input::small-medium-large::-": 16,
+      "three_input::small-medium-large::*": 16,
+      "three_input::small-large-large::+": 16,
+      "three_input::small-large-large::-": 16,
+      "three_input::small-large-large::*": 16,
+      "three_input::medium-medium-medium::+": 16,
+      "three_input::medium-medium-medium::-": 16,
+      "three_input::medium-medium-medium::*": 16,
+      "three_input::medium-medium-large::+": 16,
+      "three_input::medium-medium-large::-": 16,
+      "three_input::medium-medium-large::*": 16,
+      "three_input::medium-large-large::+": 16,
+      "three_input::medium-large-large::-": 16,
+      "three_input::medium-large-large::*": 16,
+      "three_input::large-large-large::+": 16,
+      "three_input::large-large-large::-": 16,
+      "three_input::large-large-large::*": 16,
+      "parentheses::left::small-small-small::++": 16,
+      "parentheses::left::small-small-small::+-": 16,
+      "parentheses::left::small-small-small::+*": 16,
+      "parentheses::left::small-small-small::-+": 16,
+      "parentheses::left::small-small-small::--": 16,
+      "parentheses::left::small-small-small::-*": 16,
+      "parentheses::left::small-small-small::*+": 16,
+      "parentheses::left::small-small-small::*-": 16,
+      "parentheses::left::small-small-small::**": 16,
+      "parentheses::right::small-small-small::++": 16,
+      "parentheses::right::small-small-small::+-": 16,
+      "parentheses::right::small-small-small::+*": 16,
+      "parentheses::right::small-small-small::-+": 16,
+      "parentheses::right::small-small-small::--": 16,
+      "parentheses::right::small-small-small::-*": 16,
+      "parentheses::right::small-small-small::*+": 16,
+      "parentheses::right::small-small-small::*-": 16,
+      "parentheses::right::small-small-small::**": 16,
+      "parentheses::left::small-small-medium::++": 16,
+      "parentheses::left::small-small-medium::+-": 16,
+      "parentheses::left::small-small-medium::+*": 16,
+      "parentheses::left::small-small-medium::-+": 16,
+      "parentheses::left::small-small-medium::--": 16,
+      "parentheses::left::small-small-medium::-*": 16,
+      "parentheses::left::small-small-medium::*+": 16,
+      "parentheses::left::small-small-medium::*-": 16,
+      "parentheses::left::small-small-medium::**": 16,
+      "parentheses::right::small-small-medium::++": 16,
+      "parentheses::right::small-small-medium::+-": 16,
+      "parentheses::right::small-small-medium::+*": 16,
+      "parentheses::right::small-small-medium::-+": 16,
+      "parentheses::right::small-small-medium::--": 16,
+      "parentheses::right::small-small-medium::-*": 16,
+      "parentheses::right::small-small-medium::*+": 16,
+      "parentheses::right::small-small-medium::*-": 16,
+      "parentheses::right::small-small-medium::**": 16,
+      "parentheses::left::small-small-large::++": 16,
+      "parentheses::left::small-small-large::+-": 16,
+      "parentheses::left::small-small-large::+*": 16,
+      "parentheses::left::small-small-large::-+": 16,
+      "parentheses::left::small-small-large::--": 16,
+      "parentheses::left::small-small-large::-*": 16,
+      "parentheses::left::small-small-large::*+": 16,
+      "parentheses::left::small-small-large::*-": 16,
+      "parentheses::left::small-small-large::**": 16,
+      "parentheses::right::small-small-large::++": 16,
+      "parentheses::right::small-small-large::+-": 16,
+      "parentheses::right::small-small-large::+*": 16,
+      "parentheses::right::small-small-large::-+": 16,
+      "parentheses::right::small-small-large::--": 16,
+      "parentheses::right::small-small-large::-*": 16,
+      "parentheses::right::small-small-large::*+": 16,
+      "parentheses::right::small-small-large::*-": 16,
+      "parentheses::right::small-small-large::**": 16,
+      "parentheses::left::small-medium-medium::++": 16,
+      "parentheses::left::small-medium-medium::+-": 16,
+      "parentheses::left::small-medium-medium::+*": 16,
+      "parentheses::left::small-medium-medium::-+": 16,
+      "parentheses::left::small-medium-medium::--": 16,
+      "parentheses::left::small-medium-medium::-*": 16,
+      "parentheses::left::small-medium-medium::*+": 16,
+      "parentheses::left::small-medium-medium::*-": 16,
+      "parentheses::left::small-medium-medium::**": 16,
+      "parentheses::right::small-medium-medium::++": 16,
+      "parentheses::right::small-medium-medium::+-": 16,
+      "parentheses::right::small-medium-medium::+*": 16,
+      "parentheses::right::small-medium-medium::-+": 16,
+      "parentheses::right::small-medium-medium::--": 16,
+      "parentheses::right::small-medium-medium::-*": 16,
+      "parentheses::right::small-medium-medium::*+": 16,
+      "parentheses::right::small-medium-medium::*-": 16,
+      "parentheses::right::small-medium-medium::**": 16,
+      "parentheses::left::small-medium-large::++": 16,
+      "parentheses::left::small-medium-large::+-": 16,
+      "parentheses::left::small-medium-large::+*": 16,
+      "parentheses::left::small-medium-large::-+": 16,
+      "parentheses::left::small-medium-large::--": 16,
+      "parentheses::left::small-medium-large::-*": 16,
+      "parentheses::left::small-medium-large::*+": 16,
+      "parentheses::left::small-medium-large::*-": 16,
+      "parentheses::left::small-medium-large::**": 16,
+      "parentheses::right::small-medium-large::++": 16,
+      "parentheses::right::small-medium-large::+-": 16,
+      "parentheses::right::small-medium-large::+*": 16,
+      "parentheses::right::small-medium-large::-+": 16,
+      "parentheses::right::small-medium-large::--": 16,
+      "parentheses::right::small-medium-large::-*": 16,
+      "parentheses::right::small-medium-large::*+": 16,
+      "parentheses::right::small-medium-large::*-": 16,
+      "parentheses::right::small-medium-large::**": 16,
+      "parentheses::left::small-large-large::++": 16,
+      "parentheses::left::small-large-large::+-": 16,
+      "parentheses::left::small-large-large::+*": 16,
+      "parentheses::left::small-large-large::-+": 16,
+      "parentheses::left::small-large-large::--": 16,
+      "parentheses::left::small-large-large::-*": 16,
+      "parentheses::left::small-large-large::*+": 16,
+      "parentheses::left::small-large-large::*-": 16,
+      "parentheses::left::small-large-large::**": 16,
+      "parentheses::right::small-large-large::++": 16,
+      "parentheses::right::small-large-large::+-": 16,
+      "parentheses::right::small-large-large::+*": 16,
+      "parentheses::right::small-large-large::-+": 16,
+      "parentheses::right::small-large-large::--": 16,
+      "parentheses::right::small-large-large::-*": 16,
+      "parentheses::right::small-large-large::*+": 16,
+      "parentheses::right::small-large-large::*-": 16,
+      "parentheses::right::small-large-large::**": 16,
+      "parentheses::left::medium-medium-medium::++": 16,
+      "parentheses::left::medium-medium-medium::+-": 16,
+      "parentheses::left::medium-medium-medium::+*": 16,
+      "parentheses::left::medium-medium-medium::-+": 16,
+      "parentheses::left::medium-medium-medium::--": 16,
+      "parentheses::left::medium-medium-medium::-*": 16,
+      "parentheses::left::medium-medium-medium::*+": 16,
+      "parentheses::left::medium-medium-medium::*-": 16,
+      "parentheses::left::medium-medium-medium::**": 16,
+      "parentheses::right::medium-medium-medium::++": 16,
+      "parentheses::right::medium-medium-medium::+-": 16,
+      "parentheses::right::medium-medium-medium::+*": 16,
+      "parentheses::right::medium-medium-medium::-+": 16,
+      "parentheses::right::medium-medium-medium::--": 16,
+      "parentheses::right::medium-medium-medium::-*": 16,
+      "parentheses::right::medium-medium-medium::*+": 16,
+      "parentheses::right::medium-medium-medium::**": 16,
+      "parentheses::left::medium-medium-large::++": 16,
+      "parentheses::left::medium-medium-large::+-": 16,
+      "parentheses::left::medium-medium-large::+*": 16,
+      "parentheses::left::medium-medium-large::-+": 16,
+      "parentheses::left::medium-medium-large::--": 16,
+      "parentheses::left::medium-medium-large::-*": 16,
+      "parentheses::left::medium-medium-large::*+": 16,
+      "parentheses::left::medium-medium-large::*-": 16,
+      "parentheses::left::medium-medium-large::**": 16,
+      "parentheses::right::medium-medium-large::++": 16,
+      "parentheses::right::medium-medium-large::+-": 16,
+      "parentheses::right::medium-medium-large::+*": 16,
+      "parentheses::right::medium-medium-large::-+": 16,
+      "parentheses::right::medium-medium-large::--": 16,
+      "parentheses::right::medium-medium-large::-*": 16,
+      "parentheses::right::medium-medium-large::*+": 16,
+      "parentheses::right::medium-medium-large::**": 16,
+      "parentheses::left::medium-large-large::++": 16,
+      "parentheses::left::medium-large-large::+-": 16,
+      "parentheses::left::medium-large-large::+*": 16,
+      "parentheses::left::medium-large-large::-+": 16,
+      "parentheses::left::medium-large-large::--": 16,
+      "parentheses::left::medium-large-large::-*": 16,
+      "parentheses::left::medium-large-large::*+": 16,
+      "parentheses::left::medium-large-large::*-": 16,
+      "parentheses::left::medium-large-large::**": 16,
+      "parentheses::right::medium-large-large::++": 16,
+      "parentheses::right::medium-large-large::+-": 16,
+      "parentheses::right::medium-large-large::+*": 16,
+      "parentheses::right::medium-large-large::-+": 16,
+      "parentheses::right::medium-large-large::--": 16,
+      "parentheses::right::medium-large-large::-*": 16,
+      "parentheses::right::medium-large-large::*+": 16,
+      "parentheses::right::medium-large-large::**": 16,
+      "parentheses::left::large-large-large::++": 16,
+      "parentheses::left::large-large-large::+-": 16,
+      "parentheses::left::large-large-large::+*": 16,
+      "parentheses::left::large-large-large::-+": 16,
+      "parentheses::left::large-large-large::--": 16,
+      "parentheses::left::large-large-large::-*": 16,
+      "parentheses::left::large-large-large::*+": 16,
+      "parentheses::left::large-large-large::*-": 16,
+      "parentheses::left::large-large-large::**": 16,
+      "parentheses::right::large-large-large::++": 16,
+      "parentheses::right::large-large-large::+-": 16,
+      "parentheses::right::large-large-large::+*": 16,
+      "parentheses::right::large-large-large::-+": 16,
+      "parentheses::right::large-large-large::--": 16,
+      "parentheses::right::large-large-large::-*": 16,
+      "parentheses::right::large-large-large::*+": 16,
+      "parentheses::right::large-large-large::**": 16,
+      "negative_input::small-small::+::neg_left": 16,
+      "negative_input::small-small::+::neg_right": 16,
+      "negative_input::small-small::-::neg_left": 16,
+      "negative_input::small-small::-::neg_right": 16,
+      "negative_input::small-small::*::neg_left": 16,
+      "negative_input::small-small::*::neg_right": 16,
+      "negative_input::small-medium::+::neg_left": 16,
+      "negative_input::small-medium::+::neg_right": 16,
+      "negative_input::small-medium::-::neg_left": 16,
+      "negative_input::small-medium::-::neg_right": 16,
+      "negative_input::small-medium::*::neg_left": 16,
+      "negative_input::small-medium::*::neg_right": 16,
+      "negative_input::small-large::+::neg_left": 16,
+      "negative_input::small-large::+::neg_right": 16,
+      "negative_input::small-large::-::neg_left": 16,
+      "negative_input::small-large::-::neg_right": 16,
+      "negative_input::small-large::*::neg_left": 16,
+      "negative_input::small-large::*::neg_right": 16,
+      "negative_input::medium-medium::+::neg_left": 16,
+      "negative_input::medium-medium::+::neg_right": 16,
+      "negative_input::medium-medium::-::neg_left": 16,
+      "negative_input::medium-medium::-::neg_right": 16,
+      "negative_input::medium-medium::*::neg_left": 16,
+      "negative_input::medium-medium::*::neg_right": 16,
+      "negative_input::medium-large::+::neg_left": 16,
+      "negative_input::medium-large::+::neg_right": 16,
+      "negative_input::medium-large::-::neg_left": 16,
+      "negative_input::medium-large::-::neg_right": 16,
+      "negative_input::medium-large::*::neg_left": 16,
+      "negative_input::medium-large::*::neg_right": 16,
+      "negative_input::large-large::+::neg_left": 16,
+      "negative_input::large-large::+::neg_right": 16,
+      "negative_input::large-large::-::neg_left": 16,
+      "negative_input::large-large::-::neg_right": 16,
+      "negative_input::large-large::*::neg_left": 16,
+      "negative_input::large-large::*::neg_right": 16
+    }
+  },
+  "total_unique_candidates": 670163,
+  "seed": 42,
+  "val_samples_per_kind": 16,
+  "test_samples_per_kind": 16,
+  "sampled_train_samples_per_kind": 128
+}
