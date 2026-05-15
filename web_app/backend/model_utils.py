@@ -1,15 +1,62 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, cast
+
 import torch
 from transformer_lens import HookedTransformer, HookedTransformerConfig
 
+from trainer.data import ArithmeticTokenizer
+from trainer.training.checkpointing import load_checkpoint_payload
 
-def get_hooked_model(checkpoint_path, device="cpu"):
 
-    # Load original checkpoint to get config/weights
-    checkpoint = torch.load(checkpoint_path, map_location=device)
-    
-    state_dict = checkpoint['model_state']
-    config_dict = checkpoint['model_config']
-    
+def get_hooked_model(checkpoint_path: Path, device: str = "cpu") -> HookedTransformer:
+
+    model, _, _ = load_hooked_resources(checkpoint_path, device=device)
+    return model
+
+
+def load_hooked_resources(
+    checkpoint_path: Path,
+    device: str = "cpu",
+) -> tuple[HookedTransformer, ArithmeticTokenizer, dict[str, Any]]:
+    payload = load_checkpoint_payload(checkpoint_path, torch.device(device))
+    tokenizer_state = payload.get("tokenizer")
+    if not isinstance(tokenizer_state, dict):
+        raise ValueError("checkpoint is missing tokenizer state")
+    tokenizer = ArithmeticTokenizer.from_state(cast(dict[str, list[str]], tokenizer_state))
+
+    model_state = payload.get("model_state")
+    if not isinstance(model_state, dict):
+        raise ValueError("checkpoint is missing model_state")
+
+    model_config = payload.get("model_config")
+    if not isinstance(model_config, dict):
+        raise ValueError("checkpoint is missing model_config")
+
+    model = _build_hooked_model(
+        state_dict=cast(dict[str, torch.Tensor], model_state),
+        config_dict=cast(dict[str, Any], model_config),
+        device=device,
+    )
+    model.eval()
+
+    metadata: dict[str, Any] = {
+        "epoch": payload.get("epoch"),
+        "exact_match": payload.get("exact_match"),
+        "val_loss": payload.get("val_loss"),
+        "train_loss": payload.get("train_loss"),
+        "model_config": model_config,
+        "train_config": payload.get("train_config"),
+        "checkpoint_schema_version": payload.get("checkpoint_schema_version"),
+    }
+    return model, tokenizer, metadata
+
+
+def _build_hooked_model(
+    *, state_dict: dict[str, torch.Tensor], config_dict: dict[str, Any], device: str
+) -> HookedTransformer:
+
     # Define HookedTransformer config
     ht_config = HookedTransformerConfig(
         n_layers=config_dict["n_layers"],
@@ -119,7 +166,8 @@ def get_hooked_model(checkpoint_path, device="cpu"):
     
     # Unembed (lm_head)
     new_state_dict["unembed.W_U"] = state_dict["lm_head.weight"].T
-    # No bias in original lm_head
+    # Original lm_head has no bias, so keep TransformerLens unembed bias at zero.
+    new_state_dict["unembed.b_U"] = torch.zeros(config_dict["vocab_size"], device=device)
     
     model.load_state_dict(new_state_dict, strict=False)
     return model
