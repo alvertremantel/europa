@@ -3,7 +3,7 @@
 ## Summary
 
 - `generate.py` now targets a stratified dataset format spanning binary, three-input, parenthesized, and one-negative-input arithmetic.
-- `train.py` still supports `train` and `predict`, and its tokenizer now includes `(` and `)` in addition to the arithmetic operators and `=`.
+- `train.py` supports `train` and `predict`, and training now writes resumable epoch checkpoints with retention metadata.
 - `evaluate.py` now provides sampled per-stratum exact-match evaluation with per-category and per-kind breakdowns plus report files.
 - `scripts/analyze_strata_eval.py` now analyzes per-kind evaluation CSVs and runs permutation-based tests for structural predictors of model accuracy.
 - `scripts/check_length_safety.py` now verifies that dataset prompt/answer lengths stay within checkpoint context and generation limits, and that final/intermediate values stay within the fixed numeric width.
@@ -48,6 +48,9 @@
 - `train.py` supports:
   - `train`
   - `predict`
+- Training checkpoints now include optimizer state, RNG state, history, best-so-far bookkeeping, and compatibility aliases for `checkpoint-last.pt` and `checkpoint-best.pt`.
+- Physical epoch snapshots live under `runs/<name>/checkpoints/` with a manifest describing retained and pruned checkpoints.
+- Resume is implemented at epoch boundaries via `--resume` and `--resume-from`.
 - `evaluate.py` supports sampled evaluation from a saved checkpoint across chosen data-file pools, with fixed-size per-kind selection.
 - `scripts/analyze_strata_eval.py` supports post-hoc category/op/band summaries and permutation tests over evaluation kinds.
 - `scripts/check_length_safety.py` supports post-hoc verification that no evaluated kind requires more prompt or answer tokens than the model configuration allows, or more numeric digits than the format permits.
@@ -84,7 +87,10 @@ When training is run with `--output-dir runs/arithmetic-small`, the main outputs
 
 - `runs/arithmetic-small/checkpoint-best.pt`
 - `runs/arithmetic-small/checkpoint-last.pt`
+- `runs/arithmetic-small/checkpoints/epoch-XXXX.pt`
+- `runs/arithmetic-small/checkpoints/manifest.json`
 - `runs/arithmetic-small/history.json`
+- `runs/arithmetic-small/run-metadata.json`
 - `runs/arithmetic-small/checkpoint-best-strata-eval.summary.json`
 - `runs/arithmetic-small/checkpoint-best-strata-eval.kinds.csv`
 - `runs/arithmetic-small/checkpoint-best-strata-eval.errors.jsonl`
@@ -93,8 +99,7 @@ When training is run with `--output-dir runs/arithmetic-small`, the main outputs
 
 ## Important Limitations
 
-- Resume training is not implemented yet.
-- Optimizer state is not saved for restart.
+- Resume training is implemented only at epoch boundaries, not mid-epoch.
 - Evaluation is not broken out per operation yet.
 - Validation exact-match is still sampled, not full-split.
 - Checkpoints remain tightly coupled to the tokenizer and model architecture.
@@ -102,6 +107,6 @@ When training is run with `--output-dir runs/arithmetic-small`, the main outputs
 ## Immediate Next Useful Changes
 
 1. Regenerate canonical dataset directories with the revised generator.
-2. Refactor `train.py` into modules/packages, matching the new generator structure.
+2. Build on the new trainer subpackages with richer analysis and evaluation workflows.
 3. Add richer aggregated reporting, such as per-operation and wildcard-vs-non-wildcard summaries.
 4. Decide whether sampled per-stratum evaluation should remain a separate top-level script or move under a refactored training/evaluation package.

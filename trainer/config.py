@@ -18,6 +18,9 @@ class ModelConfig:
 class TrainConfig:
     data_dir: str = "data-1m"
     output_dir: str = "runs/arithmetic-small"
+    resume_from: str | None = None
+    auto_resume: bool = False
+    additional_epochs: int | None = None
     sequence_length: int = 64
     batch_size: int = 128
     epochs: int = 5
@@ -35,3 +38,8 @@ class TrainConfig:
     n_layers: int = 6
     mlp_hidden: int = 1024
     dropout: float = 0.1
+    checkpoint_keep_last: int = 5
+    checkpoint_max_kept: int = 10
+    checkpoint_keep_best: int = 1
+    checkpoint_jump_threshold: float = 0.05
+    checkpoint_dir_name: str = "checkpoints"

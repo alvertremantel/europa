@@ -1,8 +1,12 @@
 .venv/
 .ruff_cache/
 __pycache__/
-.agents/*/old
-runs/old
-data/old
+
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/gitignore
+
+data/
 
 

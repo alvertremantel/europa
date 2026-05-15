@@ -1,12 +1,11 @@
-import torch
-import numpy as np
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import torch
 
 # Add the project root to path
 sys.path.insert(0, str(Path('.').resolve()))
 
-from trainer.interpreter import MechanisticInterpreter
 from trainer.data import ArithmeticTokenizer
 from web_app.backend.model_utils import get_hooked_model
 

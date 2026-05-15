@@ -22,8 +22,11 @@ Europa Arithmetic Language Model Interpretability Suite (Europa ALM-IS / europa-
   - main.py — CLI entrypoint (`uv run train train|predict`)
   - config.py — TrainConfig, ModelConfig defaults
   - model.py — SmallCausalTransformer
+  - core.py — compatibility shim for train/load/save APIs
   - data.py — ArithmeticTokenizer, dataset loading
   - interpreter.py — MechanisticInterpreter
+  - training/ — training loop, checkpoint retention, resume state
+  - visualization/ — split matplotlib visualizer helpers
 - evaluator/
   - main.py — CLI entrypoint (`uv run evaluate`)
 - web_app/
@@ -40,3 +43,4 @@ Europa Arithmetic Language Model Interpretability Suite (Europa ALM-IS / europa-
 - Frontend build: `cd web_app/frontend && npm run build` (requires `circuitsvis` types in `src/circuitsvis.d.ts`)
 - `data/old/`, `runs/old/`, `.agents/*/old` are gitignored scratch directories
 - Checkpoints embed tokenizer + model architecture; incompatible across changes
+- Resume is supported at epoch boundaries, with compatibility aliases at `checkpoint-last.pt` and `checkpoint-best.pt`

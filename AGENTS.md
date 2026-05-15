@@ -35,7 +35,7 @@ Three Python packages, each with a `main.py` entrypoint:
 
 Supporting:
 - `web_app/` — FastAPI backend (`web_app/backend/main.py`) + React/Vite frontend (`web_app/frontend/`). Backend hardcodes checkpoint path at `runs/test-extended-plus/checkpoint-best.pt`.
-- `scripts/` — Analysis utilities (`analyze_strata_eval.py`, `check_length_safety.py`, `promptize_math.py`, `verify_tl_parity.py`).
+- `info/` — Researcher-facing repository notes and workflow documentation.
 
 ## Dataset format
 
@@ -47,8 +47,9 @@ Output files: `train.txt`, `val.txt`, `test.txt`, `meta.json`.
 
 ## Key constraints
 
-- **No resume training** — optimizer state is not saved.
+- Resume support is available at epoch boundaries via `--resume` / `--resume-from`; optimizer and RNG state are checkpointed.
 - Checkpoints embed tokenizer + model architecture; incompatible across changes.
+- Root aliases `checkpoint-last.pt` and `checkpoint-best.pt` remain compatibility paths, while physical epoch checkpoints live under `checkpoints/` with a retention manifest.
 - The project venv is `.venv/` (gitignored). Use uv for all work. 
 - `data/old/`, `runs/old/`, `.agents/*/old` are gitignored scratch directories.
 

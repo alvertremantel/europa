@@ -71,7 +71,16 @@ uv run train train \
   --output-dir runs/my-run \
   --epochs 5 \
   --batch-size 128 \
-  --learning-rate 3e-4
+  --learning-rate 3e-4 \
+  --checkpoint-max-kept 10 \
+  --checkpoint-keep-last 5
+```
+
+Resume examples:
+
+```bash
+uv run train train --output-dir runs/my-run --resume --additional-epochs 20
+uv run train train --resume-from runs/my-run/checkpoint-last.pt --epochs 120
 ```
 
 **Training options:**
@@ -80,6 +89,9 @@ uv run train train \
 |---|---|---|
 | `--data-dir` | `data-1m` | Path to generated dataset |
 | `--output-dir` | `runs/arithmetic-small` | Checkpoint & log output directory |
+| `--resume-from` | — | Resume from an explicit checkpoint |
+| `--resume` | — | Resume from `<output-dir>/checkpoint-last.pt` |
+| `--additional-epochs` | — | Continue for N more epochs beyond the resumed epoch |
 | `--sequence-length` | `64` | Max context window |
 | `--batch-size` | `128` | Training batch size |
 | `--epochs` | `5` | Number of training epochs |
@@ -91,6 +103,10 @@ uv run train train \
 | `--exact-match-samples` | `256` | Samples for exact-match eval |
 | `--seed` | `42` | Random seed |
 | `--device` | `cuda` | Device (`cuda`, `cpu`, `auto`) |
+| `--checkpoint-keep-last` | `5` | Always retain this many latest physical epoch checkpoints |
+| `--checkpoint-max-kept` | `10` | Max retained physical epoch checkpoints (`<=0` keeps all) |
+| `--checkpoint-keep-best` | `1` | Extra best-performing checkpoints to retain |
+| `--checkpoint-jump-threshold` | `0.05` | Exact-match jump size that tags before/after comparison checkpoints |
 
 **Model architecture options:**
 
@@ -103,6 +119,14 @@ uv run train train \
 | `--dropout` | `0.1` | Dropout rate |
 
 ~4.76M parameters at default config.
+
+Training writes:
+
+- `checkpoint-last.pt` and `checkpoint-best.pt` root aliases for compatibility
+- per-epoch snapshots under `checkpoints/epoch-XXXX.pt`
+- `checkpoints/manifest.json` with retention and pruning history
+- `history.json` with rich epoch metrics
+- `run-metadata.json` with config, device, retention, and resume provenance
 
 ### 3. Predict / Inference
 
@@ -190,7 +214,7 @@ Forward-hook system (`trainer/hooks.py`) that captures all intermediate states:
 
 ### `InterpreterVisualizer`
 
-Matplotlib-based visualizations (`trainer/visualizer.py`):
+Matplotlib-based visualizations (`trainer/visualization/` with `trainer/visualizer.py` as a compatibility shim):
 
 - Activation heatmaps (per-layer and overview)
 - Attention pattern grids
@@ -225,12 +249,14 @@ The backend hardcodes the checkpoint at `runs/test-extended-plus/checkpoint-best
 ├── trainer/            # Model, training, inference, interpretability
 │   ├── config.py       # ModelConfig + TrainConfig dataclasses
 │   ├── model.py        # SmallCausalTransformer (pre-norm, tied embeddings)
-│   ├── core.py         # Training loop, checkpoint save/load
+│   ├── core.py         # Compatibility shim for training/checkpoint APIs
 │   ├── data.py         # ArithmeticTokenizer, dataset loading
 │   ├── inference.py    # generate_completion, evaluate_loss, evaluate_exact_match
 │   ├── hooks.py        # HookRegistry + ActivationCapture
 │   ├── interpreter.py  # MechanisticInterpreter high-level API
-│   ├── visualizer.py   # Matplotlib visualization suite
+│   ├── training/       # Training loop, checkpointing, resume state
+│   ├── visualization/  # Split matplotlib visualization helpers
+│   ├── visualizer.py   # Compatibility shim exporting InterpreterVisualizer
 │   └── main.py         # CLI entrypoint (train / predict subcommands)
 ├── evaluator/          # Stratified evaluation & error analysis
 │   ├── core.py         # BucketStats, row builders
@@ -238,17 +264,14 @@ The backend hardcodes the checkpoint at `runs/test-extended-plus/checkpoint-best
 ├── web_app/            # Interactive analysis web interface
 │   ├── backend/        # FastAPI API server
 │   └── frontend/       # React + Vite + circuitsvis SPA
-└── scripts/            # Utilities
-    ├── math/           # promptize_math.py, count_problem_sets.py
-    ├── promptize.sh    # Shell wrapper for prompt conversion
-    └── verify/         # analyze_strata_eval.py, check_length_safety.py, verify_tl_parity.py
+└── info/               # Researcher-facing documentation
 ```
 
 ---
 
 ## Key Constraints
 
-- **No resume training** — optimizer state is not saved. Only model weights + config are checkpointed.
+- **Resume is epoch-boundary only** — optimizer and RNG state are saved, but training resumes from `checkpoint_epoch + 1`, not mid-epoch.
 - **Checkpoints are self-contained** — they embed the tokenizer and model architecture; incompatible across code changes.
 - **GPU expected** — PyTorch is pinned to `pytorch-cu128` (CUDA 12.8). CPU fallback works but is slow.
 - **No test suite** — the project has no automated tests.

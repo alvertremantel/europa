@@ -15,9 +15,29 @@ def parse_args() -> argparse.Namespace:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    train_parser = subparsers.add_parser("train", help="Train a model from scratch")
+    train_parser = subparsers.add_parser(
+        "train",
+        help="Train a model from scratch or resume from an epoch checkpoint",
+    )
     train_parser.add_argument("--data-dir", type=str, default="data-1m")
     train_parser.add_argument("--output-dir", type=str, default="runs/arithmetic-small")
+    train_parser.add_argument(
+        "--resume-from",
+        type=str,
+        default=None,
+        help="Resume from an explicit checkpoint path.",
+    )
+    train_parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from <output-dir>/checkpoint-last.pt.",
+    )
+    train_parser.add_argument(
+        "--additional-epochs",
+        type=int,
+        default=None,
+        help="On resume, train this many more epochs beyond the checkpoint epoch.",
+    )
     train_parser.add_argument("--sequence-length", type=int, default=64)
     train_parser.add_argument("--batch-size", type=int, default=128)
     train_parser.add_argument("--epochs", type=int, default=5)
@@ -35,6 +55,10 @@ def parse_args() -> argparse.Namespace:
     train_parser.add_argument("--n-layers", type=int, default=6)
     train_parser.add_argument("--mlp-hidden", type=int, default=1024)
     train_parser.add_argument("--dropout", type=float, default=0.1)
+    train_parser.add_argument("--checkpoint-keep-last", type=int, default=5)
+    train_parser.add_argument("--checkpoint-max-kept", type=int, default=10)
+    train_parser.add_argument("--checkpoint-keep-best", type=int, default=1)
+    train_parser.add_argument("--checkpoint-jump-threshold", type=float, default=0.05)
 
     predict_parser = subparsers.add_parser(
         "predict", help="Generate an answer from a saved checkpoint"
@@ -48,9 +72,17 @@ def parse_args() -> argparse.Namespace:
 
 
 def namespace_to_train_config(args: argparse.Namespace) -> TrainConfig:
+    if args.additional_epochs is not None and args.additional_epochs <= 0:
+        raise SystemExit("--additional-epochs must be positive when provided")
+    resume_from = args.resume_from
+    if args.resume and resume_from is not None:
+        print("Both --resume and --resume-from were provided; using --resume-from.")
     return TrainConfig(
         data_dir=args.data_dir,
         output_dir=args.output_dir,
+        resume_from=resume_from,
+        auto_resume=args.resume,
+        additional_epochs=args.additional_epochs,
         sequence_length=args.sequence_length,
         batch_size=args.batch_size,
         epochs=args.epochs,
@@ -68,6 +100,10 @@ def namespace_to_train_config(args: argparse.Namespace) -> TrainConfig:
         n_layers=args.n_layers,
         mlp_hidden=args.mlp_hidden,
         dropout=args.dropout,
+        checkpoint_keep_last=args.checkpoint_keep_last,
+        checkpoint_max_kept=args.checkpoint_max_kept,
+        checkpoint_keep_best=args.checkpoint_keep_best,
+        checkpoint_jump_threshold=args.checkpoint_jump_threshold,
     )
 
 

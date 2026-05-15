@@ -10,9 +10,9 @@ from pathlib import Path
 import torch
 from torch import Tensor
 
-from .config import ModelConfig
+from .core import load_checkpoint
+from .data import ArithmeticTokenizer
 from .hooks import HookRegistry
-from .model import SmallCausalTransformer
 from .visualizer import InterpreterVisualizer
 
 
@@ -24,20 +24,20 @@ class MechanisticInterpreter:
         checkpoint_path: str | Path,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> None:
-        self.device = device
+        self.device = torch.device(device)
         self.checkpoint_path = Path(checkpoint_path)
 
-        # Load the model and config
-        checkpoint = torch.load(checkpoint_path, map_location=device)
-        self.model: SmallCausalTransformer = checkpoint["model"]
-        self.config: ModelConfig = checkpoint["config"]
+        self.model, self.tokenizer = load_checkpoint(self.checkpoint_path, self.device)
+        self.model = self.model.to(self.device)
+        self.config = self.model.config
+        self.tokenizer: ArithmeticTokenizer
 
-        self.model.to(device)
         self.model.eval()
 
-        # Set up hooks
         self.hook_registry = HookRegistry(self.model)
-        self.visualizer = InterpreterVisualizer()
+        self.visualizer = InterpreterVisualizer(
+            tokenizer_vocab={index: token for index, token in enumerate(self.tokenizer.id_to_token)}
+        )
 
     def forward_with_capture(self, input_ids: Tensor | list[int]) -> tuple:
         """
@@ -114,7 +114,7 @@ class MechanisticInterpreter:
         Interactive step-by-step exploration mode.
         Run a forward pass and launch exploration interface.
         """
-        logits, capture = self.forward_with_capture(input_ids)
+        _, capture = self.forward_with_capture(input_ids)
         self.visualizer.interactive_explore(capture)
 
     def cleanup(self) -> None:

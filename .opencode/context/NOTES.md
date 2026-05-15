@@ -17,9 +17,9 @@
 - Parenthesized generation can legitimately have impossible strata under the non-negative constraint; the generator currently skips kinds that cannot satisfy the fixed holdout minimum and records them in metadata.
 - The current sampled-policy for non-exhaustive kinds is `128` train rows plus `16` validation and `16` test rows per included kind.
 - The current verified extended dataset size is `670163` total rows (`661651` train, `4256` val, `4256` test).
-- `train.py` still remains a single-file script for now, but the tokenizer has already been updated to include `(` and `)`.
+- The trainer now uses `trainer/training/` for loop/checkpoint/resume logic and `trainer/visualization/` for split visualizer internals, while preserving `trainer.core` and `trainer.visualizer` compatibility shims.
 - The current generator no longer emits `undefined` or `remainder`, even though those tokens still remain in the training vocabulary for now.
-- Near-term work already identified by the user: refactor `train.py` into modules/packages and add a final product evaluation script.
+- Resume support exists at epoch boundaries with saved optimizer and RNG state plus manifest-driven checkpoint retention.
 
 ## Build system notes
 

@@ -1,9 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict, Any
-import torch
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import torch
 
 from trainer.data import ArithmeticTokenizer
 from web_app.backend.model_utils import get_hooked_model
@@ -17,7 +17,8 @@ CHECKPOINT_PATH = Path("runs/test-extended-plus/checkpoint-best.pt")
 model = None
 tokenizer = ArithmeticTokenizer()
 
-def load_resources():
+
+def load_resources() -> None:
     global model
     if model is None:
         if not CHECKPOINT_PATH.exists():
@@ -29,11 +30,11 @@ class AnalyzeRequest(BaseModel):
     prompt: str
 
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     load_resources()
 
 @app.post("/api/analyze")
-async def analyze(request: AnalyzeRequest):
+async def analyze(request: AnalyzeRequest) -> dict[str, object]:
     try:
         # 1. Encode prompt
         token_ids = tokenizer.encode_prompt(request.prompt)
@@ -48,17 +49,17 @@ async def analyze(request: AnalyzeRequest):
         # Attention patterns (for circuitsvis.AttentionHeads)
         # We'll send a list of [layer, head, query, key]
         attention_data = []
-        for l in range(model.cfg.n_layers):
+        for layer_idx in range(model.cfg.n_layers):
             # pattern shape: [batch, head, query, key]
-            pattern = cache[f"blocks.{l}.attn.hook_pattern"][0].cpu().numpy()
+            pattern = cache[f"blocks.{layer_idx}.attn.hook_pattern"][0].cpu().numpy()
             attention_data.append(pattern.tolist())
             
         # Activations for TextNeuronActivations
         # Expected shape: [tokens x layers x neurons]
         all_layers_acts = []
-        for l in range(model.cfg.n_layers):
+        for layer_idx in range(model.cfg.n_layers):
             # hook_resid_post shape: [batch, pos, d_model]
-            act = cache[f"blocks.{l}.hook_resid_post"][0].cpu().numpy()
+            act = cache[f"blocks.{layer_idx}.hook_resid_post"][0].cpu().numpy()
             all_layers_acts.append(act)
         
         # stack to [layers, tokens, neurons]
@@ -75,10 +76,12 @@ async def analyze(request: AnalyzeRequest):
         top_preds = []
         for pos in range(len(token_ids)):
             top_idx = np.argmax(probs[pos])
-            top_preds.append({
-                "token": tokenizer.id_to_token[top_idx],
-                "confidence": float(probs[pos, top_idx])
-            })
+            top_preds.append(
+                {
+                    "token": tokenizer.id_to_token[top_idx],
+                    "confidence": float(probs[pos, top_idx]),
+                }
+            )
 
         return {
             "tokens": tokens,
@@ -89,12 +92,12 @@ async def analyze(request: AnalyzeRequest):
             "config": {
                 "n_layers": model.cfg.n_layers,
                 "n_heads": model.cfg.n_heads,
-                "d_model": model.cfg.d_model
-            }
+                "d_model": model.cfg.d_model,
+            },
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
 
 @app.get("/api/health")
-async def health():
+async def health() -> dict[str, str]:
     return {"status": "ok", "device": DEVICE}
