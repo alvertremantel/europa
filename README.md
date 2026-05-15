@@ -107,6 +107,11 @@ uv run train train --resume-from runs/my-run/checkpoint-last.pt --epochs 120
 | `--checkpoint-max-kept` | `10` | Max retained physical epoch checkpoints (`<=0` keeps all) |
 | `--checkpoint-keep-best` | `1` | Extra best-performing checkpoints to retain |
 | `--checkpoint-jump-threshold` | `0.05` | Exact-match jump size that tags before/after comparison checkpoints |
+| `--training-mode` | `token_stream` | `token_stream` keeps the legacy flat-token baseline; `examples` preserves line boundaries |
+| `--training-format` | `final_only` | Example-mode target format: `final_only`, `light_scratchpad`, `parentheses_intermediate`, or `multiply_intermediate` |
+| `--curriculum-name` | — | Example-mode mixed curriculum preset: `baseline_mixed_v1` or `mul_focus_v1` |
+| `--balanced-val` | — | Also log deterministic balanced validation loss/exact-match from examples |
+| `--balanced-val-group-by` | `kind` | Balance validation by `kind`, `category`, or `curriculum_group` |
 
 **Model architecture options:**
 
@@ -119,6 +124,30 @@ uv run train train --resume-from runs/my-run/checkpoint-last.pt --epochs 120
 | `--dropout` | `0.1` | Dropout rate |
 
 ~4.76M parameters at default config.
+
+Experimental curriculum and scratchpad options are opt-in. The default remains the
+original final-answer-only token-stream training path. In example mode, short
+structured scratchpads use compact fields after `<ans>` such as
+`<work> <step> ... <final> ...`; prediction and evaluation still compare the
+final answer field.
+
+Tiny matched-run recipe:
+
+```bash
+# baseline control
+uv run train train --data-dir data/my-dataset --output-dir runs/tiny-baseline --epochs 1 --device auto
+
+# same model/data with a conservative mixed curriculum
+uv run train train --data-dir data/my-dataset --output-dir runs/tiny-curriculum \
+  --epochs 1 --device auto --training-mode examples --curriculum-name baseline_mixed_v1 \
+  --balanced-val --balanced-val-sample-size-per-group 2
+
+# curriculum plus scoped light scratchpads for multiplication/parentheses examples
+uv run train train --data-dir data/my-dataset --output-dir runs/tiny-scratchpad \
+  --epochs 1 --device auto --training-mode examples --training-format light_scratchpad \
+  --curriculum-name baseline_mixed_v1 --balanced-val --balanced-val-sample-size-per-group 2 \
+  --max-new-tokens 48
+```
 
 Training writes:
 

@@ -59,6 +59,47 @@ def parse_args() -> argparse.Namespace:
     train_parser.add_argument("--checkpoint-max-kept", type=int, default=10)
     train_parser.add_argument("--checkpoint-keep-best", type=int, default=1)
     train_parser.add_argument("--checkpoint-jump-threshold", type=float, default=0.05)
+    train_parser.add_argument(
+        "--training-mode",
+        choices=("token_stream", "examples"),
+        default="token_stream",
+        help="Use the legacy flat token stream or line-aware per-example training.",
+    )
+    train_parser.add_argument(
+        "--training-format",
+        choices=(
+            "final_only",
+            "light_scratchpad",
+            "parentheses_intermediate",
+            "multiply_intermediate",
+        ),
+        default="final_only",
+        help="Opt-in target format for example-mode training.",
+    )
+    train_parser.add_argument(
+        "--skip-overlong-examples",
+        action="store_true",
+        help="Skip rather than fail on per-example sequences that exceed --sequence-length.",
+    )
+    train_parser.add_argument(
+        "--curriculum-name",
+        choices=("baseline_mixed_v1", "mul_focus_v1"),
+        default=None,
+        help="Opt-in mixed-curriculum preset for --training-mode examples.",
+    )
+    train_parser.add_argument(
+        "--balanced-val",
+        action="store_true",
+        help="Log balanced validation loss from a deterministic example sample.",
+    )
+    train_parser.add_argument(
+        "--balanced-val-group-by",
+        choices=("kind", "category", "curriculum_group"),
+        default="kind",
+    )
+    train_parser.add_argument("--balanced-val-sample-size-per-group", type=int, default=8)
+    train_parser.add_argument("--balanced-val-seed", type=int, default=42)
+    train_parser.add_argument("--balanced-val-batch-size", type=int, default=None)
 
     predict_parser = subparsers.add_parser(
         "predict", help="Generate an answer from a saved checkpoint"
@@ -104,6 +145,15 @@ def namespace_to_train_config(args: argparse.Namespace) -> TrainConfig:
         checkpoint_max_kept=args.checkpoint_max_kept,
         checkpoint_keep_best=args.checkpoint_keep_best,
         checkpoint_jump_threshold=args.checkpoint_jump_threshold,
+        training_mode=args.training_mode,
+        training_format=args.training_format,
+        skip_overlong_examples=args.skip_overlong_examples,
+        curriculum_name=args.curriculum_name,
+        balanced_val_enabled=args.balanced_val,
+        balanced_val_group_by=args.balanced_val_group_by,
+        balanced_val_sample_size_per_group=args.balanced_val_sample_size_per_group,
+        balanced_val_seed=args.balanced_val_seed,
+        balanced_val_batch_size=args.balanced_val_batch_size,
     )
 
 

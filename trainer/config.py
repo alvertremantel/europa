@@ -43,3 +43,12 @@ class TrainConfig:
     checkpoint_keep_best: int = 1
     checkpoint_jump_threshold: float = 0.05
     checkpoint_dir_name: str = "checkpoints"
+    training_mode: str = "token_stream"
+    training_format: str = "final_only"
+    skip_overlong_examples: bool = False
+    curriculum_name: str | None = None
+    balanced_val_enabled: bool = False
+    balanced_val_group_by: str = "kind"
+    balanced_val_sample_size_per_group: int = 8
+    balanced_val_seed: int = 42
+    balanced_val_batch_size: int | None = None
