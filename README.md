@@ -265,7 +265,7 @@ uv run uvicorn web_app.backend.main:app --reload
 cd web_app/frontend && npm install && npm run dev
 ```
 
-The backend hardcodes the checkpoint at `runs/test-extended-plus/checkpoint-best.pt`. The `/api/analyze` endpoint returns attention patterns, layer activations, logits, top-k next-token predictions, compact attention/activation summaries, and checkpoint metadata for the dashboard's `circuitsvis` and overview panels.
+The backend hardcodes the checkpoint at `runs/test-extended-plus/checkpoint-best.pt`. The `/api/analyze` endpoint returns attention patterns, layer activations, logits, top-k next-token predictions, compact attention/activation summaries, and checkpoint metadata for the dashboard's `circuitsvis` and overview panels. Passing `include_network=true` adds the Network panel payload: bounded MLP firing summaries, attention-head activity metrics, and residual-after-attention summaries from the TransformerLens cache.
 
 ---
 
