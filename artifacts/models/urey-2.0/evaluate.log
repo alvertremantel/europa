@@ -1,0 +1,58 @@
+{
+  "available_examples_in_pool": 670163,
+  "evaluated_kinds": 266,
+  "pool_splits": [
+    "train",
+    "val",
+    "test"
+  ],
+  "sample_size_per_kind": 50,
+  "selected_examples": 13300
+}
+{
+  "checkpoint": "runs/urey-2.0/checkpoint-best.pt",
+  "data_dir": "data/training/europa-2.0-curriculum",
+  "device": {
+    "cuda_capability": "8.9",
+    "device": "cuda",
+    "device_memory_gb": 7.62,
+    "device_name": "NVIDIA GeForce RTX 4060",
+    "device_type": "cuda"
+  },
+  "elapsed_seconds": 1046.259,
+  "examples_per_second": 12.712,
+  "overall": {
+    "accuracy": 0.8683458646616541,
+    "available_count": 670163,
+    "canonical_prediction_rate": 1.0,
+    "evaluated_count": 13300,
+    "failure_examples": [],
+    "missed_count": 1751,
+    "name": "overall",
+    "perfect_count": 11549,
+    "status": "evaluated"
+  },
+  "pool_splits": [
+    "train",
+    "val",
+    "test"
+  ],
+  "sample_seed": 42,
+  "sample_size_per_kind": 50
+}
+category accuracy:
+  binary: 0.9067 (1088 perfect / 112 missed / 1200 total)
+  three_input: 0.7593 (1139 perfect / 361 missed / 1500 total)
+  parentheses: 0.8600 (7568 perfect / 1232 missed / 8800 total)
+  negative_input: 0.9744 (1754 perfect / 46 missed / 1800 total)
+worst kinds:
+  parentheses::left::large-large-large::**: 0.0000 (0 perfect / 50 missed / 50 total)
+  parentheses::right::large-large-large::**: 0.0000 (0 perfect / 50 missed / 50 total)
+  three_input::large-large-large::*: 0.0000 (0 perfect / 50 missed / 50 total)
+  three_input::medium-large-large::*: 0.0000 (0 perfect / 50 missed / 50 total)
+  three_input::medium-medium-large::*: 0.0000 (0 perfect / 50 missed / 50 total)
+  parentheses::left::medium-large-large::**: 0.0200 (1 perfect / 49 missed / 50 total)
+  parentheses::right::medium-large-large::**: 0.0200 (1 perfect / 49 missed / 50 total)
+  parentheses::left::medium-medium-large::**: 0.0400 (2 perfect / 48 missed / 50 total)
+  parentheses::right::medium-medium-large::**: 0.1000 (5 perfect / 45 missed / 50 total)
+  parentheses::right::small-large-large::**: 0.1400 (7 perfect / 43 missed / 50 total)
