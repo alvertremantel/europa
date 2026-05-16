@@ -15,6 +15,7 @@ from web_app.backend.analysis import (
     summarize_checkpoint,
 )
 from web_app.backend.model_utils import load_hooked_resources
+from web_app.backend.network_analysis import clamp_network_options, extract_network_analysis
 
 app = FastAPI(
     title="Europa ALM-IS Web API",
@@ -36,6 +37,11 @@ checkpoint_metadata: dict[str, Any] = {}
 
 class AnalyzeRequest(BaseModel):
     prompt: str = Field(min_length=1)
+    include_network: bool = False
+    mlp_threshold: float = 0.0
+    top_k: int = Field(default=5)
+    top_neurons: int = Field(default=8)
+    selected_token_index: int | None = None
 
 
 class ModelConfigResponse(BaseModel):
@@ -100,6 +106,7 @@ class AnalyzeResponse(BaseModel):
     answer_position: int
     config: ModelConfigResponse
     checkpoint: CheckpointResponse
+    network: dict[str, Any] | None = None
 
 
 class HealthResponse(BaseModel):
@@ -155,6 +162,13 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
 
     tokens = [tokenizer.id_to_token[token_id] for token_id in token_ids]
     input_tensor = torch.tensor(token_ids, dtype=torch.long, device=DEVICE).unsqueeze(0)
+    network_options = clamp_network_options(
+        mlp_threshold=request.mlp_threshold,
+        top_k=request.top_k,
+        top_neurons=request.top_neurons,
+        selected_token_index=request.selected_token_index,
+        token_count=len(tokens),
+    )
 
     try:
         with torch.no_grad():
@@ -187,6 +201,18 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
         activation_summary = build_activation_summary(
             stacked_activations=stacked_activations,
         )
+        network_analysis = None
+        if request.include_network:
+            network_analysis = extract_network_analysis(
+                model=model,
+                tokenizer=tokenizer,
+                tokens=tokens,
+                cache=cache,
+                mlp_threshold=float(network_options["mlp_threshold"]),
+                top_k=int(network_options["top_k"]),
+                top_neurons=int(network_options["top_neurons"]),
+                selected_token_index=network_options["selected_token_index"],
+            )
     except HTTPException:
         raise
     except Exception as error:
@@ -217,6 +243,7 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
                 metadata=checkpoint_metadata,
             )
         ),
+        network=network_analysis,
     )
 
 

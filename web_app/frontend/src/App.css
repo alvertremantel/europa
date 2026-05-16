@@ -151,6 +151,15 @@ code {
   padding: 14px 16px;
 }
 
+.select-field input {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  background: rgb(5 10 18 / 0.7);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
 .prompt-bar input {
   min-width: 0;
 }
@@ -471,6 +480,292 @@ code {
   color: var(--text-muted);
 }
 
+.network-panel {
+  grid-column: 1 / -1;
+}
+
+.network-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 16px;
+  align-items: start;
+}
+
+.network-layout__main,
+.network-section,
+.network-inspector,
+.network-inspector__body {
+  display: grid;
+  gap: 16px;
+}
+
+.network-section,
+.network-inspector,
+.network-caveat,
+.network-empty,
+.network-list-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgb(6 13 22 / 0.72);
+  padding: 16px;
+}
+
+.network-section__header,
+.network-controls,
+.network-bar-row,
+.network-logit-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.network-section__header h3,
+.network-section__header p,
+.network-inspector h3,
+.network-inspector h4,
+.network-inspector h5,
+.network-list-card h4,
+.network-list-card p,
+.network-caveat {
+  margin: 0;
+}
+
+.network-section__header p,
+.network-caveat,
+.network-empty,
+.network-warning-list,
+.network-list-card p,
+.network-bar-row small {
+  color: var(--text-muted);
+}
+
+.network-controls {
+  flex-wrap: wrap;
+}
+
+.network-controls .select-field {
+  min-width: 120px;
+}
+
+.network-controls--top .select-field {
+  min-width: 150px;
+}
+
+.network-map {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.network-map__terminal,
+.network-layer {
+  flex: 0 0 180px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgb(255 255 255 / 0.04);
+  padding: 12px;
+}
+
+.network-map__terminal {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  color: var(--text-muted);
+}
+
+.network-layer {
+  display: grid;
+  gap: 10px;
+}
+
+.network-layer__label {
+  font-weight: 700;
+}
+
+.network-layer__heads,
+.network-head-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.network-layer__heads {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.network-head-node,
+.network-residual-node,
+.network-mlp-node,
+.network-head-card,
+.network-heatmap__cell {
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.network-head-node,
+.network-residual-node,
+.network-mlp-node {
+  border-radius: var(--radius-sm);
+  background: rgb(122 162 255 / var(--node-alpha));
+  padding: 8px;
+}
+
+.network-residual-node {
+  background: rgb(52 211 153 / var(--node-alpha));
+}
+
+.network-mlp-node {
+  background: rgb(251 191 36 / var(--node-alpha));
+}
+
+.network-head-node:hover,
+.network-residual-node:hover,
+.network-mlp-node:hover,
+.network-head-card:hover,
+.network-heatmap__cell:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+.network-head-node.is-selected,
+.network-residual-node.is-selected,
+.network-mlp-node.is-selected,
+.network-head-card.is-selected,
+.network-heatmap__cell.is-selected {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 2px rgb(122 162 255 / 0.3);
+}
+
+.network-heatmap {
+  display: grid;
+  gap: 10px;
+  overflow-x: auto;
+}
+
+.network-heatmap--compact {
+  gap: 8px;
+}
+
+.network-heatmap__row {
+  display: grid;
+  grid-template-columns: 90px minmax(420px, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.network-heatmap__cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 6px;
+}
+
+.network-heatmap__cell {
+  min-height: 38px;
+  border-radius: var(--radius-sm);
+  background: rgb(122 162 255 / 0.2);
+}
+
+.network-bar-list,
+.network-list-card ol,
+.network-warning-list ul,
+.network-logit-table {
+  display: grid;
+  gap: 8px;
+}
+
+.network-bar-row {
+  display: grid;
+  grid-template-columns: 90px minmax(140px, 1fr) minmax(180px, 0.7fr);
+  align-items: center;
+}
+
+.network-bar-row__track {
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.08);
+}
+
+.network-bar-row__track div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #fbbf24, #fde68a);
+}
+
+.network-list-card ol {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.network-list-card li,
+.network-logit-row div,
+.network-inspector li {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.network-head-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.network-head-card {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  padding: 12px;
+}
+
+.network-head-card span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.network-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.network-logit-row {
+  justify-content: start;
+  align-items: baseline;
+}
+
+.network-inspector {
+  position: sticky;
+  top: 16px;
+}
+
+.network-inspector dl {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(110px, 1fr);
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.network-inspector dt,
+.network-inspector dd {
+  margin: 0;
+}
+
+.network-inspector dt {
+  color: var(--text-muted);
+}
+
+.network-empty--error {
+  color: #fecdd3;
+  border-color: rgb(251 113 133 / 0.45);
+  background: rgb(93 18 35 / 0.45);
+}
+
 .status-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -559,6 +854,15 @@ code {
   .dashboard__detail-grid {
     grid-template-columns: 1fr;
   }
+
+  .network-layout,
+  .network-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .network-inspector {
+    position: static;
+  }
 }
 
 @media (max-width: 960px) {
@@ -572,7 +876,10 @@ code {
   .prompt-bar__controls,
   .panel__header,
   .status-card__row,
-  .heatmap__row {
+  .heatmap__row,
+  .network-section__header,
+  .network-bar-row,
+  .network-heatmap__row {
     grid-template-columns: 1fr;
     display: grid;
   }

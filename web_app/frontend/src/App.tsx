@@ -8,6 +8,7 @@ import {
   type AnalysisResult,
   type ApiErrorDetail,
   type HealthResponse,
+  type NetworkControls,
 } from './api'
 import { ActivationPanel } from './components/ActivationPanel'
 import { AttentionPanel } from './components/AttentionPanel'
@@ -18,8 +19,9 @@ import { OverviewMetrics } from './components/OverviewMetrics'
 import { PromptBar } from './components/PromptBar'
 import { SkeletonDashboard } from './components/SkeletonDashboard'
 import { TokenPredictionTable } from './components/TokenPredictionTable'
+import { NetworkPanel } from './components/network/NetworkPanel'
 
-type DetailTab = 'attention' | 'activations' | 'logits'
+type DetailTab = 'attention' | 'activations' | 'logits' | 'network'
 
 const EXAMPLE_PROMPTS = [
   { label: 'Binary', value: '02000000 + 01000000 =' },
@@ -30,14 +32,24 @@ const EXAMPLE_PROMPTS = [
 
 const DEFAULT_PROMPT = EXAMPLE_PROMPTS[0].value
 
+const DEFAULT_NETWORK_CONTROLS: NetworkControls = {
+  mlp_threshold: 0,
+  top_k: 5,
+  top_neurons: 8,
+  selected_token_index: null,
+}
+
 function App() {
   const [prompt, setPrompt] = useState<string>(DEFAULT_PROMPT)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingNetwork, setLoadingNetwork] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [networkError, setNetworkError] = useState<string | null>(null)
   const [selectedLayer, setSelectedLayer] = useState(0)
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>('attention')
+  const [networkControls, setNetworkControls] = useState<NetworkControls>(DEFAULT_NETWORK_CONTROLS)
 
   async function refreshHealth() {
     try {
@@ -86,9 +98,14 @@ function App() {
     setError(null)
 
     try {
-      const analysis = await analyzePrompt(cleanedPrompt)
+      const includeNetwork = activeDetailTab === 'network'
+      const analysis = await analyzePrompt(cleanedPrompt, {
+        ...(includeNetwork ? networkControls : {}),
+        include_network: includeNetwork,
+      })
       setPrompt(cleanedPrompt)
       setResult(analysis)
+      setNetworkError(null)
       setSelectedLayer((current) =>
         Math.min(current, Math.max(analysis.config.n_layers - 1, 0)),
       )
@@ -97,6 +114,39 @@ function App() {
       setError(getErrorMessage(caughtError))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const requestNetworkAnalysis = async (nextControls = networkControls) => {
+    const cleanedPrompt = prompt.trim()
+    if (!cleanedPrompt || loading || loadingNetwork) {
+      return
+    }
+
+    setLoadingNetwork(true)
+    setNetworkError(null)
+    setNetworkControls(nextControls)
+
+    try {
+      const analysis = await analyzePrompt(cleanedPrompt, {
+        ...nextControls,
+        include_network: true,
+      })
+      setResult(analysis)
+      setSelectedLayer((current) =>
+        Math.min(current, Math.max(analysis.config.n_layers - 1, 0)),
+      )
+    } catch (caughtError) {
+      setNetworkError(getErrorMessage(caughtError))
+    } finally {
+      setLoadingNetwork(false)
+    }
+  }
+
+  const openDetailTab = (tab: DetailTab) => {
+    setActiveDetailTab(tab)
+    if (tab === 'network' && result && !result.network) {
+      void requestNetworkAnalysis()
     }
   }
 
@@ -148,23 +198,30 @@ function App() {
               <button
                 type="button"
                 className={activeDetailTab === 'attention' ? 'is-active' : ''}
-                onClick={() => setActiveDetailTab('attention')}
+                onClick={() => openDetailTab('attention')}
               >
                 Attention
               </button>
               <button
                 type="button"
                 className={activeDetailTab === 'activations' ? 'is-active' : ''}
-                onClick={() => setActiveDetailTab('activations')}
+                onClick={() => openDetailTab('activations')}
               >
                 Activations
               </button>
               <button
                 type="button"
                 className={activeDetailTab === 'logits' ? 'is-active' : ''}
-                onClick={() => setActiveDetailTab('logits')}
+                onClick={() => openDetailTab('logits')}
               >
                 Logits
+              </button>
+              <button
+                type="button"
+                className={activeDetailTab === 'network' ? 'is-active' : ''}
+                onClick={() => openDetailTab('network')}
+              >
+                Network
               </button>
             </div>
 
@@ -189,6 +246,18 @@ function App() {
                 className={`detail-panel detail-panel--full ${activeDetailTab === 'logits' ? 'detail-panel--active' : ''}`}
               >
                 <LogitPanel result={result} />
+              </div>
+
+              <div
+                className={`detail-panel detail-panel--full ${activeDetailTab === 'network' ? 'detail-panel--active' : ''}`}
+              >
+                <NetworkPanel
+                  result={result}
+                  controls={networkControls}
+                  loading={loadingNetwork}
+                  error={networkError}
+                  onRequestNetwork={(controls) => void requestNetworkAnalysis(controls)}
+                />
               </div>
             </div>
           </div>
