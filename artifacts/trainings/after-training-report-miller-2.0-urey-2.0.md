@@ -1,5 +1,37 @@
 # After-Training Report: `miller-2.0` and `urey-2.0`
 
+## Executive analysis
+
+This first new-scheme operation produced one useful lower-bound control and one
+substantive success:
+
+- **`miller-2.0` is a useful tiny-model lower bound, but not a successful task
+  model.** Its `37,056` parameters are inside the requested tiny range, but the
+  final evaluator accuracy was only `0.046541`. Even simple qualitative probes
+  failed. The run is still valuable because it shows that the curriculum alone
+  does not make this extremely small 2-head / 4-layer configuration robust on
+  the full stratified dataset.
+- **`urey-2.0` is a strong first success for the new example-mode scheme.** At
+  `1,598,080` parameters, it reached `0.868346` sampled evaluator accuracy with
+  perfect sampled binary add/sub performance, very strong negative-input
+  performance, and good parentheses performance.
+- **The main remaining weakness is sharply localized rather than broad.**
+  `urey-2.0` fails or nearly fails on large multiplicative composition,
+  especially `three_input::*` and parentheses `**` kinds involving medium/large
+  bands. This localization is the most important result of the run because it
+  suggests targeted next experiments and concrete mechanistic-interpretability
+  probes.
+- **This pair does not isolate scratchpad benefit.** `miller-2.0` and
+  `urey-2.0` differ in both capacity and target format. The strongest immediate
+  control is therefore a same-architecture `urey-2.0-final-only` run with
+  `--training-format final_only` and the same curriculum.
+
+Important metric caveat: for scratchpad-trained checkpoints, the legacy
+token-stream `val_loss` is not directly comparable to final-only runs because it
+is still computed on final-only validation text. For `urey-2.0`, prioritize
+`exact_match`, `balanced_exact_match`, evaluator accuracy, and category/kind
+breakdowns over raw `val_loss` when judging task behavior.
+
 ## 1. Environment
 
 - Git commit: `3247d4a36f5f4548e685b27a6d14a5703777ac63`
@@ -49,6 +81,15 @@ Validation / sequence-length notes:
 - Generator validation stayed enabled.
 - Scratchpad smoke check passed at `seq_len=64`; no overlength failure occurred.
 - During generation, several `parentheses::right::*::*-` strata reported insufficient unique candidates before split assignment (`0` or `3` unique samples for some medium/large cases), but dataset generation completed successfully and the expected output files were written.
+
+Analysis note:
+
+- The dataset is strongly binary-heavy in raw train counts (`630675` binary rows
+  versus `26368` compositional parentheses/three-input rows and `4608`
+  negative-input rows). The curriculum sampler therefore matters: it is not just
+  shuffling examples, it is substantially reweighting rare compositional and
+  negative categories during training. This makes the observed `urey-2.0`
+  category profile a meaningful test of mixed-curriculum resampling.
 
 ## 3. Model configs
 
@@ -132,6 +173,20 @@ uv run train train \
 | balanced_val_loss | `0.571363` (epoch 20) | `0.570725` (epoch 19) |
 | balanced_exact_match | `0.052632` (epoch 20) | `0.052632` (epoch 20) |
 
+Interpretation:
+
+- The tiny model continued improving in training loss through epoch 20, but the
+  evaluator remained near failure. This is consistent with learning local format
+  and token-distribution regularities without learning robust arithmetic.
+- The gap between low training loss and poor evaluator accuracy argues against
+  spending much effort on exact reruns of this configuration. If a sub-100K model
+  is still desired, increase width while preserving the required 2-head / 4-layer
+  structure.
+- A plausible next tiny configuration is `d_model=48`, `mlp_hidden=96`, 2 heads,
+  4 layers, sequence length 64, which is approximately `80K` parameters with the
+  final-only vocabulary. This stays inside the requested small-model band while
+  more than doubling the representational budget.
+
 ### `urey-2.0` (`runs/urey-2.0/history.json`)
 
 | Metric | Final | Best |
@@ -141,6 +196,22 @@ uv run train train \
 | exact_match | `0.898438` (epoch 20) | `0.921875` (epoch 19) |
 | balanced_val_loss | `0.388430` (epoch 20) | `0.379028` (epoch 8) |
 | balanced_exact_match | `0.842105` (epoch 20) | `0.842105` (epoch 20) |
+
+Interpretation:
+
+- `urey-2.0` is clearly capacity-sufficient for many strata under the new scheme.
+  The high exact-match and evaluator accuracy show that example-mode curriculum
+  training can work well at roughly 1.6M parameters.
+- The best raw `val_loss` and `balanced_val_loss` occurring around epoch 8 while
+  exact-match metrics peak later means checkpoint selection is metric-sensitive.
+  For these arithmetic models, exact-match and per-kind evaluator accuracy are
+  more behaviorally meaningful than raw next-token loss, especially when
+  scratchpad-format training is involved.
+- The recorded `scratchpad_fraction` of about `0.7218` means most balanced
+  validation examples were transformed into scratchpad-bearing targets. This is
+  useful for stress-testing the format, but it also reinforces the need for a
+  same-size final-only control before attributing gains to scratchpad
+  supervision.
 
 Curriculum stages observed in both histories:
 
@@ -226,6 +297,22 @@ Observations:
 - `urey-2.0` remained materially weaker on multiplicative compositional structure than on additive structure: `binary_mul_div 0.8133`, `three_input 0.7593`, and several `**` parentheses kinds at or near zero.
 - The biggest qualitative gap between the two runs is on compositional strata: `parentheses` improved from `0.0288` to `0.8600`, and `three_input` improved from `0.0507` to `0.7593`.
 
+Analysis:
+
+- `miller-2.0` should be interpreted as a lower-bound control, not as evidence
+  that small models cannot benefit from curriculum. At `37K` parameters it is
+  likely too constrained for the full operation/band/category mixture.
+- `urey-2.0` shows a structured competence profile: ordinary binary add/sub is
+  solved, negative-input behavior is unexpectedly strong, and many parentheses
+  cases work, while multiplicative scale/composition remains the bottleneck.
+- The weakest `urey-2.0` rows are not random failures. They cluster around large
+  chained multiplication: `three_input::*` with large bands and parentheses
+  `**` kinds. Future evaluation should preserve this per-kind breakdown because
+  overall accuracy hides the remaining hard cases.
+- The negative-input result is notable. Negative examples were rare in the raw
+  dataset but curriculum replay made them learnable for `urey-2.0`; this is a
+  strong sign that reweighting rare strata can work.
+
 ## 6. Qualitative probes
 
 Probe file:
@@ -274,6 +361,19 @@ Scratchpad-marker note for `urey-2.0`:
 - The saved probe outputs did **not** contain visible scratchpad markers.
 - The emitted strings were clean single answers rather than mixed scratchpad-plus-answer text.
 
+Analysis caveat:
+
+- These probe logs do **not** prove that `urey-2.0` failed to generate
+  scratchpad markers. The public `train predict` command returns the extracted
+  final-answer field, so a raw generation such as
+  `<work> <step> ... <final> 07000000` would still be printed as just
+  `07000000`. To inspect scratchpad behavior, either download the checkpoint and
+  run a raw decoding helper, or add a CLI/debug option that disables final-answer
+  extraction.
+- The qualitative probes are nevertheless consistent with the evaluator summary:
+  `urey-2.0` answers simple add/sub and negative-input examples correctly, but
+  misses multiplication and parenthesized multiplication probes.
+
 ## 7. Operational notes
 
 - `miller-2.0` wall-clock training time: `2131.922 s` (`00:35:31.922`)
@@ -284,7 +384,57 @@ Scratchpad-marker note for `urey-2.0`:
 
 ## 8. Next-run recommendations
 
-1. **Increase `miller-2.0` width/depth rather than rerunning the same tiny config.** Evidence: after 20 epochs it still reached only `0.0465` overall sampled evaluator accuracy and `0.0526` balanced exact match.
-2. **For the `urey` line, keep the larger scale but review epoch selection.** Evidence: `val_loss` and `balanced_val_loss` were best at epoch 8, while `exact_match` peaked later at epoch 19 and final epoch 20 gave the best `balanced_exact_match`. A rerun should either reduce epochs or make checkpoint selection explicitly match the metric that matters most.
-3. **Increase validation sample sizing.** Evidence: `urey-2.0` showed materially different conclusions depending on metric (`val_loss` best at epoch 8, `exact_match` best at epoch 19, `balanced_exact_match` best at epoch 20), suggesting that the current sampled validation view is noisy for late-stage comparisons.
-4. **If the scratchpad variant is continued, keep scratchpad targeted rather than expanding it immediately.** Evidence: `urey-2.0` already gained large improvements on compositional categories, but its weakest remaining kinds were concentrated in multiplication-heavy `three_input::*::*` and parentheses `**` strata, so the current bottleneck is specific rather than broad.
+1. **Train `urey-2.0-final-only` as the highest-priority control.** Use the same
+   architecture, seed, dataset, curriculum, epochs, and validation settings as
+   `urey-2.0`, but set `--training-format final_only` and `--max-new-tokens 24`.
+   This isolates whether the `urey-2.0` gains came from capacity/curriculum alone
+   or from compact scratchpad supervision.
+2. **Train a stronger tiny model rather than rerunning exact `miller-2.0`.** Keep
+   the required 2 heads / 4 layers, but increase to approximately `80K`
+   parameters, e.g. `d_model=48`, `mlp_hidden=96`, `training-format final_only`,
+   and the same `baseline_mixed_v1` curriculum. Evidence: `miller-2.0` reached
+   only `0.0465` overall sampled evaluator accuracy and `0.0526` balanced exact
+   match.
+3. **Add raw scratchpad decoding before making claims about scratchpad use.** The
+   current prediction probes are post-processed final answers. Downloading the
+   checkpoint or adding a raw-generation debug path is necessary to determine
+   whether the model emits `<work>`, `<step>`, and `<final>` internally.
+4. **Focus future curriculum changes on multiplicative composition.** The
+   remaining `urey-2.0` failures are concentrated in large `three_input::*` and
+   parentheses `**` kinds. A later `mul_focus_v1` run or a refined
+   multiplication-composition stage is justified, but should come after the
+   same-size final-only control.
+5. **Increase balanced validation sample size for future comparison runs.** The
+   late-epoch metric disagreement (`val_loss` best at epoch 8, exact-match best
+   around epochs 19-20) suggests the current balanced sample is useful but still
+   noisy for checkpoint-selection decisions.
+6. **Use exact-match and per-kind evaluator accuracy as primary behavioral
+   metrics.** Keep raw `val_loss` for continuity, but do not rely on it alone for
+   scratchpad-trained models because it is computed on legacy final-only
+   validation text.
+
+## 9. Mechanistic-interpretability leads
+
+These are proposed study targets, not mechanistic conclusions.
+
+1. **Multiplication/composition boundary.** Compare successful binary
+   multiplication cases against failed large `three_input::*` and parentheses
+   `**` cases. The key question is whether intermediate products are represented
+   and then lost, or never represented cleanly.
+2. **Parentheses `**` failure mode.** `urey-2.0` handles many parentheses cases
+   but collapses on large chained multiplication. This is a good candidate for
+   layer-by-layer activation comparison across operator pairs such as `+*`, `*+`,
+   and `**`.
+3. **Negative-input success.** Negative-input performance is much stronger than
+   its raw-data frequency would suggest. Compare sign-handling examples with
+   ordinary binary add/sub examples to see whether sign handling is localized to
+   specific heads or MLP features.
+4. **Scratchpad token role.** If raw decoding confirms scratchpad-marker usage,
+   inspect whether `<work>`, `<step>`, and `<final>` correspond to separable
+   computation/copying phases. If raw decoding shows the model bypasses visible
+   scratchpads, that is also useful: it would suggest final-answer computation
+   can emerge despite scratchpad-supervised targets.
+5. **Checkpoint-transition analysis.** Because `urey-2.0` metrics differ by
+   epoch and exact-match peaks late, checkpoints around epochs 8, 19, and 20 are
+   valuable comparison points if available. Look for changes in multiplicative
+   strata rather than only overall accuracy.
