@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
 
 import './App.css'
@@ -50,6 +50,7 @@ function App() {
   const [selectedLayer, setSelectedLayer] = useState(0)
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>('attention')
   const [networkControls, setNetworkControls] = useState<NetworkControls>(DEFAULT_NETWORK_CONTROLS)
+  const abortRef = useRef<AbortController | null>(null)
 
   async function refreshHealth() {
     try {
@@ -94,15 +95,25 @@ function App() {
       return
     }
 
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setLoading(true)
+    setLoadingNetwork(false)
     setError(null)
 
     try {
       const includeNetwork = activeDetailTab === 'network'
-      const analysis = await analyzePrompt(cleanedPrompt, {
-        ...(includeNetwork ? networkControls : {}),
-        include_network: includeNetwork,
-      })
+      const analysis = await analyzePrompt(
+        cleanedPrompt,
+        {
+          ...(includeNetwork ? networkControls : {}),
+          include_network: includeNetwork,
+        },
+        controller.signal,
+      )
+      if (controller.signal.aborted) return
       setPrompt(cleanedPrompt)
       setResult(analysis)
       setNetworkError(null)
@@ -111,9 +122,13 @@ function App() {
       )
       void refreshHealth()
     } catch (caughtError) {
-      setError(getErrorMessage(caughtError))
+      if (!controller.signal.aborted) {
+        setError(getErrorMessage(caughtError))
+      }
     } finally {
-      setLoading(false)
+      if (!controller.signal.aborted) {
+        setLoading(false)
+      }
     }
   }
 
@@ -123,23 +138,37 @@ function App() {
       return
     }
 
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    setLoading(false)
     setLoadingNetwork(true)
     setNetworkError(null)
     setNetworkControls(nextControls)
 
     try {
-      const analysis = await analyzePrompt(cleanedPrompt, {
-        ...nextControls,
-        include_network: true,
-      })
+      const analysis = await analyzePrompt(
+        cleanedPrompt,
+        {
+          ...nextControls,
+          include_network: true,
+        },
+        controller.signal,
+      )
+      if (controller.signal.aborted) return
       setResult(analysis)
       setSelectedLayer((current) =>
         Math.min(current, Math.max(analysis.config.n_layers - 1, 0)),
       )
     } catch (caughtError) {
-      setNetworkError(getErrorMessage(caughtError))
+      if (!controller.signal.aborted) {
+        setNetworkError(getErrorMessage(caughtError))
+      }
     } finally {
-      setLoadingNetwork(false)
+      if (!controller.signal.aborted) {
+        setLoadingNetwork(false)
+      }
     }
   }
 

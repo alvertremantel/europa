@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import torch
@@ -73,7 +74,7 @@ def extract_network_analysis(
             "top_neurons": top_neurons,
             "selected_token_index": selected_index,
         },
-        "mlp": _build_mlp_summary(
+        "mlp": _build_network_mlp_summary(
             model=model,
             cache=cache,
             tokens=tokens,
@@ -81,13 +82,13 @@ def extract_network_analysis(
             top_neurons=top_neurons,
             warnings=warnings,
         ),
-        "attention": _build_attention_summary(
+        "attention": _build_network_attention_summary(
             model=model,
             cache=cache,
             tokens=tokens,
             warnings=warnings,
         ),
-        "residual": _build_residual_summary(
+        "residual": _build_network_residual_summary(
             model=model,
             tokenizer=tokenizer,
             tokens=tokens,
@@ -114,7 +115,7 @@ def get_cache_tensor(cache: Any, candidates: list[str]) -> tuple[torch.Tensor | 
     return None, None
 
 
-def _build_mlp_summary(
+def _build_network_mlp_summary(
     *,
     model: Any,
     cache: Any,
@@ -144,6 +145,7 @@ def _build_mlp_summary(
                     token_index=token_idx,
                     threshold=threshold,
                     top_neurons=top_neurons,
+                    warnings=warnings,
                 )
                 for token_idx in range(post.shape[0])
             ]
@@ -154,13 +156,13 @@ def _build_mlp_summary(
                     "source_hook": post_key,
                     "layer_summary": {
                         "active_fraction_positive": _finite_float(
-                            (post > threshold).float().mean()
+                            (post > threshold).float().mean(), warnings=warnings
                         ),
                         "active_fraction_abs": _finite_float(
-                            (post.abs() > threshold).float().mean()
+                            (post.abs() > threshold).float().mean(), warnings=warnings
                         ),
-                        "mean_abs_activation": _finite_float(post.abs().mean()),
-                        "max_abs_activation": _finite_float(post.abs().max()),
+                        "mean_abs_activation": _finite_float(post.abs().mean(), warnings=warnings),
+                        "max_abs_activation": _finite_float(post.abs().max(), warnings=warnings),
                     },
                     "tokens": token_rows,
                 }
@@ -192,14 +194,14 @@ def _build_mlp_summary(
                 "availability": "mlp_hidden_unavailable",
                 "source_hook": out_key,
                 "layer_summary": {
-                    "output_norm_mean": _finite_float(norms.mean()),
-                    "output_norm_max": _finite_float(norms.max()),
+                    "output_norm_mean": _finite_float(norms.mean(), warnings=warnings),
+                    "output_norm_max": _finite_float(norms.max(), warnings=warnings),
                 },
                 "tokens": [
                     {
                         "token_index": token_idx,
                         "token": tokens[token_idx],
-                        "output_norm": _finite_float(norms[token_idx]),
+                        "output_norm": _finite_float(norms[token_idx], warnings=warnings),
                         "top_neurons": [],
                     }
                     for token_idx in range(mlp_out.shape[0])
@@ -221,6 +223,7 @@ def _summarize_mlp_token(
     token_index: int,
     threshold: float,
     top_neurons: int,
+    warnings: list[str] | None = None,
 ) -> dict[str, Any]:
     positive = activations > threshold
     absolute = activations.abs() > threshold
@@ -232,24 +235,24 @@ def _summarize_mlp_token(
         "token_index": token_index,
         "token": token,
         "active_count_positive": int(positive.sum().item()),
-        "active_fraction_positive": _finite_float(positive.float().mean()),
+        "active_fraction_positive": _finite_float(positive.float().mean(), warnings=warnings),
         "active_count_abs": int(absolute.sum().item()),
-        "active_fraction_abs": _finite_float(absolute.float().mean()),
-        "mean_abs_activation": _finite_float(activations.abs().mean()),
-        "max_activation": _finite_float(activations.max()),
-        "max_abs_activation": _finite_float(activations.abs().max()),
+        "active_fraction_abs": _finite_float(absolute.float().mean(), warnings=warnings),
+        "mean_abs_activation": _finite_float(activations.abs().mean(), warnings=warnings),
+        "max_activation": _finite_float(activations.max(), warnings=warnings),
+        "max_abs_activation": _finite_float(activations.abs().max(), warnings=warnings),
         "top_neurons": [
             {
                 "neuron_index": int(neuron_idx.item()),
-                "value": _finite_float(activations[int(neuron_idx.item())]),
-                "abs_value": _finite_float(abs_value),
+                "value": _finite_float(activations[int(neuron_idx.item())], warnings=warnings),
+                "abs_value": _finite_float(abs_value, warnings=warnings),
             }
             for abs_value, neuron_idx in zip(top_values, top_indices, strict=False)
         ],
     }
 
 
-def _build_attention_summary(
+def _build_network_attention_summary(
     *, model: Any, cache: Any, tokens: list[str], warnings: list[str]
 ) -> dict[str, Any]:
     layers: list[dict[str, Any]] = []
@@ -296,6 +299,7 @@ def _build_attention_summary(
                             if result_norms is not None
                             else None
                         ),
+                        warnings=warnings,
                     )
                     for head_idx in range(pattern.shape[0])
                 ],
@@ -315,6 +319,7 @@ def _summarize_attention_head(
     layer_idx: int,
     head_idx: int,
     result_norms: list[float] | None,
+    warnings: list[str] | None = None,
 ) -> dict[str, Any]:
     clipped = head_pattern.clamp(min=1e-12, max=1.0)
     entropy_by_query = (-clipped * torch.log2(clipped)).sum(dim=-1)
@@ -332,17 +337,17 @@ def _summarize_attention_head(
     return {
         "layer": layer_idx,
         "head": head_idx,
-        "mean_entropy": _finite_float(entropy_by_query.mean()),
-        "entropy_by_query": [_finite_float(value) for value in entropy_by_query],
-        "max_weight": _finite_float(head_pattern.max()),
-        "self_attention_mass": _finite_float(diagonal.mean()) if diagonal.numel() else 0.0,
-        "previous_token_mass": _finite_float(previous.mean()) if previous.numel() else 0.0,
+        "mean_entropy": _finite_float(entropy_by_query.mean(), warnings=warnings),
+        "entropy_by_query": [_finite_float(value, warnings=warnings) for value in entropy_by_query],
+        "max_weight": _finite_float(head_pattern.max(), warnings=warnings),
+        "self_attention_mass": _finite_float(diagonal.mean(), warnings=warnings) if diagonal.numel() else 0.0,
+        "previous_token_mass": _finite_float(previous.mean(), warnings=warnings) if previous.numel() else 0.0,
         "strongest_pair": {
             "query_index": query_index,
             "query_token": tokens[query_index],
             "key_index": key_index,
             "key_token": tokens[key_index],
-            "weight": _finite_float(head_pattern[query_index, key_index]),
+            "weight": _finite_float(head_pattern[query_index, key_index], warnings=warnings),
         },
         "argmax_keys": [
             {
@@ -350,7 +355,7 @@ def _summarize_attention_head(
                 "query_token": tokens[query_idx],
                 "key_index": int(key_idx.item()),
                 "key_token": tokens[int(key_idx.item())],
-                "weight": _finite_float(head_pattern[query_idx, int(key_idx.item())]),
+                "weight": _finite_float(head_pattern[query_idx, int(key_idx.item())], warnings=warnings),
             }
             for query_idx, key_idx in enumerate(argmax_keys)
         ],
@@ -358,7 +363,7 @@ def _summarize_attention_head(
     }
 
 
-def _build_residual_summary(
+def _build_network_residual_summary(
     *,
     model: Any,
     tokenizer: Any,
@@ -419,6 +424,7 @@ def _build_residual_summary(
                         token_index=token_idx,
                         top_dimensions=top_dimensions,
                         logit_lens=logit_lens[token_idx] if logit_lens is not None else [],
+                        warnings=warnings,
                     )
                     for token_idx in range(resid_mid.shape[0])
                 ],
@@ -441,19 +447,20 @@ def _summarize_residual_token(
     token_index: int,
     top_dimensions: int,
     logit_lens: list[dict[str, float | str]],
+    warnings: list[str] | None = None,
 ) -> dict[str, Any]:
     vector = resid_mid[token_index]
     delta_norm = None
     if resid_pre is not None:
-        delta_norm = _finite_float(torch.linalg.vector_norm(vector - resid_pre[token_index]))
+        delta_norm = _finite_float(torch.linalg.vector_norm(vector - resid_pre[token_index]), warnings=warnings)
 
     previous_cosine = None
     if previous_mid is not None:
-        previous_cosine = _cosine_similarity(vector, previous_mid[token_index].float())
+        previous_cosine = _cosine_similarity(vector, previous_mid[token_index].float(), warnings=warnings)
 
     final_cosine = None
     if final_residual is not None:
-        final_cosine = _cosine_similarity(vector, final_residual[token_index].float())
+        final_cosine = _cosine_similarity(vector, final_residual[token_index].float(), warnings=warnings)
 
     top_values, top_indices = torch.topk(
         vector.abs(),
@@ -463,15 +470,15 @@ def _summarize_residual_token(
     return {
         "token_index": token_index,
         "token": token,
-        "norm": _finite_float(torch.linalg.vector_norm(vector)),
+        "norm": _finite_float(torch.linalg.vector_norm(vector), warnings=warnings),
         "attention_delta_norm": delta_norm,
         "cosine_to_previous_mid": previous_cosine,
         "cosine_to_final": final_cosine,
         "top_dimensions": [
             {
                 "dimension": int(dimension.item()),
-                "value": _finite_float(vector[int(dimension.item())]),
-                "abs_value": _finite_float(abs_value),
+                "value": _finite_float(vector[int(dimension.item())], warnings=warnings),
+                "abs_value": _finite_float(abs_value, warnings=warnings),
             }
             for abs_value, dimension in zip(top_values, top_indices, strict=False)
         ],
@@ -506,8 +513,8 @@ def _logit_lens_top_k(
             [
                 {
                     "token": tokenizer.id_to_token[int(token_idx.item())],
-                    "probability": _finite_float(probability),
-                    "logit": _finite_float(logits[position, int(token_idx.item())]),
+                    "probability": _finite_float(probability, warnings=warnings),
+                    "logit": _finite_float(logits[position, int(token_idx.item())], warnings=warnings),
                 }
                 for probability, token_idx in zip(
                     top_probabilities[position],
@@ -545,7 +552,7 @@ def _manual_layer_norm(
     eps: float,
 ) -> torch.Tensor:
     mean = residual.mean(dim=-1, keepdim=True)
-    variance = residual.var(dim=-1, unbiased=False, keepdim=True)
+    variance = residual.var(dim=-1, unbiased=True, keepdim=True)
     return ((residual - mean) / torch.sqrt(variance + eps)) * weight + bias
 
 
@@ -555,17 +562,25 @@ def _without_batch(tensor: torch.Tensor) -> torch.Tensor:
     return tensor.detach()
 
 
-def _cosine_similarity(left: torch.Tensor, right: torch.Tensor) -> float | None:
+def _cosine_similarity(
+    left: torch.Tensor, right: torch.Tensor, *, warnings: list[str] | None = None
+) -> float | None:
     denominator = torch.linalg.vector_norm(left) * torch.linalg.vector_norm(right)
-    if float(denominator.detach().cpu()) == 0.0:
+    if float(denominator.detach().cpu()) < 1e-8:
         return None
-    return _finite_float(torch.dot(left, right) / denominator)
+    return _finite_float(torch.dot(left, right) / denominator, warnings=warnings)
 
 
-def _finite_float(value: torch.Tensor | float) -> float:
+def _finite_float(
+    value: torch.Tensor | float, *, warnings: list[str] | None = None
+) -> float:
     if isinstance(value, torch.Tensor):
         value = float(value.detach().cpu())
-    if value != value or value in (float("inf"), float("-inf")):
+    if math.isnan(value) or math.isinf(value):
+        if warnings is not None:
+            msg = "Non-finite value detected: coerced to 0.0"
+            if msg not in warnings:
+                warnings.append(msg)
         return 0.0
     return float(value)
 

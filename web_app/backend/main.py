@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,8 @@ from web_app.backend.analysis import (
 )
 from web_app.backend.model_utils import load_hooked_resources
 from web_app.backend.network_analysis import clamp_network_options, extract_network_analysis
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Europa ALM-IS Web API",
@@ -128,8 +131,8 @@ def load_resources() -> None:
 async def startup_event() -> None:
     try:
         load_resources()
-    except RuntimeError:
-        return
+    except RuntimeError as error:
+        logger.error("Failed to load checkpoint: %s", error)
 
 
 @app.post("/api/analyze", response_model=AnalyzeResponse)
@@ -192,7 +195,7 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
             probs=probs,
             logits=logits_np,
             tokens_by_id=tokenizer.id_to_token,
-            top_k=5,
+            top_k=request.top_k,
         )
         attention_summary = build_attention_summary(
             attention_by_layer=attention_by_layer,

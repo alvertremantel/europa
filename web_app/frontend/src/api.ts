@@ -206,8 +206,9 @@ export interface AnalyzePromptOptions extends Partial<NetworkControls> {
 export async function analyzePrompt(
   prompt: string,
   options: AnalyzePromptOptions = {},
+  signal?: AbortSignal,
 ): Promise<AnalysisResult> {
-  const response = await axios.post<AnalysisResult>('/api/analyze', { prompt, ...options })
+  const response = await axios.post<AnalysisResult>('/api/analyze', { prompt, ...options }, { signal })
   return response.data
 }
 
