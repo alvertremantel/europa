@@ -1,54 +1,5 @@
-from __future__ import annotations
+"""Compatibility shim: re-exports from canonical package."""
 
-from dataclasses import dataclass
+from eur_ts.trainer.config import ModelConfig, TrainConfig
 
-
-@dataclass(frozen=True)
-class ModelConfig:
-    vocab_size: int
-    sequence_length: int = 64
-    d_model: int = 256
-    n_heads: int = 4
-    n_layers: int = 6
-    mlp_hidden: int = 1024
-    dropout: float = 0.1
-
-
-@dataclass(frozen=True)
-class TrainConfig:
-    data_dir: str = "data-1m"
-    output_dir: str = "runs/arithmetic-small"
-    resume_from: str | None = None
-    auto_resume: bool = False
-    additional_epochs: int | None = None
-    sequence_length: int = 64
-    batch_size: int = 128
-    epochs: int = 5
-    learning_rate: float = 3e-4
-    weight_decay: float = 0.1
-    grad_clip: float = 1.0
-    log_interval: int = 100
-    eval_batches: int = 50
-    exact_match_samples: int = 256
-    max_new_tokens: int = 24
-    seed: int = 42
-    device: str = "cuda"
-    d_model: int = 256
-    n_heads: int = 4
-    n_layers: int = 6
-    mlp_hidden: int = 1024
-    dropout: float = 0.1
-    checkpoint_keep_last: int = 5
-    checkpoint_max_kept: int = 10
-    checkpoint_keep_best: int = 1
-    checkpoint_jump_threshold: float = 0.05
-    checkpoint_dir_name: str = "checkpoints"
-    training_mode: str = "token_stream"
-    training_format: str = "final_only"
-    skip_overlong_examples: bool = False
-    curriculum_name: str | None = None
-    balanced_val_enabled: bool = False
-    balanced_val_group_by: str = "kind"
-    balanced_val_sample_size_per_group: int = 8
-    balanced_val_seed: int = 42
-    balanced_val_batch_size: int | None = None
+__all__ = ["ModelConfig", "TrainConfig"]

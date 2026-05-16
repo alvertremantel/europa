@@ -7,8 +7,11 @@ FastAPI backend for the mechanistic interpretability dashboard.
 From the repository root:
 
 ```bash
-uv run uvicorn web_app.backend.main:app --reload
+uv run uvicorn eur_is.backend.main:app --reload
 ```
+
+The legacy shim path `web_app.backend.main:app` still resolves, but `eur_is.backend.main:app`
+is now canonical.
 
 The backend loads `runs/test-extended-plus/checkpoint-best.pt` at startup, keeps the
 HookedTransformer + tokenizer in memory, and exposes:
@@ -18,7 +21,7 @@ HookedTransformer + tokenizer in memory, and exposes:
 
 ## Checkpoint behavior
 
-- The checkpoint path is currently fixed in `web_app/backend/main.py`.
+- The checkpoint path is currently fixed in `eur_is/backend/settings.py`.
 - The tokenizer is loaded from the checkpoint payload, not rebuilt from the legacy
   default vocabulary. This keeps scratchpad checkpoints compatible with the web UI.
 

@@ -216,10 +216,10 @@ Europa ALM-IS ships with built-in tools for understanding *how* the model solves
 
 ### `MechanisticInterpreter`
 
-High-level wrapper in `trainer/interpreter.py` for loading checkpoints and running interpretability analyses:
+High-level wrapper in `eur_ts/trainer/interpreter.py` for loading checkpoints and running interpretability analyses:
 
 ```python
-from trainer.interpreter import MechanisticInterpreter
+from eur_ts.trainer.interpreter import MechanisticInterpreter
 
 with MechanisticInterpreter("runs/my-run/checkpoint-best.pt") as interp:
     logits, capture = interp.forward_with_capture(token_ids)
@@ -235,7 +235,7 @@ with MechanisticInterpreter("runs/my-run/checkpoint-best.pt") as interp:
 
 ### `HookRegistry` & `ActivationCapture`
 
-Forward-hook system (`trainer/hooks.py`) that captures all intermediate states:
+Forward-hook system (`eur_ts/trainer/hooks.py`) that captures all intermediate states:
 
 - **Embeddings**: token, positional, combined
 - **Per-layer**: inputs, outputs, attention outputs, MLP outputs, norm outputs
@@ -243,7 +243,7 @@ Forward-hook system (`trainer/hooks.py`) that captures all intermediate states:
 
 ### `InterpreterVisualizer`
 
-Matplotlib-based visualizations (`trainer/visualization/` with `trainer/visualizer.py` as a compatibility shim):
+Matplotlib-based visualizations (`eur_ts/trainer/visualization/` with `trainer/visualizer.py` retained as a compatibility shim):
 
 - Activation heatmaps (per-layer and overview)
 - Attention pattern grids
@@ -259,10 +259,10 @@ A FastAPI + React/Vite application for interactive model analysis:
 
 ```bash
 # Backend (serves /api/analyze and /api/health)
-uv run uvicorn web_app.backend.main:app --reload
+uv run uvicorn eur_is.backend.main:app --reload
 
-# Frontend (cd into web_app/frontend/)
-cd web_app/frontend && npm install && npm run dev
+# Frontend (cd into eur_is/frontend/)
+cd eur_is/frontend && npm install && npm run dev
 ```
 
 The backend hardcodes the checkpoint at `runs/test-extended-plus/checkpoint-best.pt`. The `/api/analyze` endpoint returns attention patterns, layer activations, logits, top-k next-token predictions, compact attention/activation summaries, and checkpoint metadata for the dashboard's `circuitsvis` and overview panels. Passing `include_network=true` adds the Network panel payload: bounded MLP firing summaries, attention-head activity metrics, and residual-after-attention summaries from the TransformerLens cache.
@@ -272,27 +272,17 @@ The backend hardcodes the checkpoint at `runs/test-extended-plus/checkpoint-best
 ## Project Structure
 
 ```
-├── generator/          # Stratified arithmetic data generation
-│   ├── core.py         # KindSpec, sampling, formatting, validation
-│   └── main.py         # CLI entrypoint
-├── trainer/            # Model, training, inference, interpretability
-│   ├── config.py       # ModelConfig + TrainConfig dataclasses
-│   ├── model.py        # SmallCausalTransformer (pre-norm, tied embeddings)
-│   ├── core.py         # Compatibility shim for training/checkpoint APIs
-│   ├── data.py         # ArithmeticTokenizer, dataset loading
-│   ├── inference.py    # generate_completion, evaluate_loss, evaluate_exact_match
-│   ├── hooks.py        # HookRegistry + ActivationCapture
-│   ├── interpreter.py  # MechanisticInterpreter high-level API
-│   ├── training/       # Training loop, checkpointing, resume state
-│   ├── visualization/  # Split matplotlib visualization helpers
-│   ├── visualizer.py   # Compatibility shim exporting InterpreterVisualizer
-│   └── main.py         # CLI entrypoint (train / predict subcommands)
-├── evaluator/          # Stratified evaluation & error analysis
-│   ├── core.py         # BucketStats, row builders
-│   └── main.py         # CLI entrypoint
-├── web_app/            # Interactive analysis web interface
+├── eur_ts/             # Europa Training Suite canonical Python package
+│   ├── generator/      # Stratified arithmetic data generation
+│   ├── trainer/        # Model, training, inference, interpretability
+│   └── evaluator/      # Stratified evaluation & error analysis
+├── eur_is/             # Interactive analysis web interface
 │   ├── backend/        # FastAPI API server
 │   └── frontend/       # React + Vite + circuitsvis SPA
+├── generator/          # Compatibility shim package for legacy imports
+├── trainer/            # Compatibility shim package for legacy imports
+├── evaluator/          # Compatibility shim package for legacy imports
+├── web_app/            # Legacy backend shim path
 └── info/               # Researcher-facing documentation
 ```
 

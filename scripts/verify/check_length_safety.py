@@ -10,7 +10,7 @@ from typing import cast
 
 import torch
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -53,7 +53,7 @@ def parse_args() -> argparse.Namespace:
 def load_checkpoint_metadata(
     checkpoint_path: Path,
 ) -> tuple[object, int, int]:
-    from train import ArithmeticTokenizer
+    from eur_ts.trainer.data import ArithmeticTokenizer
 
     payload = torch.load(checkpoint_path, map_location="cpu")
     if not isinstance(payload, dict):
@@ -77,7 +77,7 @@ def load_checkpoint_metadata(
 
 
 def intermediate_abs_value(sample: object) -> int:
-    from generator.core import (
+    from eur_ts.generator.core import (
         apply_operation,
         parse_signed_number,
         parse_unsigned_number,
@@ -143,9 +143,9 @@ def analyze_dataset(
     sequence_length: int,
     max_new_tokens: int,
 ) -> tuple[dict[str, KindLengthStats], dict[str, int]]:
-    from generator.core import validate_line
-    from train import ArithmeticTokenizer
-    from train import answer_from_line, prompt_from_line
+    from eur_ts.generator.core import validate_line
+    from eur_ts.trainer.data import ArithmeticTokenizer
+    from eur_ts.trainer.utils import answer_from_line, prompt_from_line
 
     typed_tokenizer = cast(ArithmeticTokenizer, tokenizer)
     kind_stats: dict[str, KindLengthStats] = {}

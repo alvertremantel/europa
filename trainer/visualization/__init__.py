@@ -1,3 +1,5 @@
-from .visualizer import InterpreterVisualizer
+"""Compatibility shim: re-exports from canonical package."""
+
+from eur_ts.trainer.visualization import InterpreterVisualizer
 
 __all__ = ["InterpreterVisualizer"]

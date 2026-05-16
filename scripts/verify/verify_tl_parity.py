@@ -1,13 +1,9 @@
-import sys
 from pathlib import Path
 
 import torch
 
-# Add the project root to path
-sys.path.insert(0, str(Path('.').resolve()))
-
-from trainer.data import ArithmeticTokenizer
-from web_app.backend.model_utils import get_hooked_model
+from eur_is.backend.model_utils import get_hooked_model
+from eur_ts.trainer.data import ArithmeticTokenizer
 
 def verify_parity():
     checkpoint_path = Path('runs/test-extended-plus/checkpoint-best.pt')
@@ -21,8 +17,8 @@ def verify_parity():
     print("Loading original model...")
     checkpoint = torch.load(checkpoint_path, map_location=device)
     config_dict = checkpoint['model_config']
-    from trainer.config import ModelConfig
-    from trainer.model import SmallCausalTransformer
+    from eur_ts.trainer.config import ModelConfig
+    from eur_ts.trainer.model import SmallCausalTransformer
     
     model_config = ModelConfig(**config_dict)
     original_model = SmallCausalTransformer(model_config)

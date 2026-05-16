@@ -9,4 +9,8 @@ __pycache__/
 
 data/
 
+web_app/frontend/node_modules/
+web_app/frontend/dist/
+eur_is/frontend/node_modules/
+eur_is/frontend/dist/
 

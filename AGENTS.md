@@ -25,16 +25,18 @@ No test suite exists.
 
 ## Architecture
 
-Three Python packages, each with a `main.py` entrypoint:
+Canonical training code now lives under one `eur_ts/` package root, while legacy top-level packages remain compatibility shims:
 
 | Package | Purpose |
 |---|---|
-| `generator/` | Stratified arithmetic data generation (binary, three_input, parentheses, negative_input categories) |
-| `trainer/` | Causal transformer training + inference. Uses `transformer-lens` for hooked model access |
-| `evaluator/` | Per-stratum evaluation, writes summary JSON, kinds CSV, and errors JSONL next to the checkpoint |
+| `eur_ts/generator/` | Stratified arithmetic data generation (binary, three_input, parentheses, negative_input categories) |
+| `eur_ts/trainer/` | Causal transformer training + inference. Uses `transformer-lens` for hooked model access |
+| `eur_ts/evaluator/` | Per-stratum evaluation, writes summary JSON, kinds CSV, and errors JSONL next to the checkpoint |
 
 Supporting:
-- `web_app/` — FastAPI backend (`web_app/backend/main.py`) + React/Vite frontend (`web_app/frontend/`). Backend hardcodes checkpoint path at `runs/test-extended-plus/checkpoint-best.pt`.
+- `eur_is/` — FastAPI backend (`eur_is/backend/main.py`) + React/Vite frontend (`eur_is/frontend/`). Backend hardcodes checkpoint path at `runs/test-extended-plus/checkpoint-best.pt`.
+- `generator/`, `trainer/`, `evaluator/`, and `web_app/backend/` — compatibility shims for legacy imports and commands.
+- `web_app/frontend/` — legacy frontend copy; canonical frontend lives under `eur_is/frontend/`.
 - `info/` — Researcher-facing repository notes and workflow documentation.
 
 ## Dataset format

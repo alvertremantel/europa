@@ -18,9 +18,9 @@ dependencies = [
 ]
 
 [project.scripts]
-generate = "generator.main:main"
-train = "trainer.main:main"
-evaluate = "evaluator.main:main"
+generate = "eur_ts.generator.cli:main"
+train = "eur_ts.trainer.main:main"
+evaluate = "eur_ts.evaluator.cli:main"
 
 [dependency-groups]
 dev = [
@@ -31,7 +31,7 @@ dev = [
 package = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["generator", "trainer", "evaluator"]
+packages = ["generator", "trainer", "evaluator", "web_app", "eur_ts", "eur_is"]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cu128" }

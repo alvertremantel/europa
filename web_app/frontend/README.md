@@ -13,10 +13,11 @@ npm install
 Run the backend from the repository root:
 
 ```bash
-uv run uvicorn web_app.backend.main:app --reload
+uv run uvicorn eur_is.backend.main:app --reload
 ```
 
-Then run the frontend from `web_app/frontend/`:
+Then run the frontend from `eur_is/frontend/` (the canonical location) or keep using
+this legacy copy if needed:
 
 ```bash
 npm run dev
