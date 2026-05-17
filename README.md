@@ -7,225 +7,95 @@
 ![CUDA 12.8](https://img.shields.io/badge/CUDA-12.8-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
 ![TransformerLens](https://img.shields.io/badge/TransformerLens-7B68EE?style=for-the-badge&logo=pytorch&logoColor=white)
 
-**Synthetic arithmetic data generation + small causal transformer training + mechanistic interpretability tooling**
+**Synthetic arithmetic model training and interpretability for mechanistic analysis**
 
 </div>
 
----
+Europa ALM-IS is a compact research environment for building and studying small arithmetic language models. It combines a controlled synthetic task domain, a configurable transformer training stack, stratified evaluation, and an interactive interpretability interface so researchers can inspect not just whether a model solves a problem, but how it appears to do so.
 
-Europa ALM-IS (europa-is) is a research-grade toolkit for training and interpreting small language models on synthetic arithmetic tasks. It generates stratified datasets of reversed-digit math problems, trains a configurable causal transformer, evaluates performance across fine-grained problem strata, and provides deep mechanistic interpretability tools — all backed by a web UI for interactive analysis.
+## What this project is for
 
-## Quick Start
+The repository is built around a simple idea: arithmetic is a useful substrate for interpretability because the task can be generated at scale, tightly controlled, and broken into meaningful behavioral strata. Europa lets you:
 
-```bash
-uv sync          # Python 3.12, requires CUDA for PyTorch (cu128)
-```
+- generate structured arithmetic corpora with known distributions and difficulty bands,
+- train small causal transformers on that data with reproducible TOML-based configs,
+- evaluate performance by category and fine-grained problem kind,
+- inspect internal activations, attention patterns, logits, and residual behavior through code or a web UI.
 
-Four CLI entrypoints are defined — **do not** run `python generate.py` etc. (those scripts don't exist):
+The result is a workflow aimed at mechanistic understanding rather than benchmark chasing.
 
-```bash
-uv run generate --output-dir data/my-dataset          # generate dataset
-uv run config --new                                   # create train-config.toml in CWD
-uv run train train train-config.toml                  # train from TOML config
-uv run train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "03000000 + 03000000 = <ans>"
-uv run evaluate --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
-```
+## The two main suites
 
-Lint: `uv run ruff check .`
-Tests: `uv run pytest`
+### ETS — Europa Training Suite
 
----
+`eur_ts/` contains the canonical Python tooling for dataset generation, training, prediction, evaluation, and programmatic interpretability.
 
-## Workflow
+Core responsibilities:
 
-### 1. Generate Data
+- **Generator**: builds reversed-digit arithmetic datasets across multiple structural families.
+- **Trainer**: trains checkpointed causal transformers from TOML configs.
+- **Evaluator**: measures performance across strata and writes detailed reports.
+- **Interpreter**: exposes hook-based access to model internals for analysis code.
 
-Generate a stratified arithmetic dataset with four problem categories across magnitude bands (small: 0–20, medium: 21–100, large: 101–500).
+### ITS — Europa Interpretability Suite
 
-```bash
-uv run generate --output-dir data/my-dataset --seed 42
-```
+`eur_is/` contains the interactive analysis app:
 
-| Option | Default | Description |
-|---|---|---|
-| `--seed` | `42` | Random seed for reproducibility |
-| `--output-dir` | `data` | Directory to save `train.txt`, `val.txt`, `test.txt`, `meta.json` |
-| `--no-validate` | — | Skip post-generation validation pass |
+- **FastAPI backend** for checkpoint-backed inference and analysis payloads.
+- **React/Vite frontend** for inspecting tokens, heads, activations, logits, and network summaries.
 
-**Problem categories:**
+ITS is meant to make inspection fast and visual once a checkpoint already exists.
 
-| Category | Description | Strategy | Operations |
-|---|---|---|---|
-| `binary` | `A op B` with 2 operands | Exhaustive | `+`, `-`, `*`, `/` |
-| `three_input` | `A op B op C` (same op) | Sampled | `+`, `-`, `*` |
-| `parentheses` | `(A op B) op C` or `A op (B op C)` | Sampled | `+`, `-`, `*` (inner × outer) |
-| `negative_input` | `(-A) op B` or `A op (-B)` | Sampled | `+`, `-`, `*` |
+## Data and modeling conventions
 
-Numbers are **8-digit zero-padded decimals, reversed** (e.g. 6 → `60000000`). Negatives: `(-60000000)`. The `<ans>` token marks the prompt/answer boundary.
+Europa uses a deliberately nonstandard arithmetic representation to keep the task synthetic and explicit:
 
-### 2. Train a Model
+- numbers are rendered as **8-digit zero-padded reversed decimals**,
+- negatives are wrapped like `(-60000000)`,
+- prompts include an `<ans>` token that marks the answer boundary.
 
-Training conditions now come from a structured TOML file.
+Datasets span categories such as binary arithmetic, three-input expressions, parenthesized expressions, and negative-input variants. This gives the project a controlled behavioral landscape for both training and post-hoc analysis.
 
-```bash
-uv run config --new
-uv run config --guide
-# fill in train-config.toml first
-uv run config --size train-config.toml
-uv run train train train-config.toml
-```
+## Why the project is structured this way
 
-The generated `train-config.toml` includes every training variable with comments.
-Required values begin as empty-string placeholders and must be filled before training.
+The codebase is organized so model lifecycle stages stay separate but compatible:
 
-Key derived size metrics:
+- `eur_ts/generator/` defines the synthetic world,
+- `eur_ts/trainer/` learns that world,
+- `eur_ts/evaluator/` measures what was learned,
+- `eur_is/` helps inspect the learned circuits.
 
-- `total_parameters`
-- `total_virtual_neurons = n_layers * sequence_length * mlp_hidden`
+Checkpoints are self-contained and carry model architecture plus tokenizer state, which makes them the bridge between the training and interpretability sides of the repository.
 
-Experimental curriculum and scratchpad settings remain available through TOML under `[training]` and `[balanced_validation]`.
+## Environment assumptions
 
-Training writes:
+- Python 3.12
+- dependency management via `uv`
+- PyTorch from the CUDA 12.8 index
+- GPU strongly preferred for training and interactive analysis
 
-- `checkpoint-last.pt` and `checkpoint-best.pt` root aliases for compatibility
-- per-epoch snapshots under `checkpoints/epoch-XXXX.pt`
-- `checkpoints/manifest.json` with retention and pruning history
-- `history.json` with rich epoch metrics
-- `run-metadata.json` with config, device, retention, and resume provenance
-
-### 3. Predict / Inference
-
-Query a saved checkpoint with a custom prompt:
+Minimal setup:
 
 ```bash
-uv run train predict \
-  --checkpoint runs/my-run/checkpoint-best.pt \
-  --prompt "03000000 + 03000000 = <ans>" \
-  --max-new-tokens 24
+uv sync
 ```
 
-| Option | Default | Description |
-|---|---|---|
-| `--checkpoint` | *(required)* | Path to `.pt` checkpoint file |
-| `--prompt` | *(required)* | Input prompt string |
-| `--max-new-tokens` | `24` | Max tokens to generate |
-| `--device` | `auto` | Device override |
+## Where to go next
 
-### 4. Evaluate a Model
+- Training suite usage: [`docs/USING-ETS.md`](docs/USING-ETS.md)
+- Interpretability suite usage: [`docs/USING-ITS.md`](docs/USING-ITS.md)
 
-Run stratified evaluation across problem kinds with detailed per-category and per-kind reporting.
+## Repository map
 
-```bash
-uv run evaluate \
-  --checkpoint runs/my-run/checkpoint-best.pt \
-  --data-dir data/my-dataset
+```text
+eur_ts/   Training, generation, evaluation, interpreter utilities
+eur_is/   FastAPI backend and React frontend for interactive analysis
+tests/    Smoke tests for canonical behavior
+info/     Research notes and supporting documentation
 ```
 
-**Evaluation options:**
+## Important constraints
 
-| Option | Default | Description |
-|---|---|---|
-| `--checkpoint` | *(required)* | Path to `.pt` checkpoint |
-| `--data-dir` | *(from checkpoint)* | Dataset directory (optional if embedded) |
-| `--splits` | `train val test` | Splits to draw sample pool from |
-| `--device` | `auto` | Device override |
-| `--max-new-tokens` | *(from checkpoint)* | Generation limit |
-| `--sample-size-per-kind` | `50` | Examples sampled per kind |
-| `--sample-seed` | `42` | Sampling seed |
-| `--output-prefix` | *(auto)* | Output file prefix (defaults to `<checkpoint-stem>-strata-eval`) |
-| `--failures-per-kind` | `3` | Max failure examples saved per kind |
-| `--progress-interval-kinds` | `0` | Print progress every N kinds (0 = silent) |
-
-**Outputs** (saved next to the checkpoint):
-
-| File | Format | Contents |
-|---|---|---|
-| `*.summary.json` | JSON | Overall stats, category accuracy, top/bottom 10 kinds, device info |
-| `*.kinds.csv` | CSV | Per-kind rows with accuracy, canonical prediction rate, available counts |
-| `*.errors.jsonl` | JSONL | Individual error cases with prompt, expected, and prediction |
-
----
-
-## Mechanistic Interpretability
-
-Europa ALM-IS ships with built-in tools for understanding *how* the model solves arithmetic:
-
-### `MechanisticInterpreter`
-
-High-level wrapper in `eur_ts/trainer/interpreter.py` for loading checkpoints and running interpretability analyses:
-
-```python
-from eur_ts.trainer.interpreter import MechanisticInterpreter
-
-with MechanisticInterpreter("runs/my-run/checkpoint-best.pt") as interp:
-    logits, capture = interp.forward_with_capture(token_ids)
-    interp.visualize_summary()
-    interp.visualize_activations()
-    interp.visualize_attention()
-    interp.visualize_logits()
-    interp.visualize_mlp()
-    interp.visualize_layer_transition(layer_idx=2)
-    interp.visualize_position_influence(pos=5)
-    interp.explore_step_by_step(token_ids)  # interactive mode
-```
-
-### `HookRegistry` & `ActivationCapture`
-
-Forward-hook system (`eur_ts/trainer/hooks.py`) that captures all intermediate states:
-
-- **Embeddings**: token, positional, combined
-- **Per-layer**: inputs, outputs, attention outputs, MLP outputs, norm outputs
-- **Final**: hidden state, norm output, logits
-
-### `InterpreterVisualizer`
-
-Matplotlib-based visualizations (`eur_ts/trainer/visualization/`):
-
-- Activation heatmaps (per-layer and overview)
-- Attention pattern grids
-- Logit trajectory & prediction confidence plots
-- MLP contribution heatmaps
-- Layer transition (input vs output vs delta)
-- Token position influence bar charts
-- Interactive exploration mode
-
-### Web UI
-
-A FastAPI + React/Vite application for interactive model analysis:
-
-```bash
-# Backend (serves /api/analyze and /api/health)
-uv run uvicorn eur_is.backend.main:app --reload
-
-# Frontend (cd into eur_is/frontend/)
-cd eur_is/frontend && npm install && npm run dev
-```
-
-The backend hardcodes the checkpoint at `runs/test-extended-plus/checkpoint-best.pt`. The `/api/analyze` endpoint returns attention patterns, layer activations, logits, top-k next-token predictions, compact attention/activation summaries, and checkpoint metadata for the dashboard's `circuitsvis` and overview panels. Passing `include_network=true` adds the Network panel payload: bounded MLP firing summaries, attention-head activity metrics, and residual-after-attention summaries from the TransformerLens cache.
-
----
-
-## Project Structure
-
-```
-├── eur_ts/             # Europa Training Suite canonical Python package
-│   ├── generator/      # Stratified arithmetic data generation
-│   ├── trainer/        # Model, training, inference, interpretability
-│   └── evaluator/      # Stratified evaluation & error analysis
-├── eur_is/             # Interactive analysis web interface
-│   ├── backend/        # FastAPI API server
-│   └── frontend/       # React + Vite + circuitsvis SPA
-├── tests/              # Pytest smoke tests for canonical core behavior
-└── info/               # Researcher-facing documentation
-```
-
----
-
-## Key Constraints
-
-- **Resume is epoch-boundary only** — optimizer and RNG state are saved, but training resumes from `checkpoint_epoch + 1`, not mid-epoch.
-- **Checkpoints are self-contained** — they embed the tokenizer and model architecture; incompatible across code changes.
-- **GPU expected** — PyTorch is pinned to `pytorch-cu128` (CUDA 12.8). CPU fallback works but is slow.
-- **Tests are smoke-focused** — the pytest suite covers core canonical generator, trainer, model, and evaluator behavior.
-- **Project venv** is `.venv/` (gitignored). Use `uv run` for all commands.
-- `data/old/`, `runs/old/`, `.agents/*/old` are gitignored scratch directories.
+- Resume support is available at epoch boundaries, not mid-epoch.
+- Checkpoints are not guaranteed to stay compatible across architecture changes.
+- The project expects `uv run ...` entrypoints rather than ad hoc top-level scripts.

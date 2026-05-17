@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,12 @@ from eur_is.backend.model_utils import load_hooked_resources
 logger = logging.getLogger(__name__)
 
 DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
-CHECKPOINT_PATH: Path = Path("runs/test-extended-plus/checkpoint-best.pt")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_CHECKPOINT_PATH = PROJECT_ROOT / "runs/test-extended-plus/checkpoint-best.pt"
+CHECKPOINT_ENV_VAR = "EUR_IS_CHECKPOINT_PATH"
+CHECKPOINT_PATH: Path = Path(
+    os.environ.get(CHECKPOINT_ENV_VAR) or str(DEFAULT_CHECKPOINT_PATH)
+).resolve()
 
 model: Any = None
 tokenizer: Any = None
@@ -21,7 +27,7 @@ checkpoint_metadata: dict[str, Any] = {}
 
 
 def load_resources() -> None:
-    """Load model, tokenizer, and metadata from the fixed checkpoint path."""
+    """Load model, tokenizer, and metadata from the configured checkpoint path."""
     global model, tokenizer, checkpoint_metadata
     if model is None or tokenizer is None:
         if not CHECKPOINT_PATH.exists():

@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import Any, TypedDict
 
 import torch
+
+
+class NetworkOptions(TypedDict):
+    mlp_threshold: float
+    top_k: int
+    top_neurons: int
+    selected_token_index: int | None
 
 
 def clamp_network_options(
@@ -13,12 +20,14 @@ def clamp_network_options(
     top_neurons: int,
     selected_token_index: int | None,
     token_count: int,
-) -> dict[str, int | float | None]:
+) -> NetworkOptions:
     return {
         "mlp_threshold": max(0.0, min(float(mlp_threshold), 100.0)),
         "top_k": max(1, min(int(top_k), 10)),
         "top_neurons": max(1, min(int(top_neurons), 24)),
-        "selected_token_index": _clamp_optional_index(selected_token_index, token_count),
+        "selected_token_index": _clamp_optional_index(
+            selected_token_index, token_count
+        ),
     }
 
 
@@ -56,8 +65,12 @@ def extract_network_analysis(
             warnings.append(f"Missing residual-mid hook for layer {layer_idx}.")
         if post_key is None:
             warnings.append(f"Missing residual-post hook for layer {layer_idx}.")
-        residual_mid_layers.append(_without_batch(residual_mid) if residual_mid is not None else None)
-        residual_post_layers.append(_without_batch(residual_post) if residual_post is not None else None)
+        residual_mid_layers.append(
+            _without_batch(residual_mid) if residual_mid is not None else None
+        )
+        residual_post_layers.append(
+            _without_batch(residual_post) if residual_post is not None else None
+        )
 
     final_residual = next(
         (layer for layer in reversed(residual_post_layers) if layer is not None),
@@ -102,7 +115,9 @@ def extract_network_analysis(
     }
 
 
-def get_cache_tensor(cache: Any, candidates: list[str]) -> tuple[torch.Tensor | None, str | None]:
+def get_cache_tensor(
+    cache: Any, candidates: list[str]
+) -> tuple[torch.Tensor | None, str | None]:
     for key in candidates:
         try:
             value = cache[key]
@@ -161,8 +176,12 @@ def _build_network_mlp_summary(
                         "active_fraction_abs": _finite_float(
                             (post.abs() > threshold).float().mean(), warnings=warnings
                         ),
-                        "mean_abs_activation": _finite_float(post.abs().mean(), warnings=warnings),
-                        "max_abs_activation": _finite_float(post.abs().max(), warnings=warnings),
+                        "mean_abs_activation": _finite_float(
+                            post.abs().mean(), warnings=warnings
+                        ),
+                        "max_abs_activation": _finite_float(
+                            post.abs().max(), warnings=warnings
+                        ),
                     },
                     "tokens": token_rows,
                 }
@@ -174,7 +193,9 @@ def _build_network_mlp_summary(
             [f"blocks.{layer_idx}.hook_mlp_out", f"blocks.{layer_idx}.mlp.hook_out"],
         )
         if mlp_out is None:
-            warnings.append(f"Missing MLP hidden and output hooks for layer {layer_idx}.")
+            warnings.append(
+                f"Missing MLP hidden and output hooks for layer {layer_idx}."
+            )
             layers.append(
                 {
                     "layer": layer_idx,
@@ -201,7 +222,9 @@ def _build_network_mlp_summary(
                     {
                         "token_index": token_idx,
                         "token": tokens[token_idx],
-                        "output_norm": _finite_float(norms[token_idx], warnings=warnings),
+                        "output_norm": _finite_float(
+                            norms[token_idx], warnings=warnings
+                        ),
                         "top_neurons": [],
                     }
                     for token_idx in range(mlp_out.shape[0])
@@ -235,16 +258,24 @@ def _summarize_mlp_token(
         "token_index": token_index,
         "token": token,
         "active_count_positive": int(positive.sum().item()),
-        "active_fraction_positive": _finite_float(positive.float().mean(), warnings=warnings),
+        "active_fraction_positive": _finite_float(
+            positive.float().mean(), warnings=warnings
+        ),
         "active_count_abs": int(absolute.sum().item()),
-        "active_fraction_abs": _finite_float(absolute.float().mean(), warnings=warnings),
-        "mean_abs_activation": _finite_float(activations.abs().mean(), warnings=warnings),
+        "active_fraction_abs": _finite_float(
+            absolute.float().mean(), warnings=warnings
+        ),
+        "mean_abs_activation": _finite_float(
+            activations.abs().mean(), warnings=warnings
+        ),
         "max_activation": _finite_float(activations.max(), warnings=warnings),
         "max_abs_activation": _finite_float(activations.abs().max(), warnings=warnings),
         "top_neurons": [
             {
                 "neuron_index": int(neuron_idx.item()),
-                "value": _finite_float(activations[int(neuron_idx.item())], warnings=warnings),
+                "value": _finite_float(
+                    activations[int(neuron_idx.item())], warnings=warnings
+                ),
                 "abs_value": _finite_float(abs_value, warnings=warnings),
             }
             for abs_value, neuron_idx in zip(top_values, top_indices, strict=False)
@@ -265,7 +296,10 @@ def _build_network_attention_summary(
         )
         result, result_key = get_cache_tensor(
             cache,
-            [f"blocks.{layer_idx}.attn.hook_result", f"blocks.{layer_idx}.hook_attn_out"],
+            [
+                f"blocks.{layer_idx}.attn.hook_result",
+                f"blocks.{layer_idx}.hook_attn_out",
+            ],
         )
         if pattern is None:
             warnings.append(f"Missing attention pattern hook for layer {layer_idx}.")
@@ -280,7 +314,11 @@ def _build_network_attention_summary(
             continue
 
         pattern = _without_batch(pattern).float()
-        result_norms = _attention_result_norms(result, model.cfg.n_heads) if result is not None else None
+        result_norms = (
+            _attention_result_norms(result, model.cfg.n_heads)
+            if result is not None
+            else None
+        )
         available_layers += 1
         layers.append(
             {
@@ -329,25 +367,37 @@ def _summarize_attention_head(
     key_index = max_index % key_count
     diagonal_count = min(query_count, key_count)
     diagonal = head_pattern[:diagonal_count, :diagonal_count].diagonal()
-    previous = torch.stack(
-        [head_pattern[index, index - 1] for index in range(1, diagonal_count)]
-    ) if diagonal_count > 1 else torch.zeros(1, device=head_pattern.device)
+    previous = (
+        torch.stack(
+            [head_pattern[index, index - 1] for index in range(1, diagonal_count)]
+        )
+        if diagonal_count > 1
+        else torch.zeros(1, device=head_pattern.device)
+    )
     argmax_keys = torch.argmax(head_pattern, dim=-1)
 
     return {
         "layer": layer_idx,
         "head": head_idx,
         "mean_entropy": _finite_float(entropy_by_query.mean(), warnings=warnings),
-        "entropy_by_query": [_finite_float(value, warnings=warnings) for value in entropy_by_query],
+        "entropy_by_query": [
+            _finite_float(value, warnings=warnings) for value in entropy_by_query
+        ],
         "max_weight": _finite_float(head_pattern.max(), warnings=warnings),
-        "self_attention_mass": _finite_float(diagonal.mean(), warnings=warnings) if diagonal.numel() else 0.0,
-        "previous_token_mass": _finite_float(previous.mean(), warnings=warnings) if previous.numel() else 0.0,
+        "self_attention_mass": _finite_float(diagonal.mean(), warnings=warnings)
+        if diagonal.numel()
+        else 0.0,
+        "previous_token_mass": _finite_float(previous.mean(), warnings=warnings)
+        if previous.numel()
+        else 0.0,
         "strongest_pair": {
             "query_index": query_index,
             "query_token": tokens[query_index],
             "key_index": key_index,
             "key_token": tokens[key_index],
-            "weight": _finite_float(head_pattern[query_index, key_index], warnings=warnings),
+            "weight": _finite_float(
+                head_pattern[query_index, key_index], warnings=warnings
+            ),
         },
         "argmax_keys": [
             {
@@ -355,7 +405,9 @@ def _summarize_attention_head(
                 "query_token": tokens[query_idx],
                 "key_index": int(key_idx.item()),
                 "key_token": tokens[int(key_idx.item())],
-                "weight": _finite_float(head_pattern[query_idx, int(key_idx.item())], warnings=warnings),
+                "weight": _finite_float(
+                    head_pattern[query_idx, int(key_idx.item())], warnings=warnings
+                ),
             }
             for query_idx, key_idx in enumerate(argmax_keys)
         ],
@@ -379,7 +431,9 @@ def _build_network_residual_summary(
     available_layers = 0
 
     for layer_idx in range(model.cfg.n_layers):
-        resid_pre, pre_key = get_cache_tensor(cache, [f"blocks.{layer_idx}.hook_resid_pre"])
+        resid_pre, pre_key = get_cache_tensor(
+            cache, [f"blocks.{layer_idx}.hook_resid_pre"]
+        )
         resid_mid = residual_mid_layers[layer_idx]
         if resid_mid is None:
             layers.append(
@@ -423,7 +477,9 @@ def _build_network_residual_summary(
                         token=tokens[token_idx],
                         token_index=token_idx,
                         top_dimensions=top_dimensions,
-                        logit_lens=logit_lens[token_idx] if logit_lens is not None else [],
+                        logit_lens=logit_lens[token_idx]
+                        if logit_lens is not None
+                        else [],
                         warnings=warnings,
                     )
                     for token_idx in range(resid_mid.shape[0])
@@ -452,15 +508,21 @@ def _summarize_residual_token(
     vector = resid_mid[token_index]
     delta_norm = None
     if resid_pre is not None:
-        delta_norm = _finite_float(torch.linalg.vector_norm(vector - resid_pre[token_index]), warnings=warnings)
+        delta_norm = _finite_float(
+            torch.linalg.vector_norm(vector - resid_pre[token_index]), warnings=warnings
+        )
 
     previous_cosine = None
     if previous_mid is not None:
-        previous_cosine = _cosine_similarity(vector, previous_mid[token_index].float(), warnings=warnings)
+        previous_cosine = _cosine_similarity(
+            vector, previous_mid[token_index].float(), warnings=warnings
+        )
 
     final_cosine = None
     if final_residual is not None:
-        final_cosine = _cosine_similarity(vector, final_residual[token_index].float(), warnings=warnings)
+        final_cosine = _cosine_similarity(
+            vector, final_residual[token_index].float(), warnings=warnings
+        )
 
     top_values, top_indices = torch.topk(
         vector.abs(),
@@ -477,7 +539,9 @@ def _summarize_residual_token(
         "top_dimensions": [
             {
                 "dimension": int(dimension.item()),
-                "value": _finite_float(vector[int(dimension.item())], warnings=warnings),
+                "value": _finite_float(
+                    vector[int(dimension.item())], warnings=warnings
+                ),
                 "abs_value": _finite_float(abs_value, warnings=warnings),
             }
             for abs_value, dimension in zip(top_values, top_indices, strict=False)
@@ -514,7 +578,9 @@ def _logit_lens_top_k(
                 {
                     "token": tokenizer.id_to_token[int(token_idx.item())],
                     "probability": _finite_float(probability, warnings=warnings),
-                    "logit": _finite_float(logits[position, int(token_idx.item())], warnings=warnings),
+                    "logit": _finite_float(
+                        logits[position, int(token_idx.item())], warnings=warnings
+                    ),
                 }
                 for probability, token_idx in zip(
                     top_probabilities[position],

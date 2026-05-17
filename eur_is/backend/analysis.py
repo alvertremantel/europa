@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import Any, TypedDict
 
 import numpy as np
+
+
+class PredictionSummary(TypedDict):
+    token: str
+    confidence: float
+    logit: float
 
 
 def build_top_prediction_summaries(
@@ -12,13 +18,13 @@ def build_top_prediction_summaries(
     logits: np.ndarray,
     tokens_by_id: list[str],
     top_k: int = 5,
-) -> tuple[list[dict[str, float | str]], list[list[dict[str, float | str]]]]:
-    top_predictions: list[dict[str, float | str]] = []
-    top_k_predictions: list[list[dict[str, float | str]]] = []
+) -> tuple[list[PredictionSummary], list[list[PredictionSummary]]]:
+    top_predictions: list[PredictionSummary] = []
+    top_k_predictions: list[list[PredictionSummary]] = []
 
     top_indices = np.argsort(probs, axis=-1)[:, -top_k:][:, ::-1]
     for position, indices in enumerate(top_indices):
-        ranked: list[dict[str, float | str]] = []
+        ranked: list[PredictionSummary] = []
         for token_index in indices:
             ranked.append(
                 {
@@ -47,7 +53,9 @@ def build_attention_summary(
             max_index = int(np.argmax(head_attention))
             query_index, key_index = divmod(max_index, key_count)
             diagonal_extent = min(query_count, key_count)
-            diagonal_mean = float(np.diag(head_attention[:diagonal_extent, :diagonal_extent]).mean())
+            diagonal_mean = float(
+                np.diag(head_attention[:diagonal_extent, :diagonal_extent]).mean()
+            )
 
             layer_heads.append(
                 {
@@ -78,7 +86,9 @@ def build_activation_summary(*, stacked_activations: np.ndarray) -> dict[str, An
         "layer_mean_l2": token_layer_norms.mean(axis=0).tolist(),
         "layer_peak_l2": token_layer_norms.max(axis=0).tolist(),
         "token_peak_l2": token_layer_norms.max(axis=1).tolist(),
-        "global_max_abs": float(token_layer_max_abs.max()) if token_layer_max_abs.size else 0.0,
+        "global_max_abs": float(token_layer_max_abs.max())
+        if token_layer_max_abs.size
+        else 0.0,
     }
 
 

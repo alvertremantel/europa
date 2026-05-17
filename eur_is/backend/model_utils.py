@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any, cast
 
@@ -10,6 +11,8 @@ from eur_ts.config import ModelConfig
 from eur_ts.trainer.data import ArithmeticTokenizer
 from eur_ts.trainer.model import SmallCausalTransformer
 from eur_ts.trainer.training.checkpointing import load_checkpoint_payload
+
+logger = logging.getLogger(__name__)
 
 
 def get_hooked_model(checkpoint_path: Path, device: str = "cpu") -> HookedTransformer:
@@ -183,5 +186,15 @@ def _build_hooked_model(
         config_dict["vocab_size"], device=device
     )
 
-    model.load_state_dict(new_state_dict, strict=False)
+    incompatible_keys = model.load_state_dict(new_state_dict, strict=False)
+    if incompatible_keys.missing_keys:
+        logger.warning(
+            "Missing HookedTransformer state keys while loading checkpoint: %s",
+            incompatible_keys.missing_keys,
+        )
+    if incompatible_keys.unexpected_keys:
+        logger.warning(
+            "Unexpected checkpoint state keys while loading HookedTransformer: %s",
+            incompatible_keys.unexpected_keys,
+        )
     return model

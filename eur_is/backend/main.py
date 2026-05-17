@@ -14,7 +14,10 @@ from eur_is.backend.analysis import (
     build_top_prediction_summaries,
     summarize_checkpoint,
 )
-from eur_is.backend.network_analysis import clamp_network_options, extract_network_analysis
+from eur_is.backend.network_analysis import (
+    clamp_network_options,
+    extract_network_analysis,
+)
 from eur_is.backend.schemas import (
     ActivationSummaryResponse,
     AnalyzeRequest,
@@ -60,8 +63,8 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
 
     model = settings.model
     tokenizer = settings.tokenizer
-    assert tokenizer is not None
-    assert model is not None
+    if tokenizer is None or model is None:
+        raise HTTPException(status_code=503, detail="Model resources are unavailable.")
 
     try:
         token_ids = tokenizer.encode_prompt(cleaned_prompt)
