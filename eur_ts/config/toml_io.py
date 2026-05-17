@@ -10,6 +10,7 @@ from eur_ts.trainer.curriculum import PRESETS
 from .schema import TrainConfig
 
 ALLOWED_TRAINING_MODES = {"token_stream", "examples"}
+ALLOWED_POSITION_ENCODINGS = {"absolute", "digit_roles"}
 ALLOWED_TRAINING_FORMATS = {
     "final_only",
     "light_scratchpad",
@@ -39,6 +40,7 @@ SECTION_SPECS: dict[str, dict[str, tuple[str, type, bool]]] = {
         "n_layers": ("n_layers", int, True),
         "mlp_hidden": ("mlp_hidden", int, True),
         "dropout": ("dropout", float, True),
+        "position_encoding": ("position_encoding", str, True),
     },
     "optimization": {
         "batch_size": ("batch_size", int, True),
@@ -106,6 +108,7 @@ def load_train_config(path: Path) -> TrainConfig:
         n_layers=_required_int(values, "n_layers"),
         mlp_hidden=_required_int(values, "mlp_hidden"),
         dropout=_required_float(values, "dropout"),
+        position_encoding=_required_str(values, "position_encoding"),
         checkpoint_keep_last=_required_int(values, "checkpoint_keep_last"),
         checkpoint_max_kept=_required_int(values, "checkpoint_max_kept"),
         checkpoint_keep_best=_required_int(values, "checkpoint_keep_best"),
@@ -283,6 +286,11 @@ def _validate_semantics(values: Mapping[str, object]) -> None:
     training_mode = values["training_mode"]
     if training_mode not in ALLOWED_TRAINING_MODES:
         errors.append(f"training_mode must be one of {sorted(ALLOWED_TRAINING_MODES)}")
+    position_encoding = values["position_encoding"]
+    if position_encoding not in ALLOWED_POSITION_ENCODINGS:
+        errors.append(
+            f"position_encoding must be one of {sorted(ALLOWED_POSITION_ENCODINGS)}"
+        )
     training_format = values["training_format"]
     if training_format not in ALLOWED_TRAINING_FORMATS:
         errors.append(

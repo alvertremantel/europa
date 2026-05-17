@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 from fastapi.testclient import TestClient
 
-from eur_is.backend import main, settings
+from eur_is.backend import main, model_utils, settings
 from eur_ts.trainer.data import ArithmeticTokenizer
 
 
@@ -134,3 +134,34 @@ def test_analyze_returns_full_generated_answer_and_correctness(monkeypatch) -> N
     assert len(payload["generated_answer_top_k"]) == 8
     assert payload["generated_answer_top_k"][0]["token"] == "7"
     assert payload["top_predictions"][payload["answer_position"]]["token"] == "7"
+
+
+def test_load_hooked_resources_rejects_digit_role_checkpoints(monkeypatch) -> None:
+    tokenizer = ArithmeticTokenizer()
+
+    monkeypatch.setattr(
+        model_utils,
+        "load_checkpoint_payload",
+        lambda _path, _device: {
+            "tokenizer": {"vocab": tokenizer.id_to_token},
+            "model_state": {},
+            "model_config": {
+                "vocab_size": tokenizer.vocab_size,
+                "sequence_length": 32,
+                "d_model": 16,
+                "n_heads": 4,
+                "n_layers": 1,
+                "mlp_hidden": 32,
+                "dropout": 0.0,
+                "position_encoding": "digit_roles",
+                "position_vocab_size": 9,
+            },
+        },
+    )
+
+    try:
+        model_utils.load_hooked_resources(Path("dummy.pt"))
+    except ValueError as error:
+        assert "absolute positional embeddings" in str(error)
+    else:
+        raise AssertionError("expected digit_roles checkpoints to be rejected")

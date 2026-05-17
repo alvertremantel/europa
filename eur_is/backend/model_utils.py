@@ -8,7 +8,7 @@ import torch
 from transformer_lens import HookedTransformer, HookedTransformerConfig
 
 from eur_ts.config import ModelConfig
-from eur_ts.trainer.data import ArithmeticTokenizer
+from eur_ts.trainer.data import ArithmeticTokenizer, POSITION_ENCODING_ABSOLUTE
 from eur_ts.trainer.model import SmallCausalTransformer
 from eur_ts.trainer.training.checkpointing import load_checkpoint_payload
 
@@ -48,6 +48,14 @@ def load_hooked_resources(
             model_config = cast(dict[str, Any], legacy_config.__dict__)
         else:
             raise ValueError("checkpoint is missing model_config")
+    position_encoding = cast(
+        str,
+        model_config.get("position_encoding") or POSITION_ENCODING_ABSOLUTE,
+    )
+    if position_encoding != POSITION_ENCODING_ABSOLUTE:
+        raise ValueError(
+            "TransformerLens backend support is currently limited to checkpoints with absolute positional embeddings"
+        )
 
     model = _build_hooked_model(
         state_dict=cast(dict[str, torch.Tensor], model_state),

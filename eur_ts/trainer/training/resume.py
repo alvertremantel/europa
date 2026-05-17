@@ -10,7 +10,12 @@ from typing import cast
 import torch
 
 from eur_ts.config import ModelConfig, TrainConfig
-from ..data import ArithmeticTokenizer, vocab_for_training_format
+from ..data import (
+    ArithmeticTokenizer,
+    POSITION_ENCODING_ABSOLUTE,
+    POSITION_ROLE_VOCAB_SIZE,
+    vocab_for_training_format,
+)
 from ..model import SmallCausalTransformer
 
 from .checkpointing import best_exact_match_from_history, load_checkpoint_payload
@@ -54,6 +59,8 @@ def initialize_training_state(
             n_layers=config.n_layers,
             mlp_hidden=config.mlp_hidden,
             dropout=config.dropout,
+            position_encoding=config.position_encoding,
+            position_vocab_size=POSITION_ROLE_VOCAB_SIZE,
         )
         model = SmallCausalTransformer(model_config).to(device)
         optimizer = torch.optim.AdamW(
@@ -99,6 +106,16 @@ def initialize_training_state(
         n_layers=_as_int(state["n_layers"], "model_config.n_layers"),
         mlp_hidden=_as_int(state["mlp_hidden"], "model_config.mlp_hidden"),
         dropout=_as_float(state["dropout"], "model_config.dropout"),
+        position_encoding=_as_optional_str(
+            state.get("position_encoding"),
+            "model_config.position_encoding",
+            default=POSITION_ENCODING_ABSOLUTE,
+        ),
+        position_vocab_size=_as_optional_int(
+            state.get("position_vocab_size"),
+            "model_config.position_vocab_size",
+            default=POSITION_ROLE_VOCAB_SIZE,
+        ),
     )
 
     for field_name in (
@@ -108,6 +125,7 @@ def initialize_training_state(
         "n_layers",
         "mlp_hidden",
         "dropout",
+        "position_encoding",
     ):
         requested = getattr(config, field_name)
         actual = getattr(model_config, field_name)
@@ -246,3 +264,17 @@ def _as_float(value: object, field_name: str) -> float:
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise ValueError(f"{field_name} must be numeric")
     return float(value)
+
+
+def _as_optional_str(value: object, field_name: str, *, default: str) -> str:
+    if value is None:
+        return default
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} must be a string")
+    return value
+
+
+def _as_optional_int(value: object, field_name: str, *, default: int) -> int:
+    if value is None:
+        return default
+    return _as_int(value, field_name)

@@ -20,7 +20,7 @@ from ..data import (
     ExampleSequenceDataset,
     TokenBlockDataset,
     load_examples,
-    load_token_stream,
+    load_token_stream_with_roles,
     transform_examples,
 )
 from ..inference import (
@@ -94,9 +94,12 @@ def train_model(config: TrainConfig) -> None:
         )
     )
 
-    val_tokens = load_token_stream(data_dir / "val.txt", tokenizer)
+    val_tokens, val_position_ids = load_token_stream_with_roles(
+        data_dir / "val.txt", tokenizer
+    )
     val_dataset = TokenBlockDataset(
         val_tokens,
+        val_position_ids,
         effective_model_config.sequence_length,
     )
     if len(val_dataset) == 0:
@@ -106,7 +109,8 @@ def train_model(config: TrainConfig) -> None:
 
     train_examples: list[ArithmeticExample] | None = None
     static_train_loader: (
-        DataLoader[tuple[Tensor, Tensor]] | DataLoader[tuple[Tensor, Tensor, Tensor]]
+        DataLoader[tuple[Tensor, Tensor, Tensor]]
+        | DataLoader[tuple[Tensor, Tensor, Tensor, Tensor]]
     )
     if config.training_mode == "token_stream":
         if config.training_format != "final_only":
@@ -117,9 +121,12 @@ def train_model(config: TrainConfig) -> None:
             raise ValueError(
                 'curriculum presets require training.training_mode = "examples"'
             )
-        train_tokens = load_token_stream(data_dir / "train.txt", tokenizer)
+        train_tokens, train_position_ids = load_token_stream_with_roles(
+            data_dir / "train.txt", tokenizer
+        )
         train_dataset = TokenBlockDataset(
             train_tokens,
+            train_position_ids,
             effective_model_config.sequence_length,
         )
         if len(train_dataset) == 0:
@@ -308,20 +315,34 @@ def train_model(config: TrainConfig) -> None:
 
         for step, batch in enumerate(train_loader, start=1):
             if config.training_mode == "examples":
-                inputs, targets, loss_mask = batch
+                inputs, input_position_ids, targets, loss_mask = batch
             else:
-                inputs, targets = batch
+                inputs, input_position_ids, targets = batch
                 loss_mask = None
             inputs = inputs.to(device, non_blocking=device.type == "cuda")
+            input_position_ids = input_position_ids.to(
+                device, non_blocking=device.type == "cuda"
+            )
             targets = targets.to(device, non_blocking=device.type == "cuda")
             if loss_mask is not None:
                 loss_mask = loss_mask.to(device, non_blocking=device.type == "cuda")
 
             optimizer.zero_grad(set_to_none=True)
             if loss_mask is None:
-                loss = loss_for_batch(model, inputs, targets)
+                loss = loss_for_batch(
+                    model,
+                    inputs,
+                    targets,
+                    position_ids=input_position_ids,
+                )
             else:
-                loss = loss_for_example_batch(model, inputs, targets, loss_mask).mean()
+                loss = loss_for_example_batch(
+                    model,
+                    inputs,
+                    targets,
+                    loss_mask,
+                    position_ids=input_position_ids,
+                ).mean()
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=config.grad_clip)
             optimizer.step()
