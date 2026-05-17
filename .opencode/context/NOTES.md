@@ -1,23 +1,22 @@
 # Notes
 
 ## Current state
-- Canonical Python packages now live under `eur_ts/` and the canonical web app lives under `eur_is/`.
-- Legacy roots `generator/`, `trainer/`, `evaluator/`, and `web_app/backend/` are compatibility shims.
-- CLI entrypoints now resolve to canonical modules while preserving `uv run generate`, `uv run train`, and `uv run evaluate` behavior.
-- `AGENTS.md`, `README.md`, verification scripts, and web READMEs were updated to the new canonical paths.
+- Canonical Python packages live under `eur_ts/`; the canonical web app lives under `eur_is/`.
+- Legacy roots `generator/`, `trainer/`, `evaluator/`, and `web_app/` have been removed.
+- CLI entrypoints resolve directly to canonical modules while preserving `uv run generate`, `uv run train`, and `uv run evaluate` behavior.
+- Packaging now includes only `eur_ts` and `eur_is`; pytest is in the dev dependency group.
+- `tests/` contains smoke coverage for generator validation, trainer formatting/tokenization, model forward shape, and evaluator summary math.
 
 ## Active work
-- Main package rehome + web rename refactor is complete and verified.
-- Context files refreshed after the reorganization.
+- Legacy shim removal and core smoke-test addition are complete; changes are ready to commit.
 
 ## Immediate next steps
-- Watch for drift between `eur_is/frontend/` and the legacy `web_app/frontend/` copy if more frontend work lands.
-- If desired later, replace the legacy frontend copy with a lighter compatibility approach.
-- Future refactors should import from `eur_ts.*` / `eur_is.*` first, not from shim packages.
+- Use canonical imports (`eur_ts.*` / `eur_is.*`) in all future code and docs.
+- If checkpoint behavior changes, preserve payload compatibility for existing run artifacts.
 
 ## Durable notes / decisions
 - Use `eur_ts` / `eur_is` for canonical imports; hyphenated names are branding only.
-- Keep checkpoint compatibility in mind: old top-level trainer/generator/evaluator imports still matter.
+- Keep checkpoint payload compatibility in mind, but old top-level trainer/generator/evaluator import shims are gone.
 - Backend command: `uv run uvicorn eur_is.backend.main:app --reload`.
 - Frontend app directory: `eur_is/frontend/`.
-- No test suite exists; rely on `uv run ruff check .`, CLI help/import smokes, targeted script checks, and frontend `npm run build` / `npm run lint`.
+- Use `uv run pytest`, `uv run ruff check .`, CLI help/import smokes, targeted script checks, and frontend `npm run build` / `npm run lint`.

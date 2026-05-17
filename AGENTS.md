@@ -21,11 +21,11 @@ uv run evaluate --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-d
 
 Lint: `uv run ruff check .`
 
-No test suite exists.
+Tests: `uv run pytest`
 
 ## Architecture
 
-Canonical training code now lives under one `eur_ts/` package root, while legacy top-level packages remain compatibility shims:
+Canonical training code lives under one `eur_ts/` package root:
 
 | Package | Purpose |
 |---|---|
@@ -35,8 +35,7 @@ Canonical training code now lives under one `eur_ts/` package root, while legacy
 
 Supporting:
 - `eur_is/` — FastAPI backend (`eur_is/backend/main.py`) + React/Vite frontend (`eur_is/frontend/`). Backend hardcodes checkpoint path at `runs/test-extended-plus/checkpoint-best.pt`.
-- `generator/`, `trainer/`, `evaluator/`, and `web_app/backend/` — compatibility shims for legacy imports and commands.
-- `web_app/frontend/` — legacy frontend copy; canonical frontend lives under `eur_is/frontend/`.
+- `tests/` — pytest smoke tests for core canonical generator/trainer/evaluator behavior.
 - `info/` — Researcher-facing repository notes and workflow documentation.
 
 ## Dataset format

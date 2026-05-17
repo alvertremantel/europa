@@ -24,6 +24,7 @@ evaluate = "eur_ts.evaluator.cli:main"
 
 [dependency-groups]
 dev = [
+    "pytest>=9,<10",
     "ruff>=0.15.10",
 ]
 
@@ -31,7 +32,7 @@ dev = [
 package = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["generator", "trainer", "evaluator", "web_app", "eur_ts", "eur_is"]
+packages = ["eur_ts", "eur_is"]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cu128" }

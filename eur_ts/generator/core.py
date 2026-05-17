@@ -1,6 +1,6 @@
 """Public generator facade.
 
-This module is the stable import surface for compatibility shims and scripts.
+This module is the stable import surface for scripts and downstream users.
 Keep exports explicit so implementation-module additions do not accidentally
 become part of the facade contract.
 """

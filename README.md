@@ -31,6 +31,7 @@ uv run evaluate --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-d
 ```
 
 Lint: `uv run ruff check .`
+Tests: `uv run pytest`
 
 ---
 
@@ -243,7 +244,7 @@ Forward-hook system (`eur_ts/trainer/hooks.py`) that captures all intermediate s
 
 ### `InterpreterVisualizer`
 
-Matplotlib-based visualizations (`eur_ts/trainer/visualization/` with `trainer/visualizer.py` retained as a compatibility shim):
+Matplotlib-based visualizations (`eur_ts/trainer/visualization/`):
 
 - Activation heatmaps (per-layer and overview)
 - Attention pattern grids
@@ -279,10 +280,7 @@ The backend hardcodes the checkpoint at `runs/test-extended-plus/checkpoint-best
 ├── eur_is/             # Interactive analysis web interface
 │   ├── backend/        # FastAPI API server
 │   └── frontend/       # React + Vite + circuitsvis SPA
-├── generator/          # Compatibility shim package for legacy imports
-├── trainer/            # Compatibility shim package for legacy imports
-├── evaluator/          # Compatibility shim package for legacy imports
-├── web_app/            # Legacy backend shim path
+├── tests/              # Pytest smoke tests for canonical core behavior
 └── info/               # Researcher-facing documentation
 ```
 
@@ -293,6 +291,6 @@ The backend hardcodes the checkpoint at `runs/test-extended-plus/checkpoint-best
 - **Resume is epoch-boundary only** — optimizer and RNG state are saved, but training resumes from `checkpoint_epoch + 1`, not mid-epoch.
 - **Checkpoints are self-contained** — they embed the tokenizer and model architecture; incompatible across code changes.
 - **GPU expected** — PyTorch is pinned to `pytorch-cu128` (CUDA 12.8). CPU fallback works but is slow.
-- **No test suite** — the project has no automated tests.
+- **Tests are smoke-focused** — the pytest suite covers core canonical generator, trainer, model, and evaluator behavior.
 - **Project venv** is `.venv/` (gitignored). Use `uv run` for all commands.
 - `data/old/`, `runs/old/`, `.agents/*/old` are gitignored scratch directories.
