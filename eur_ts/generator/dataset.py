@@ -19,6 +19,7 @@ from .config import (
 from .kinds import iter_kind_specs
 from .parsing import validate_line
 from .sampling import (
+    Sample,
     build_exhaustive_binary_samples,
     build_sampled_kind_samples,
     format_sample,
@@ -36,7 +37,7 @@ def generate_dataset(config: Config) -> None:
     ensure_directory(output_dir)
 
     kind_specs = iter_kind_specs()
-    candidate_samples: dict[str, list] = {}
+    candidate_samples: dict[str, list[Sample]] = {}
     candidate_counts: dict[str, int] = {}
     kind_definitions: dict[str, dict[str, object]] = {}
     skipped_kinds: dict[str, str] = {}

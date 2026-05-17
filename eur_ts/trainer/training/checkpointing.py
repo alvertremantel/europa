@@ -53,7 +53,9 @@ def build_checkpoint_payload(
         "scheduler_state": scheduler_state,
         "rng_state": rng_state,
         "history": history or [],
-        "best_exact_match": exact_match if best_exact_match is None else best_exact_match,
+        "best_exact_match": exact_match
+        if best_exact_match is None
+        else best_exact_match,
         "global_step": global_step,
         "checkpoint_roles": checkpoint_roles or [],
         "resume_source": resume_source,
@@ -62,7 +64,9 @@ def build_checkpoint_payload(
             "scheduler_state": scheduler_state,
             "rng_state": rng_state,
             "history": history or [],
-            "best_exact_match": exact_match if best_exact_match is None else best_exact_match,
+            "best_exact_match": exact_match
+            if best_exact_match is None
+            else best_exact_match,
             "global_step": global_step,
             "checkpoint_roles": checkpoint_roles or [],
             "resume_source": resume_source,
@@ -100,7 +104,9 @@ def load_model_checkpoint(
     tokenizer_state = payload.get("tokenizer")
     if not isinstance(tokenizer_state, dict):
         raise ValueError("checkpoint is missing tokenizer state")
-    tokenizer = ArithmeticTokenizer.from_state(cast(dict[str, list[str]], tokenizer_state))
+    tokenizer = ArithmeticTokenizer.from_state(
+        cast(dict[str, list[str]], tokenizer_state)
+    )
 
     model_config = _model_config_from_payload(payload)
     model = SmallCausalTransformer(model_config)
@@ -181,7 +187,8 @@ class CheckpointManager:
         if not self.manifest_path.exists():
             return {"schema_version": MANIFEST_SCHEMA_VERSION, "records": []}
         return cast(
-            dict[str, object], json.loads(self.manifest_path.read_text(encoding="utf-8"))
+            dict[str, object],
+            json.loads(self.manifest_path.read_text(encoding="utf-8")),
         )
 
     def save_epoch(
@@ -264,10 +271,9 @@ class CheckpointManager:
         if not records:
             return
 
-        last_epochs = {
-            int(record["epoch"])
-            for record in records[-max(self.config.checkpoint_keep_last, 0) :]
-        }
+        keep_last = max(self.config.checkpoint_keep_last, 0)
+        latest_records = records[-keep_last:] if keep_last > 0 else []
+        last_epochs = {int(record["epoch"]) for record in latest_records}
         for record in records:
             roles = cast(list[str], record["roles"])
             epoch = int(record["epoch"])
@@ -298,14 +304,19 @@ class CheckpointManager:
 
         budget = self.config.checkpoint_max_kept
         selected: set[int] = set()
-        latest_records = records[-max(self.config.checkpoint_keep_last, 0) :]
+        keep_last = max(self.config.checkpoint_keep_last, 0)
+        latest_records = records[-keep_last:] if keep_last > 0 else []
         for record in latest_records:
             selected.add(int(record["epoch"]))
         if len(selected) >= budget:
             return set(sorted(selected)[-budget:])
 
         priority_groups = (
-            [record for record in records if "best" in cast(list[str], record["roles"])],
+            [
+                record
+                for record in records
+                if "best" in cast(list[str], record["roles"])
+            ],
             [
                 record
                 for record in records
@@ -346,7 +357,9 @@ class CheckpointManager:
     def _best_available_record(
         self, records: list[dict[str, object]]
     ) -> dict[str, object] | None:
-        available_records = [record for record in records if bool(record.get("available", False))]
+        available_records = [
+            record for record in records if bool(record.get("available", False))
+        ]
         if not available_records:
             return None
         return max(

@@ -1,6 +1,9 @@
-# Europa ALM-IS Frontend
+# Europa ALM-IS Legacy Frontend Shim
 
-React + Vite frontend for the mechanistic interpretability dashboard.
+This directory is a legacy React + Vite frontend entrypoint kept for existing
+workflows. The canonical frontend source lives in `eur_is/frontend/`; this root
+re-exports the canonical `src/App.tsx` and `src/api.ts` stubs so the legacy app
+can still build without carrying duplicate component code.
 
 ## Setup
 
@@ -16,8 +19,9 @@ Run the backend from the repository root:
 uv run uvicorn eur_is.backend.main:app --reload
 ```
 
-Then run the frontend from `eur_is/frontend/` (the canonical location) or keep using
-this legacy copy if needed:
+Prefer running and editing the canonical frontend in `eur_is/frontend/`. If an
+existing workflow still depends on this legacy root, it can be run as a thin
+shim:
 
 ```bash
 npm run dev
@@ -45,6 +49,9 @@ npm run build
 
 ## Notes
 
+- New frontend work should be made under `eur_is/frontend/` first. Do not add
+  copied component implementations under this legacy root unless the shim policy
+  is intentionally changed.
 - Prompts should use reversed zero-padded arithmetic tokens such as
   `02000000 + 01000000 =`.
 - The backend appends `<ans>` automatically before analysis.

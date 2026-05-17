@@ -1,6 +1,114 @@
-from .config import *  # noqa: F401,F403
-from .dataset import ensure_directory, generate_dataset, validate_output  # noqa: F401
-from .kinds import *  # noqa: F401,F403
-from .numbers import *  # noqa: F401,F403
-from .parsing import *  # noqa: F401,F403
-from .sampling import *  # noqa: F401,F403
+"""Public generator facade.
+
+This module is the stable import surface for compatibility shims and scripts.
+Keep exports explicit so implementation-module additions do not accidentally
+become part of the facade contract.
+"""
+
+from .config import (
+    BANDS,
+    BINARY_OPERATIONS,
+    COMPOSITE_OPERATIONS,
+    NUMBER_WIDTH,
+    SAMPLED_KIND_MAX_ATTEMPTS,
+    SAMPLED_TRAIN_SAMPLES_PER_KIND,
+    SPLITS,
+    TEST_SAMPLES_PER_KIND,
+    VAL_SAMPLES_PER_KIND,
+    Band,
+    Config,
+)
+from .dataset import ensure_directory, generate_dataset, validate_output
+from .kinds import (
+    KindSpec,
+    binary_kind_name,
+    iter_kind_specs,
+    negative_kind_name,
+    parentheses_kind_name,
+    three_input_kind_name,
+)
+from .numbers import (
+    canonical_band_pattern,
+    classify_band,
+    fits_number_width,
+    format_signed_number,
+    format_unsigned_number,
+    ordered_band_patterns,
+    parse_signed_number,
+    parse_unsigned_number,
+    pattern_label,
+    stable_hash,
+    wildcard_for_pattern,
+)
+from .parsing import (
+    ParsedSample,
+    parse_binary_expression,
+    parse_line,
+    parse_parentheses_expression,
+    parse_three_input_expression,
+    validate_line,
+)
+from .sampling import (
+    Sample,
+    apply_operation,
+    build_exhaustive_binary_samples,
+    build_sampled_kind_samples,
+    format_sample,
+    random_band_value,
+    random_negative_candidate,
+    random_parentheses_candidate,
+    random_three_input_candidate,
+    shuffled_samples,
+    write_sample,
+)
+
+__all__ = [
+    "BANDS",
+    "BINARY_OPERATIONS",
+    "COMPOSITE_OPERATIONS",
+    "NUMBER_WIDTH",
+    "SAMPLED_KIND_MAX_ATTEMPTS",
+    "SAMPLED_TRAIN_SAMPLES_PER_KIND",
+    "SPLITS",
+    "TEST_SAMPLES_PER_KIND",
+    "VAL_SAMPLES_PER_KIND",
+    "Band",
+    "Config",
+    "KindSpec",
+    "ParsedSample",
+    "Sample",
+    "apply_operation",
+    "binary_kind_name",
+    "build_exhaustive_binary_samples",
+    "build_sampled_kind_samples",
+    "canonical_band_pattern",
+    "classify_band",
+    "ensure_directory",
+    "fits_number_width",
+    "format_sample",
+    "format_signed_number",
+    "format_unsigned_number",
+    "generate_dataset",
+    "iter_kind_specs",
+    "negative_kind_name",
+    "ordered_band_patterns",
+    "parentheses_kind_name",
+    "parse_binary_expression",
+    "parse_line",
+    "parse_parentheses_expression",
+    "parse_signed_number",
+    "parse_three_input_expression",
+    "parse_unsigned_number",
+    "pattern_label",
+    "random_band_value",
+    "random_negative_candidate",
+    "random_parentheses_candidate",
+    "random_three_input_candidate",
+    "shuffled_samples",
+    "stable_hash",
+    "three_input_kind_name",
+    "validate_line",
+    "validate_output",
+    "wildcard_for_pattern",
+    "write_sample",
+]

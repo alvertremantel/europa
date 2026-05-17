@@ -10,12 +10,13 @@ import torch
 
 from eur_ts.trainer.utils import (
     answer_from_line,
+    device_metadata,
     prompt_from_line,
 )
 from eur_ts.trainer.inference import generate_completion
 from eur_ts.trainer.core import load_checkpoint
 
-from .core import BucketStats, bucket_row, sort_kind_rows
+from .core import BucketStats, SelectedExample, bucket_row, sort_kind_rows
 from .sampling import (
     is_canonical_prediction,
     ordered_selected_kinds,
@@ -41,7 +42,7 @@ def run_evaluation(
     kind_definitions: dict[str, dict[str, object]],
     skipped_kinds: dict[str, str],
     expected_counts: dict[str, int] | None,
-    selected_examples: dict[str, list],
+    selected_examples: dict[str, list[SelectedExample]],
     available_counts: dict[str, int],
 ) -> dict[str, object]:
     model, tokenizer = load_checkpoint(checkpoint_path, device)
@@ -92,10 +93,7 @@ def run_evaluation(
 
             evaluated_examples += 1
 
-        if (
-            progress_interval_kinds > 0
-            and kind_index % progress_interval_kinds == 0
-        ):
+        if progress_interval_kinds > 0 and kind_index % progress_interval_kinds == 0:
             print(
                 f"evaluated {kind_index}/{len(ordered_kinds)} kinds "
                 f"({evaluated_examples}/{total_examples} examples)"
@@ -145,8 +143,6 @@ def run_evaluation(
         kind_rows.append(row)
 
     kind_rows = sort_kind_rows(kind_rows, categories)
-
-    from eur_ts.trainer.utils import device_metadata
 
     summary = {
         "checkpoint": str(checkpoint_path),
