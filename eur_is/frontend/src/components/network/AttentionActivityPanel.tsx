@@ -5,7 +5,7 @@ import type { NetworkSelection } from './types'
 
 interface AttentionActivityPanelProps {
   attention: AttentionNetworkSummary
-  rawAttention: number[][][][]
+  rawAttention?: number[][][][] | null
   tokens: string[]
   selection: NetworkSelection
   selectedLayer: number
@@ -77,7 +77,7 @@ export function AttentionActivityPanel({
         )}
       </div>
 
-      {selectedLayerSummary?.availability === 'available' ? (
+      {selectedLayerSummary?.availability === 'available' && rawAttention?.[selectedLayer] ? (
         <div className="circuitsvis-frame">
           <AttentionHeads tokens={tokens} attention={rawAttention[selectedLayer]} />
         </div>

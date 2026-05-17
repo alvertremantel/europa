@@ -1,4 +1,4 @@
-import type { AnalysisResult, HealthResponse } from '../api'
+import type { AnalysisCapabilities, AnalysisResult, HealthResponse } from '../api'
 
 interface ModelStatusCardProps {
   health: HealthResponse | null
@@ -8,6 +8,10 @@ interface ModelStatusCardProps {
 
 export function ModelStatusCard({ health, result, loading }: ModelStatusCardProps) {
   const checkpoint = result?.checkpoint ?? health?.checkpoint ?? null
+  const positionEncoding = result?.position_encoding ?? health?.position_encoding ?? null
+  const analysisRuntime = result?.analysis_runtime ?? health?.analysis_runtime ?? null
+  const capabilities = result?.capabilities ?? health?.capabilities ?? null
+  const limitations = buildCapabilityLimitations(capabilities)
 
   return (
     <section className="card status-card">
@@ -39,9 +43,53 @@ export function ModelStatusCard({ health, result, loading }: ModelStatusCardProp
           <dt>Schema</dt>
           <dd>{checkpoint?.checkpoint_schema_version ?? '—'}</dd>
         </div>
+        <div>
+          <dt>Mode</dt>
+          <dd>{formatPositionEncoding(positionEncoding)}</dd>
+        </div>
+        <div>
+          <dt>Runtime</dt>
+          <dd>{formatRuntime(analysisRuntime)}</dd>
+        </div>
       </dl>
+
+      {limitations.length > 0 ? (
+        <div className="status-card__detail">
+          {limitations.map((limitation) => (
+            <p key={limitation}>{limitation}</p>
+          ))}
+        </div>
+      ) : null}
     </section>
   )
+}
+
+function buildCapabilityLimitations(capabilities: AnalysisCapabilities | null): string[] {
+  if (!capabilities) {
+    return []
+  }
+
+  const limitations: string[] = []
+  if (!capabilities.network_analysis) {
+    limitations.push('Full network analysis is unavailable for this checkpoint mode.')
+  }
+  if (!capabilities.attention_view) {
+    limitations.push('Raw attention patterns are unavailable for this checkpoint mode.')
+  }
+  return limitations
+}
+
+function formatPositionEncoding(value: string | null | undefined): string {
+  if (!value) return '—'
+  if (value === 'digit_roles') return 'digit roles'
+  return value
+}
+
+function formatRuntime(value: string | null | undefined): string {
+  if (!value) return '—'
+  if (value === 'native_pytorch') return 'native PyTorch'
+  if (value === 'transformerlens') return 'TransformerLens'
+  return value
 }
 
 function formatPercent(value: number | null | undefined): string {

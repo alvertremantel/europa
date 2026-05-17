@@ -2,6 +2,8 @@ import axios from 'axios'
 import type { AnalysisResult, AnalyzePromptOptions, HealthResponse } from './types/api'
 
 export type {
+  AnalysisCapabilities,
+  AnalysisRuntime,
   ActivationSummary,
   AnalysisResult,
   ApiErrorDetail,
@@ -24,9 +26,11 @@ export type {
   NetworkAnalysis,
   NetworkControls,
   NetworkWarningAvailability,
+  PositionEncoding,
   ResidualDimensionSummary,
   ResidualLayerSummary,
   ResidualNetworkSummary,
+  RuntimeMetadata,
   ResidualTokenSummary,
   StrongestAttentionPair,
   TopNeuronActivation,

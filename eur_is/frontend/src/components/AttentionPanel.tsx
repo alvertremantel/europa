@@ -13,6 +13,19 @@ export function AttentionPanel({
   selectedLayer,
   onSelectedLayerChange,
 }: AttentionPanelProps) {
+  if (!result.attention || !result.attention_summary) {
+    return (
+      <section className="card panel">
+        <div className="panel__header">
+          <div>
+            <h2>Attention heads</h2>
+            <p>Raw attention patterns are unavailable for the loaded checkpoint mode.</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="card panel">
       <div className="panel__header">

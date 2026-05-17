@@ -43,6 +43,19 @@ export function NetworkPanel({
     [controls, result.answer_position, result.tokens.length],
   )
 
+  if (!result.capabilities?.network_analysis) {
+    return (
+      <section className="card panel network-panel">
+        <div className="panel__header">
+          <div>
+            <h2>Full-network CircuitVis</h2>
+            <p>Full network analysis is unavailable for the loaded checkpoint mode.</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   if (!network) {
     return (
       <section className="card panel network-panel">

@@ -174,6 +174,19 @@ def summarize_checkpoint(
     }
 
 
+def summarize_runtime_metadata(
+    *,
+    position_encoding: str | None,
+    analysis_runtime: str | None,
+    capabilities: dict[str, bool] | None,
+) -> dict[str, Any]:
+    return {
+        "position_encoding": position_encoding,
+        "analysis_runtime": analysis_runtime,
+        "capabilities": capabilities,
+    }
+
+
 def _optional_float(value: Any) -> float | None:
     if value is None:
         return None

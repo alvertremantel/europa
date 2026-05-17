@@ -9,7 +9,7 @@ from typing import Any
 
 import torch
 
-from eur_is.backend.model_utils import load_hooked_resources
+from eur_is.backend.runtime import BaseCheckpointRuntime, load_checkpoint_runtime
 
 logger = logging.getLogger(__name__)
 
@@ -24,20 +24,31 @@ CHECKPOINT_PATH: Path = Path(
 model: Any = None
 tokenizer: Any = None
 checkpoint_metadata: dict[str, Any] = {}
+runtime: BaseCheckpointRuntime | None = None
 
 
 def load_resources() -> None:
-    """Load model, tokenizer, and metadata from the configured checkpoint path."""
-    global model, tokenizer, checkpoint_metadata
-    if model is None or tokenizer is None:
+    """Load model, tokenizer, metadata, and runtime from the checkpoint."""
+    global runtime, model, tokenizer, checkpoint_metadata
+    if runtime is None:
         if not CHECKPOINT_PATH.exists():
             raise RuntimeError(f"Checkpoint not found at {CHECKPOINT_PATH}")
         try:
-            model, tokenizer, checkpoint_metadata = load_hooked_resources(
+            runtime = load_checkpoint_runtime(
                 CHECKPOINT_PATH,
                 device=DEVICE,
             )
+            model = runtime.model
+            tokenizer = runtime.tokenizer
+            checkpoint_metadata = runtime.checkpoint_metadata
         except Exception as error:  # pragma: no cover - exercised via FastAPI smoke
             raise RuntimeError(
                 f"Failed to load checkpoint at {CHECKPOINT_PATH}: {error}"
             ) from error
+
+
+def get_runtime() -> BaseCheckpointRuntime:
+    load_resources()
+    if runtime is None:
+        raise RuntimeError("Model resources are unavailable.")
+    return runtime
