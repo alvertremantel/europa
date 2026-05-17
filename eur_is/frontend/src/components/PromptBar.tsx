@@ -26,14 +26,38 @@ export function PromptBar({
 }: PromptBarProps) {
   return (
     <section className="card prompt-bar">
-      <div className="prompt-bar__header">
-        <div>
+      <div className="prompt-bar__layout">
+        <div className="prompt-bar__intro">
           <h2>Prompt explorer</h2>
           <p>
             Use reversed zero-padded numbers. The backend appends <code>&lt;ans&gt;</code>{' '}
             automatically if it is missing.
           </p>
         </div>
+
+        <div className="prompt-bar__entry">
+          <div className="prompt-bar__controls">
+            <input
+              ref={inputRef}
+              type="text"
+              value={prompt}
+              onChange={(event) => onPromptChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  onSubmit()
+                }
+              }}
+              placeholder="02000000 + 01000000 ="
+              aria-label="Arithmetic prompt"
+            />
+
+            <button type="button" className="primary-button" onClick={onSubmit} disabled={loading}>
+              {loading ? <Loader2 className="spin" size={18} /> : <Play size={18} />}
+              <span>{loading ? 'Analyzing…' : 'Analyze'}</span>
+            </button>
+          </div>
+        </div>
+
         <div className="prompt-bar__examples" aria-label="Example prompts">
           {examplePrompts.map((example) => (
             <button key={example.label} type="button" className="ghost-button" onClick={example.onSelect}>
@@ -41,27 +65,6 @@ export function PromptBar({
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="prompt-bar__controls">
-        <input
-          ref={inputRef}
-          type="text"
-          value={prompt}
-          onChange={(event) => onPromptChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              onSubmit()
-            }
-          }}
-          placeholder="02000000 + 01000000 ="
-          aria-label="Arithmetic prompt"
-        />
-
-        <button type="button" className="primary-button" onClick={onSubmit} disabled={loading}>
-          {loading ? <Loader2 className="spin" size={18} /> : <Play size={18} />}
-          <span>{loading ? 'Analyzing…' : 'Analyze'}</span>
-        </button>
       </div>
     </section>
   )

@@ -6,6 +6,15 @@ from typing import Any, TypedDict
 import numpy as np
 
 from eur_ts.generator.core import parse_line
+from eur_ts.generator.numbers import parse_signed_number, parse_unsigned_number
+from eur_ts.generator.parsing import (
+    parse_binary_expression,
+    parse_parentheses_expression,
+    parse_three_input_expression,
+)
+from eur_ts.generator.sampling import apply_operation
+from eur_ts.trainer.curriculum import curriculum_group
+from eur_ts.trainer.data import ArithmeticExample
 from eur_ts.trainer.formatting import extract_final_answer
 
 ARITHMETIC_MISMATCH_PREFIX = "arithmetic mismatch:"
@@ -174,9 +183,69 @@ def summarize_checkpoint(
     }
 
 
+def summarize_problem(prompt: str) -> dict[str, Any]:
+    parts = prompt.strip().split()
+    if not parts or parts[-1] != "=":
+        raise ValueError("prompt must end with '=' for curriculum classification")
+
+    expression_fields = tuple(parts[:-1])
+    answer = _evaluate_expression(expression_fields)
+    if len(expression_fields) == 3:
+        parsed = parse_binary_expression(expression_fields, answer)
+    elif len(expression_fields) == 5:
+        parsed = parse_three_input_expression(expression_fields, answer)
+    elif len(expression_fields) == 7:
+        parsed = parse_parentheses_expression(expression_fields, answer)
+    else:
+        raise ValueError(f"unsupported expression shape: {expression_fields!r}")
+
+    example = ArithmeticExample(
+        line="",
+        prompt=prompt,
+        answer=str(answer),
+        kind=parsed.kind,
+        category=parsed.category,
+    )
+    return {
+        "category": parsed.category,
+        "kind": parsed.kind,
+        "curriculum_group": curriculum_group(example),
+    }
+
+
 def _optional_float(value: Any) -> float | None:
     if value is None:
         return None
     if isinstance(value, (int, float)) and math.isfinite(float(value)):
         return float(value)
     return None
+
+
+def _evaluate_expression(expression_fields: tuple[str, ...]) -> int:
+    if len(expression_fields) == 3:
+        left = parse_signed_number(expression_fields[0])
+        right = parse_signed_number(expression_fields[2])
+        return apply_operation(expression_fields[1], left, right)
+
+    if len(expression_fields) == 5:
+        left = parse_unsigned_number(expression_fields[0])
+        middle = parse_unsigned_number(expression_fields[2])
+        right = parse_unsigned_number(expression_fields[4])
+        first = apply_operation(expression_fields[1], left, middle)
+        return apply_operation(expression_fields[3], first, right)
+
+    if len(expression_fields) == 7:
+        if expression_fields[0] == "(" and expression_fields[4] == ")":
+            left = parse_unsigned_number(expression_fields[1])
+            middle = parse_unsigned_number(expression_fields[3])
+            right = parse_unsigned_number(expression_fields[6])
+            first = apply_operation(expression_fields[2], left, middle)
+            return apply_operation(expression_fields[5], first, right)
+        if expression_fields[2] == "(" and expression_fields[6] == ")":
+            left = parse_unsigned_number(expression_fields[0])
+            middle = parse_unsigned_number(expression_fields[3])
+            right = parse_unsigned_number(expression_fields[5])
+            first = apply_operation(expression_fields[4], middle, right)
+            return apply_operation(expression_fields[1], left, first)
+
+    raise ValueError(f"unsupported expression shape: {expression_fields!r}")

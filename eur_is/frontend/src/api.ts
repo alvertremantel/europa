@@ -24,6 +24,7 @@ export type {
   NetworkAnalysis,
   NetworkControls,
   NetworkWarningAvailability,
+  ProblemMetadata,
   ResidualDimensionSummary,
   ResidualLayerSummary,
   ResidualNetworkSummary,

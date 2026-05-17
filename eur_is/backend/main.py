@@ -16,6 +16,7 @@ from eur_is.backend.analysis import (
     build_attention_summary,
     build_top_prediction_summaries,
     evaluate_generated_answer,
+    summarize_problem,
     summarize_checkpoint,
 )
 from eur_is.backend.network_analysis import (
@@ -32,6 +33,7 @@ from eur_is.backend.schemas import (
     GeneratedAnswerToken,
     HealthResponse,
     ModelConfigResponse,
+    ProblemMetadataResponse,
     TopPrediction,
 )
 from eur_is.backend import settings
@@ -72,6 +74,14 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     tokenizer = settings.tokenizer
     if tokenizer is None or model is None:
         raise HTTPException(status_code=503, detail="Model resources are unavailable.")
+
+    problem_metadata = None
+    try:
+        problem_metadata = summarize_problem(
+            cleaned_prompt.split(" <ans>", maxsplit=1)[0].strip()
+        )
+    except ValueError as error:
+        logger.warning("Unable to classify prompt %r: %s", cleaned_prompt, error)
 
     try:
         token_ids = tokenizer.encode_prompt(cleaned_prompt)
@@ -156,6 +166,10 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
 
+    checkpoint_model_config = settings.checkpoint_metadata.get("model_config")
+    if not isinstance(checkpoint_model_config, dict):
+        checkpoint_model_config = {}
+
     return AnalyzeResponse(
         tokens=tokens,
         attention=[layer.tolist() for layer in attention_by_layer],
@@ -191,7 +205,17 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
             n_layers=model.cfg.n_layers,
             n_heads=model.cfg.n_heads,
             d_model=model.cfg.d_model,
+            d_head=getattr(model.cfg, "d_head", model.cfg.d_model // model.cfg.n_heads),
+            mlp_hidden=getattr(
+                model.cfg, "d_mlp", checkpoint_model_config.get("mlp_hidden")
+            ),
+            sequence_length=model.cfg.n_ctx,
+            vocab_size=getattr(model.cfg, "d_vocab", tokenizer.vocab_size),
+            dropout=getattr(model.cfg, "attn_dropout", None),
         ),
+        problem=ProblemMetadataResponse(**problem_metadata)
+        if problem_metadata
+        else None,
         checkpoint=CheckpointResponse(
             **summarize_checkpoint(
                 checkpoint_path=str(settings.CHECKPOINT_PATH),

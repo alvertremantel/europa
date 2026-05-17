@@ -20,6 +20,17 @@ class ModelConfigResponse(BaseModel):
     n_layers: int
     n_heads: int
     d_model: int
+    d_head: int
+    mlp_hidden: int | None = None
+    sequence_length: int
+    vocab_size: int
+    dropout: float | None = None
+
+
+class ProblemMetadataResponse(BaseModel):
+    category: str
+    kind: str
+    curriculum_group: str
 
 
 class TopPrediction(BaseModel):
@@ -93,6 +104,7 @@ class AnalyzeResponse(BaseModel):
     generated_answer: GeneratedAnswerResponse
     generated_answer_top_k: list[GeneratedAnswerToken]
     config: ModelConfigResponse
+    problem: ProblemMetadataResponse | None = None
     checkpoint: CheckpointResponse
     network: dict[str, Any] | None = None
 

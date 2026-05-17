@@ -9,6 +9,7 @@ import { ErrorNotice } from './components/ErrorNotice'
 import { LogitPanel } from './components/LogitPanel'
 import { ModelStatusCard } from './components/ModelStatusCard'
 import { OverviewMetrics } from './components/OverviewMetrics'
+import { PromptBriefingCard } from './components/PromptBriefingCard'
 import { PromptBar } from './components/PromptBar'
 import { SkeletonDashboard } from './components/SkeletonDashboard'
 import { TokenPredictionTable } from './components/TokenPredictionTable'
@@ -37,6 +38,9 @@ function isEditableTarget(target: EventTarget | null): boolean {
 function App() {
   const promptInputRef = useRef<HTMLInputElement>(null)
   const [density, setDensity] = useState<DensityMode>(() => readDensityPreference())
+  const [predictionCollapsed, setPredictionCollapsed] = useState(false)
+  const [activationCollapsed, setActivationCollapsed] = useState(false)
+  const [logitCollapsed, setLogitCollapsed] = useState(false)
   const {
     prompt,
     setPrompt,
@@ -58,6 +62,7 @@ function App() {
     openDetailTab,
     setError,
   } = useAnalysisSession()
+  const matchTopRowHeights = predictionCollapsed && activationCollapsed && logitCollapsed
 
   useEffect(() => {
     window.localStorage.setItem(DENSITY_STORAGE_KEY, density)
@@ -115,50 +120,52 @@ function App() {
   return (
     <div className={`app-shell density-${density} ${loading ? 'is-loading' : ''}`}>
       <header className="hero">
-        <div>
-          <p className="hero__eyebrow">Europa ALM-IS</p>
+        <div className="hero__intro">
+          <p className="hero__eyebrow">Europa ATM-IS</p>
           <h1>Mechanistic Interpretability Dashboard</h1>
-          <p className="hero__lede">
-            4K analysis wall for prompt tokens, attention heads, residual activity, logits,
-            and full-network summaries.
-          </p>
         </div>
-        <div className="hero__tools" aria-label="Display controls">
-          <label className="select-field select-field--inline">
-            <span>Density</span>
-            <select value={density} onChange={(event) => setDensity(event.target.value as DensityMode)}>
-              <option value="compact">Compact</option>
-              <option value="comfortable">Comfortable</option>
-            </select>
-          </label>
-          <div className="shortcut-hints" aria-label="Keyboard shortcuts">
-            <span><kbd>/</kbd> prompt</span>
-            <span><kbd>[</kbd><kbd>]</kbd> layer</span>
-            <span><kbd>1</kbd>–<kbd>5</kbd> panels</span>
-          </div>
-        </div>
-        <ModelStatusCard health={health} result={result} loading={loading} />
-      </header>
 
-      <PromptBar
-        inputRef={promptInputRef}
-        prompt={prompt}
-        loading={loading}
-        examplePrompts={EXAMPLE_PROMPTS.map((example) => ({
-          ...example,
-          onSelect: () => {
-            setPrompt(example.value)
-            setError(null)
-          },
-        }))}
-        onPromptChange={(value) => {
-          setPrompt(value)
-          if (error) {
-            setError(null)
-          }
-        }}
-        onSubmit={() => void submitPrompt()}
-      />
+        <div className="hero__main">
+
+          <PromptBar
+            inputRef={promptInputRef}
+            prompt={prompt}
+            loading={loading}
+            examplePrompts={EXAMPLE_PROMPTS.map((example) => ({
+              ...example,
+              onSelect: () => {
+                setPrompt(example.value)
+                setError(null)
+              },
+            }))}
+            onPromptChange={(value) => {
+              setPrompt(value)
+              if (error) {
+                setError(null)
+              }
+            }}
+            onSubmit={() => void submitPrompt()}
+          />
+
+          <PromptBriefingCard result={result} />
+        </div>
+        <ModelStatusCard health={health} result={result} loading={loading}>
+          <div className="status-card__extras">
+            <label className="select-field">
+              <span>Density</span>
+              <select value={density} onChange={(event) => setDensity(event.target.value as DensityMode)}>
+                <option value="compact">Compact</option>
+                <option value="comfortable">Comfortable</option>
+              </select>
+            </label>
+            <div className="shortcut-hints" aria-label="Keyboard shortcuts">
+              <span><kbd>/</kbd> prompt</span>
+              <span><kbd>[</kbd><kbd>]</kbd> layer</span>
+              <span><kbd>1</kbd>–<kbd>5</kbd> panels</span>
+            </div>
+          </div>
+        </ModelStatusCard>
+      </header>
 
       <ErrorNotice message={error} />
 
@@ -170,10 +177,6 @@ function App() {
           <OverviewMetrics result={result} generatedAnswer={generatedAnswer} />
 
           <div className="dashboard__primary">
-            <div id="panel-predictions" className="dashboard__panel dashboard__panel--predictions">
-              <TokenPredictionTable result={result} />
-            </div>
-
             <div className="detail-tab-strip" role="tablist" aria-label="Detail panels">
               <button
                 type="button"
@@ -205,7 +208,11 @@ function App() {
               </button>
             </div>
 
-            <div className="dashboard__detail-grid">
+            <div className={`dashboard__detail-grid ${matchTopRowHeights ? 'dashboard__detail-grid--top-row-collapsed' : ''}`.trim()}>
+              <div id="panel-predictions" className="dashboard__panel dashboard__panel--predictions">
+                <TokenPredictionTable result={result} matchCollapsedHeight={matchTopRowHeights} onCollapsedStateChange={setPredictionCollapsed} />
+              </div>
+
               <div
                 id="panel-attention"
                 className={`detail-panel ${activeDetailTab === 'attention' ? 'detail-panel--active' : ''}`}
@@ -221,7 +228,7 @@ function App() {
                 id="panel-activations"
                 className={`detail-panel ${activeDetailTab === 'activations' ? 'detail-panel--active' : ''}`}
               >
-                <ActivationPanel result={result} />
+                <ActivationPanel result={result} matchCollapsedHeight={matchTopRowHeights} onCollapsedStateChange={setActivationCollapsed} />
               </div>
 
               <div
@@ -232,6 +239,8 @@ function App() {
                   result={result}
                   selectedAnswerTokenIndex={selectedAnswerTokenIndex}
                   onSelectedAnswerTokenIndexChange={setSelectedAnswerTokenIndex}
+                  matchCollapsedHeight={matchTopRowHeights}
+                  onCollapsedStateChange={setLogitCollapsed}
                 />
               </div>
 
@@ -250,15 +259,6 @@ function App() {
             </div>
           </div>
         </main>
-      ) : !loading ? (
-        <section className="empty-state card">
-          <h2>Analyze a prompt to populate the dashboard</h2>
-          <p>
-            Prompts should use reversed zero-padded arithmetic fields such as{' '}
-            <code>02000000 + 01000000 =</code>. The backend appends <code>&lt;ans&gt;</code>{' '}
-            automatically before running inference.
-          </p>
-        </section>
       ) : null}
     </div>
   )

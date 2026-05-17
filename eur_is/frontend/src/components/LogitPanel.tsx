@@ -1,22 +1,40 @@
+import { useEffect, useMemo, useState } from 'react'
+
+import { CollapsibleSection } from './CollapsibleSection'
+
 import type { AnalysisResult, GeneratedAnswerToken } from '../api'
 
 interface LogitPanelProps {
   result: AnalysisResult
   selectedAnswerTokenIndex: number
   onSelectedAnswerTokenIndexChange: (value: number) => void
+  matchCollapsedHeight?: boolean
+  onCollapsedStateChange?: (collapsed: boolean) => void
 }
 
 export function LogitPanel({
   result,
   selectedAnswerTokenIndex,
   onSelectedAnswerTokenIndexChange,
+  matchCollapsedHeight = false,
+  onCollapsedStateChange,
 }: LogitPanelProps) {
   const selectedAnswerToken = result.generated_answer_top_k[selectedAnswerTokenIndex] ?? null
   const answerTopK = selectedAnswerToken?.top_predictions ?? []
   const hasGeneratedAnswer = result.generated_answer_top_k.length > 0
+  const [answerViewOpen, setAnswerViewOpen] = useState(true)
+  const [trajectoryOpen, setTrajectoryOpen] = useState(true)
+  const collapsed = useMemo(
+    () => !trajectoryOpen && (!hasGeneratedAnswer || !answerViewOpen),
+    [answerViewOpen, hasGeneratedAnswer, trajectoryOpen],
+  )
+
+  useEffect(() => {
+    onCollapsedStateChange?.(collapsed)
+  }, [collapsed, onCollapsedStateChange])
 
   return (
-    <section className="card panel">
+    <section className={`card panel ${matchCollapsedHeight ? 'panel--collapsed-stretch' : ''}`.trim()}>
       <div className="panel__header">
         <div>
           <h2>Logit lens summary</h2>
@@ -49,68 +67,80 @@ export function LogitPanel({
       </p>
 
       {hasGeneratedAnswer ? (
-        <div className="answer-token-timeline" aria-label="Generated answer token timeline">
-          {result.generated_answer_top_k.map((entry, index) => (
-            <button
-              key={`${index}-${entry.token}`}
-              type="button"
-              className={`answer-token-timeline__item ${
-                index === selectedAnswerTokenIndex ? 'is-selected' : ''
-              }`}
-              onClick={() => onSelectedAnswerTokenIndexChange(index)}
-            >
-              <span>#{index + 1}</span>
-              <code>{entry.token}</code>
-            </button>
-          ))}
-        </div>
+        <CollapsibleSection
+          title="Generated answer token view"
+          summary="Inspect per-answer-token top-k distributions and confidence."
+          onOpenChange={setAnswerViewOpen}
+        >
+          <div className="answer-token-timeline" aria-label="Generated answer token timeline">
+            {result.generated_answer_top_k.map((entry, index) => (
+              <button
+                key={`${index}-${entry.token}`}
+                type="button"
+                className={`answer-token-timeline__item ${
+                  index === selectedAnswerTokenIndex ? 'is-selected' : ''
+                }`}
+                onClick={() => onSelectedAnswerTokenIndexChange(index)}
+              >
+                <span>#{index + 1}</span>
+                <code>{entry.token}</code>
+              </button>
+            ))}
+          </div>
+
+          <div className="answer-strip answer-strip--unrolled">
+            {answerTopK.map((prediction) => (
+              <article key={prediction.token} className="answer-strip__card">
+                <div className="answer-strip__card-header">
+                  <strong><code>{prediction.token}</code></strong>
+                  <span>{(prediction.confidence * 100).toFixed(1)}%</span>
+                </div>
+                <div className="confidence-bar confidence-bar--wide">
+                  <div
+                    className="confidence-bar__fill"
+                    style={{ width: `${prediction.confidence * 100}%` }}
+                  />
+                </div>
+                <small>logit {prediction.logit?.toFixed(3) ?? '—'}</small>
+              </article>
+            ))}
+          </div>
+        </CollapsibleSection>
       ) : null}
 
-      <div className="answer-strip">
-        {answerTopK.map((prediction) => (
-          <article key={prediction.token} className="answer-strip__card">
-            <div className="answer-strip__card-header">
-              <strong><code>{prediction.token}</code></strong>
-              <span>{(prediction.confidence * 100).toFixed(1)}%</span>
-            </div>
-            <div className="confidence-bar confidence-bar--wide">
-              <div
-                className="confidence-bar__fill"
-                style={{ width: `${prediction.confidence * 100}%` }}
-              />
-            </div>
-            <small>logit {prediction.logit?.toFixed(3) ?? '—'}</small>
-          </article>
-        ))}
-      </div>
+      <CollapsibleSection
+        title="Prompt-token trajectory"
+        summary="Per-position next-token distributions across the full prompt."
+        onOpenChange={setTrajectoryOpen}
+      >
+        <div className="trajectory-header">
+          <h3>Prompt-token next-token trajectory</h3>
+          <p>Separate from generated-answer token distributions above.</p>
+        </div>
 
-      <div className="trajectory-header">
-        <h3>Prompt-token next-token trajectory</h3>
-        <p>Separate from generated-answer token distributions above.</p>
-      </div>
-
-      <div className="position-grid">
-        {result.tokens.map((token, tokenIndex) => (
-          <article
-            key={tokenIndex}
-            className={`position-card ${tokenIndex === result.answer_position ? 'position-card--answer' : ''}`}
-          >
-            <div className="position-card__header">
-              <span>Pos {tokenIndex}</span>
-              <code>{token}</code>
-            </div>
-            <div className="position-card__rows">
-              {(result.top_k_predictions[tokenIndex] ?? []).map((prediction) => (
-                <div key={`${tokenIndex}-${prediction.token}`} className="position-card__row">
-                  <code>{prediction.token}</code>
-                  <span>{(prediction.confidence * 100).toFixed(1)}%</span>
-                  <small>{prediction.logit?.toFixed(3) ?? '—'}</small>
-                </div>
-              ))}
-            </div>
-          </article>
-        ))}
-      </div>
+        <div className="position-grid position-grid--unrolled">
+          {result.tokens.map((token, tokenIndex) => (
+            <article
+              key={tokenIndex}
+              className={`position-card ${tokenIndex === result.answer_position ? 'position-card--answer' : ''}`}
+            >
+              <div className="position-card__header">
+                <span>Pos {tokenIndex}</span>
+                <code>{token}</code>
+              </div>
+              <div className="position-card__rows">
+                {(result.top_k_predictions[tokenIndex] ?? []).map((prediction) => (
+                  <div key={`${tokenIndex}-${prediction.token}`} className="position-card__row">
+                    <code>{prediction.token}</code>
+                    <span>{(prediction.confidence * 100).toFixed(1)}%</span>
+                    <small>{prediction.logit?.toFixed(3) ?? '—'}</small>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </CollapsibleSection>
     </section>
   )
 }

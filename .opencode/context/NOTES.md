@@ -23,4 +23,6 @@
 - `eur_ts.config` is the canonical home for train/model config schema, TOML loading, guide/template text, and size reporting.
 - Backend command: `uv run uvicorn eur_is.backend.main:app --reload`.
 - Frontend app directory: `eur_is/frontend/`.
+- Frontend dashboard is optimized for fullscreen 4K use; density preference is stored under `eur-is-density-mode`, and shortcuts include `/` prompt focus, `[`/`]` layer stepping, and `1`-`5` panel jumps.
 - Use `uv run pytest`, `uv run ruff check .`, CLI help/import smokes, targeted script checks, and frontend `npm run build` / `npm run lint`.
+- CircuitsVis visualizers are always lazy-loaded through wrapper components in `eur_is/frontend/src/components/circuitsvis/`. Every panel that needs an `AttentionHeads` or `TextNeuronActivations` embed imports the corresponding `Lazy*` wrapper (not `circuitsvis` directly). This keeps TensorFlow.js (~867 kB gzip) out of the initial application chunk, and each embed region shows a panel-local loading skeleton until the deferred chunk arrives.

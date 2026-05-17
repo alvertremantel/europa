@@ -173,6 +173,17 @@ export interface ModelConfig {
   n_layers: number
   n_heads: number
   d_model: number
+  d_head: number
+  mlp_hidden?: number | null
+  sequence_length: number
+  vocab_size: number
+  dropout?: number | null
+}
+
+export interface ProblemMetadata {
+  category: string
+  kind: string
+  curriculum_group: string
 }
 
 export interface CheckpointInfo {
@@ -198,6 +209,7 @@ export interface AnalysisResult {
   generated_answer: GeneratedAnswer
   generated_answer_top_k: GeneratedAnswerToken[]
   config: ModelConfig
+  problem?: ProblemMetadata | null
   checkpoint: CheckpointInfo
   network?: NetworkAnalysis | null
 }
