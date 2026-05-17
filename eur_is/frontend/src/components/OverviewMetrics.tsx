@@ -26,6 +26,7 @@ export function OverviewMetrics({ result, generatedAnswer }: OverviewMetricsProp
       value: generatedAnswer?.text ?? '—',
       icon: Target,
       note: formatAnswerStatus(generatedAnswer),
+      tone: generatedAnswer?.is_correct ? 'success' : generatedAnswer ? 'danger' : 'neutral',
     },
     {
       label: 'Peak residual norm',
@@ -43,8 +44,8 @@ export function OverviewMetrics({ result, generatedAnswer }: OverviewMetricsProp
 
   return (
     <section className="metric-grid">
-      {cards.map(({ icon: Icon, label, value, note }) => (
-        <article key={label} className="card metric-card">
+      {cards.map(({ icon: Icon, label, value, note, tone }) => (
+        <article key={label} className={`card metric-card ${tone ? `metric-card--${tone}` : ''}`}>
           <div className="metric-card__icon">
             <Icon size={18} />
           </div>

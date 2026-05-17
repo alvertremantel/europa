@@ -48,14 +48,45 @@ export function LogitPanel({
           : 'No generated answer tokens available.'}
       </p>
 
+      {hasGeneratedAnswer ? (
+        <div className="answer-token-timeline" aria-label="Generated answer token timeline">
+          {result.generated_answer_top_k.map((entry, index) => (
+            <button
+              key={`${index}-${entry.token}`}
+              type="button"
+              className={`answer-token-timeline__item ${
+                index === selectedAnswerTokenIndex ? 'is-selected' : ''
+              }`}
+              onClick={() => onSelectedAnswerTokenIndexChange(index)}
+            >
+              <span>#{index + 1}</span>
+              <code>{entry.token}</code>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className="answer-strip">
         {answerTopK.map((prediction) => (
           <article key={prediction.token} className="answer-strip__card">
-            <strong>{prediction.token}</strong>
-            <span>{(prediction.confidence * 100).toFixed(1)}%</span>
+            <div className="answer-strip__card-header">
+              <strong><code>{prediction.token}</code></strong>
+              <span>{(prediction.confidence * 100).toFixed(1)}%</span>
+            </div>
+            <div className="confidence-bar confidence-bar--wide">
+              <div
+                className="confidence-bar__fill"
+                style={{ width: `${prediction.confidence * 100}%` }}
+              />
+            </div>
             <small>logit {prediction.logit?.toFixed(3) ?? '—'}</small>
           </article>
         ))}
+      </div>
+
+      <div className="trajectory-header">
+        <h3>Prompt-token next-token trajectory</h3>
+        <p>Separate from generated-answer token distributions above.</p>
       </div>
 
       <div className="position-grid">

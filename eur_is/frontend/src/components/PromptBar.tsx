@@ -1,4 +1,5 @@
 import { Loader2, Play } from 'lucide-react'
+import type { RefObject } from 'react'
 
 interface ExamplePrompt {
   label: string
@@ -7,6 +8,7 @@ interface ExamplePrompt {
 }
 
 interface PromptBarProps {
+  inputRef?: RefObject<HTMLInputElement>
   prompt: string
   loading: boolean
   examplePrompts: ExamplePrompt[]
@@ -15,6 +17,7 @@ interface PromptBarProps {
 }
 
 export function PromptBar({
+  inputRef,
   prompt,
   loading,
   examplePrompts,
@@ -42,6 +45,7 @@ export function PromptBar({
 
       <div className="prompt-bar__controls">
         <input
+          ref={inputRef}
           type="text"
           value={prompt}
           onChange={(event) => onPromptChange(event.target.value)}

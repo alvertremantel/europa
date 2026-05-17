@@ -1,7 +1,7 @@
-import { AttentionHeads } from 'circuitsvis'
-
 import type { AttentionNetworkSummary } from '../../api'
 import type { NetworkSelection } from './types'
+
+import { LazyAttentionHeads } from '../circuitsvis/LazyAttentionHeads'
 
 interface AttentionActivityPanelProps {
   attention: AttentionNetworkSummary
@@ -79,7 +79,7 @@ export function AttentionActivityPanel({
 
       {selectedLayerSummary?.availability === 'available' ? (
         <div className="circuitsvis-frame">
-          <AttentionHeads tokens={tokens} attention={rawAttention[selectedLayer]} />
+          <LazyAttentionHeads tokens={tokens} attention={rawAttention[selectedLayer]} />
         </div>
       ) : (
         <div className="network-empty">Attention patterns are not available for this layer.</div>
