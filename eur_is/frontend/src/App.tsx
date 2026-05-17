@@ -1,7 +1,8 @@
 import './App.css'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAnalysisSession } from './hooks/useAnalysisSession'
 import { EXAMPLE_PROMPTS } from './constants'
+import { getPanelShortcutTarget, type DetailTab } from './keyboardShortcuts'
 
 import { ActivationPanel } from './components/ActivationPanel'
 import { AttentionPanel } from './components/AttentionPanel'
@@ -64,6 +65,14 @@ function App() {
   } = useAnalysisSession()
   const matchTopRowHeights = predictionCollapsed && activationCollapsed && logitCollapsed
 
+  const handleOpenDetailTab = useCallback((tab: DetailTab) => {
+    openDetailTab(tab)
+    if (tab !== 'network' || !result) return
+    if (!result.network) {
+      void requestNetworkAnalysis()
+    }
+  }, [openDetailTab, requestNetworkAnalysis, result])
+
   useEffect(() => {
     window.localStorage.setItem(DENSITY_STORAGE_KEY, density)
   }, [density])
@@ -91,31 +100,24 @@ function App() {
         return
       }
 
-      const panelByKey: Record<string, string> = {
-        '1': 'panel-predictions',
-        '2': 'panel-attention',
-        '3': 'panel-activations',
-        '4': 'panel-logits',
-        '5': 'panel-network',
-      }
-      const panelId = panelByKey[event.key]
-      if (panelId) {
+      const panelTarget = getPanelShortcutTarget(event.key)
+      if (panelTarget) {
         event.preventDefault()
-        document.getElementById(panelId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        if (panelTarget.tab) {
+          handleOpenDetailTab(panelTarget.tab)
+        }
+        window.requestAnimationFrame(() => {
+          document.getElementById(panelTarget.panelId)?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          })
+        })
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [result, setSelectedLayer])
-
-  const handleOpenDetailTab = (tab: typeof activeDetailTab) => {
-    openDetailTab(tab)
-    if (tab !== 'network' || !result) return
-    if (!result.network) {
-      void requestNetworkAnalysis()
-    }
-  }
+  }, [handleOpenDetailTab, result, setSelectedLayer])
 
   return (
     <div className={`app-shell density-${density} ${loading ? 'is-loading' : ''}`}>

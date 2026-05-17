@@ -19,10 +19,19 @@ export function ActivationPanel({
   const [metric, setMetric] = useState<'l2' | 'max_abs'>('l2')
   const [heatmapOpen, setHeatmapOpen] = useState(true)
   const [browserOpen, setBrowserOpen] = useState(true)
-  const [selectedCell, setSelectedCell] = useState({ tokenIndex: result.answer_position, layerIndex: 0 })
+  const resultSelectionKey = `${result.answer_position}:${result.tokens.length}:${result.config.n_layers}`
+  const [selectedCell, setSelectedCell] = useState({
+    tokenIndex: result.answer_position,
+    layerIndex: 0,
+    resultSelectionKey,
+  })
+  const activeSelectedCell =
+    selectedCell.resultSelectionKey === resultSelectionKey
+      ? selectedCell
+      : { tokenIndex: result.answer_position, layerIndex: 0, resultSelectionKey }
   const clampedSelectedCell = {
-    tokenIndex: Math.min(selectedCell.tokenIndex, Math.max(result.tokens.length - 1, 0)),
-    layerIndex: Math.min(selectedCell.layerIndex, Math.max(result.config.n_layers - 1, 0)),
+    tokenIndex: Math.min(activeSelectedCell.tokenIndex, Math.max(result.tokens.length - 1, 0)),
+    layerIndex: Math.min(activeSelectedCell.layerIndex, Math.max(result.config.n_layers - 1, 0)),
   }
   const heatmapValues =
     metric === 'l2'
@@ -112,7 +121,7 @@ export function ActivationPanel({
                       className={`heatmap__cell ${selected ? 'is-selected' : ''}`}
                       style={{ backgroundColor: `rgb(83 109 254 / ${alpha})` }}
                       title={`Token ${tokenIndex}, layer ${layerIndex}: ${metric} ${value.toFixed(3)}`}
-                      onClick={() => setSelectedCell({ tokenIndex, layerIndex })}
+                      onClick={() => setSelectedCell({ tokenIndex, layerIndex, resultSelectionKey })}
                     >
                       {value.toFixed(metric === 'l2' ? 2 : 3)}
                     </button>
