@@ -180,14 +180,14 @@ class ArithmeticTokenizer:
             token = self.id_to_token[token_id]
             if token in SEPARATOR_TOKENS:
                 if current_field:
-                    role_ids.extend(self._field_position_roles("".join(current_field)))
+                    role_ids.extend(_field_token_position_roles(current_field))
                     current_field = []
                 role_ids.append(POSITION_ROLE_NONE)
                 continue
             current_field.append(token)
 
         if current_field:
-            role_ids.extend(self._field_position_roles("".join(current_field)))
+            role_ids.extend(_field_token_position_roles(current_field))
 
         if len(role_ids) != len(token_ids):
             raise RuntimeError("position role IDs must align with token IDs")
@@ -223,27 +223,25 @@ class ArithmeticTokenizer:
 
     def _field_position_roles(self, field: str) -> list[int]:
         if field in SPECIAL_FIELD_TOKENS:
-            return [POSITION_ROLE_NONE]
-        if _is_unsigned_number_field(field):
-            return list(range(1, NUMBER_DIGIT_COUNT + 1))
-        if _is_signed_number_field(field):
-            return [
-                POSITION_ROLE_NONE,
-                POSITION_ROLE_NONE,
-                *range(1, NUMBER_DIGIT_COUNT + 1),
-                POSITION_ROLE_NONE,
-            ]
-        return [POSITION_ROLE_NONE] * len(field)
+            return _field_token_position_roles([field])
+        return _field_token_position_roles(list(field))
 
 
-def _is_unsigned_number_field(field: str) -> bool:
-    return len(field) == NUMBER_DIGIT_COUNT and field.isdigit()
-
-
-def _is_signed_number_field(field: str) -> bool:
-    return (
-        len(field) == NUMBER_DIGIT_COUNT + 3
-        and field.startswith("(-")
-        and field.endswith(")")
-        and field[2:-1].isdigit()
-    )
+def _field_token_position_roles(tokens: Sequence[str]) -> list[int]:
+    if len(tokens) == 1 and tokens[0] in SPECIAL_FIELD_TOKENS:
+        return [POSITION_ROLE_NONE]
+    if 1 <= len(tokens) <= NUMBER_DIGIT_COUNT and all(
+        token.isdigit() for token in tokens
+    ):
+        return list(range(1, len(tokens) + 1))
+    if len(tokens) >= 2 and tokens[0] == "(" and tokens[1] == "-":
+        roles = [POSITION_ROLE_NONE, POSITION_ROLE_NONE]
+        next_digit_role = 1
+        for token in tokens[2:]:
+            if token.isdigit() and next_digit_role <= NUMBER_DIGIT_COUNT:
+                roles.append(next_digit_role)
+                next_digit_role += 1
+            else:
+                roles.append(POSITION_ROLE_NONE)
+        return roles
+    return [POSITION_ROLE_NONE] * len(tokens)

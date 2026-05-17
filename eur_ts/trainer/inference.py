@@ -217,4 +217,4 @@ def _forward_model(
                 "digit_roles models require position_ids for forward passes"
             )
         return model(input_ids, position_ids)
-    return model(input_ids, position_ids)
+    return model(input_ids)

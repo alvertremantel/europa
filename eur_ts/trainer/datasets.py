@@ -11,7 +11,7 @@ from .examples import ArithmeticExample
 from .tokenizer import ArithmeticTokenizer
 
 
-class TokenBlockDataset(Dataset[tuple[Tensor, Tensor]]):
+class TokenBlockDataset(Dataset[tuple[Tensor, Tensor, Tensor]]):
     def __init__(
         self,
         token_ids: list[int],
