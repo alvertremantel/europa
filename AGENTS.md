@@ -10,11 +10,12 @@ PyTorch is pulled from the `pytorch-cu128` index (CUDA 12.8). A GPU is expected 
 
 ## Developer commands (via `uv run`)
 
-Three CLI entrypoints are defined in `pyproject.toml` — **do not** run `python generate.py` etc. (those top-level scripts do not exist):
+Four CLI entrypoints are defined in `pyproject.toml` — **do not** run `python generate.py` etc. (those top-level scripts do not exist):
 
 ```bash
 uv run generate --output-dir data/my-dataset          # generate dataset
-uv run train train --data-dir data/my-dataset --output-dir runs/my-run  # train
+uv run config --new                                   # create train-config.toml in CWD
+uv run train train train-config.toml                  # train from TOML config
 uv run train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "03000000 + 03000000 = <ans>"
 uv run evaluate --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
 ```
@@ -48,7 +49,7 @@ Output files: `train.txt`, `val.txt`, `test.txt`, `meta.json`.
 
 ## Key constraints
 
-- Resume support is available at epoch boundaries via `--resume` / `--resume-from`; optimizer and RNG state are checkpointed.
+- Resume support is available at epoch boundaries via TOML fields `resume.auto_resume`, `resume.resume_from`, and `resume.additional_epochs`; optimizer and RNG state are checkpointed.
 - Checkpoints embed tokenizer + model architecture; incompatible across changes.
 - Root aliases `checkpoint-last.pt` and `checkpoint-best.pt` remain compatibility paths, while physical epoch checkpoints live under `checkpoints/` with a retention manifest.
 - The project venv is `.venv/` (gitignored). Use uv for all work. 

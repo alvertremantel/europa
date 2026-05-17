@@ -21,11 +21,12 @@ Europa ALM-IS (europa-is) is a research-grade toolkit for training and interpret
 uv sync          # Python 3.12, requires CUDA for PyTorch (cu128)
 ```
 
-Three CLI entrypoints are defined — **do not** run `python generate.py` etc. (those scripts don't exist):
+Four CLI entrypoints are defined — **do not** run `python generate.py` etc. (those scripts don't exist):
 
 ```bash
 uv run generate --output-dir data/my-dataset          # generate dataset
-uv run train train --data-dir data/my-dataset --output-dir runs/my-run  # train
+uv run config --new                                   # create train-config.toml in CWD
+uv run train train train-config.toml                  # train from TOML config
 uv run train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "03000000 + 03000000 = <ans>"
 uv run evaluate --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
 ```
@@ -64,91 +65,25 @@ Numbers are **8-digit zero-padded decimals, reversed** (e.g. 6 → `60000000`). 
 
 ### 2. Train a Model
 
-Train a small causal transformer on the generated data.
+Training conditions now come from a structured TOML file.
 
 ```bash
-uv run train train \
-  --data-dir data/my-dataset \
-  --output-dir runs/my-run \
-  --epochs 5 \
-  --batch-size 128 \
-  --learning-rate 3e-4 \
-  --checkpoint-max-kept 10 \
-  --checkpoint-keep-last 5
+uv run config --new
+uv run config --guide
+# fill in train-config.toml first
+uv run config --size train-config.toml
+uv run train train train-config.toml
 ```
 
-Resume examples:
+The generated `train-config.toml` includes every training variable with comments.
+Required values begin as empty-string placeholders and must be filled before training.
 
-```bash
-uv run train train --output-dir runs/my-run --resume --additional-epochs 20
-uv run train train --resume-from runs/my-run/checkpoint-last.pt --epochs 120
-```
+Key derived size metrics:
 
-**Training options:**
+- `total_parameters`
+- `total_virtual_neurons = n_layers * sequence_length * mlp_hidden`
 
-| Option | Default | Description |
-|---|---|---|
-| `--data-dir` | `data-1m` | Path to generated dataset |
-| `--output-dir` | `runs/arithmetic-small` | Checkpoint & log output directory |
-| `--resume-from` | — | Resume from an explicit checkpoint |
-| `--resume` | — | Resume from `<output-dir>/checkpoint-last.pt` |
-| `--additional-epochs` | — | Continue for N more epochs beyond the resumed epoch |
-| `--sequence-length` | `64` | Max context window |
-| `--batch-size` | `128` | Training batch size |
-| `--epochs` | `5` | Number of training epochs |
-| `--learning-rate` | `3e-4` | AdamW learning rate |
-| `--weight-decay` | `0.1` | AdamW weight decay |
-| `--grad-clip` | `1.0` | Gradient clipping norm |
-| `--log-interval` | `100` | Steps between log prints |
-| `--eval-batches` | `50` | Validation batches per eval |
-| `--exact-match-samples` | `256` | Samples for exact-match eval |
-| `--seed` | `42` | Random seed |
-| `--device` | `cuda` | Device (`cuda`, `cpu`, `auto`) |
-| `--checkpoint-keep-last` | `5` | Always retain this many latest physical epoch checkpoints |
-| `--checkpoint-max-kept` | `10` | Max retained physical epoch checkpoints (`<=0` keeps all) |
-| `--checkpoint-keep-best` | `1` | Extra best-performing checkpoints to retain |
-| `--checkpoint-jump-threshold` | `0.05` | Exact-match jump size that tags before/after comparison checkpoints |
-| `--training-mode` | `token_stream` | `token_stream` keeps the legacy flat-token baseline; `examples` preserves line boundaries |
-| `--training-format` | `final_only` | Example-mode target format: `final_only`, `light_scratchpad`, `parentheses_intermediate`, or `multiply_intermediate` |
-| `--curriculum-name` | — | Example-mode mixed curriculum preset: `baseline_mixed_v1` or `mul_focus_v1` |
-| `--balanced-val` | — | Also log deterministic balanced validation loss/exact-match from examples |
-| `--balanced-val-group-by` | `kind` | Balance validation by `kind`, `category`, or `curriculum_group` |
-
-**Model architecture options:**
-
-| Option | Default | Description |
-|---|---|---|
-| `--d-model` | `256` | Embedding dimension |
-| `--n-heads` | `4` | Number of attention heads |
-| `--n-layers` | `6` | Number of transformer blocks |
-| `--mlp-hidden` | `1024` | MLP hidden dimension |
-| `--dropout` | `0.1` | Dropout rate |
-
-~4.76M parameters at default config.
-
-Experimental curriculum and scratchpad options are opt-in. The default remains the
-original final-answer-only token-stream training path. In example mode, short
-structured scratchpads use compact fields after `<ans>` such as
-`<work> <step> ... <final> ...`; prediction and evaluation still compare the
-final answer field.
-
-Tiny matched-run recipe:
-
-```bash
-# baseline control
-uv run train train --data-dir data/my-dataset --output-dir runs/tiny-baseline --epochs 1 --device auto
-
-# same model/data with a conservative mixed curriculum
-uv run train train --data-dir data/my-dataset --output-dir runs/tiny-curriculum \
-  --epochs 1 --device auto --training-mode examples --curriculum-name baseline_mixed_v1 \
-  --balanced-val --balanced-val-sample-size-per-group 2
-
-# curriculum plus scoped light scratchpads for multiplication/parentheses examples
-uv run train train --data-dir data/my-dataset --output-dir runs/tiny-scratchpad \
-  --epochs 1 --device auto --training-mode examples --training-format light_scratchpad \
-  --curriculum-name baseline_mixed_v1 --balanced-val --balanced-val-sample-size-per-group 2 \
-  --max-new-tokens 48
-```
+Experimental curriculum and scratchpad settings remain available through TOML under `[training]` and `[balanced_validation]`.
 
 Training writes:
 

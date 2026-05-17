@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 
-from .config import TrainConfig
+from eur_ts.config import TrainConfig
 from .data import ArithmeticTokenizer
 from .model import SmallCausalTransformer
 from .training.checkpointing import (

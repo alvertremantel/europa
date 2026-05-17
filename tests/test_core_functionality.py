@@ -9,7 +9,7 @@ from eur_ts.generator.core import (
     parse_signed_number,
     validate_line,
 )
-from eur_ts.trainer.config import ModelConfig
+from eur_ts.config import ModelConfig
 from eur_ts.trainer.data import ArithmeticTokenizer, vocab_for_training_format
 from eur_ts.trainer.formatting import final_answer_from_line, format_training_line
 from eur_ts.trainer.model import SmallCausalTransformer

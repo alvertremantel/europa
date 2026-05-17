@@ -6,7 +6,7 @@ from typing import Any, cast
 import torch
 from transformer_lens import HookedTransformer, HookedTransformerConfig
 
-from eur_ts.trainer.config import ModelConfig
+from eur_ts.config import ModelConfig
 from eur_ts.trainer.data import ArithmeticTokenizer
 from eur_ts.trainer.model import SmallCausalTransformer
 from eur_ts.trainer.training.checkpointing import load_checkpoint_payload
@@ -26,7 +26,9 @@ def load_hooked_resources(
     tokenizer_state = payload.get("tokenizer")
     if not isinstance(tokenizer_state, dict):
         raise ValueError("checkpoint is missing tokenizer state")
-    tokenizer = ArithmeticTokenizer.from_state(cast(dict[str, list[str]], tokenizer_state))
+    tokenizer = ArithmeticTokenizer.from_state(
+        cast(dict[str, list[str]], tokenizer_state)
+    )
 
     model_state = payload.get("model_state")
     if not isinstance(model_state, dict):
@@ -82,17 +84,17 @@ def _build_hooked_model(
         use_split_qkv_input=True,
         original_architecture="SmallCausalTransformer",
     )
-    
+
     # Initialize HookedTransformer
     model = HookedTransformer(ht_config).to(device)
-    
+
     # Map weights
     new_state_dict = {}
-    
+
     # Embeddings
     new_state_dict["embed.W_E"] = state_dict["token_embedding.weight"]
     new_state_dict["pos_embed.W_pos"] = state_dict["position_embedding.weight"]
-    
+
     # Blocks
     for layer_idx in range(config_dict["n_layers"]):
         # LayerNorm 1
@@ -102,21 +104,21 @@ def _build_hooked_model(
         new_state_dict[f"blocks.{layer_idx}.ln1.b"] = state_dict[
             f"blocks.{layer_idx}.norm_1.bias"
         ]
-        
+
         # Attention - Original uses nn.MultiheadAttention
         # We need to extract Q, K, V, O weights
         # nn.MultiheadAttention.in_proj_weight is [3*d_model, d_model]
         in_proj_weight = state_dict[f"blocks.{layer_idx}.attention.in_proj_weight"]
         in_proj_bias = state_dict[f"blocks.{layer_idx}.attention.in_proj_bias"]
-        
+
         q_w, k_w, v_w = torch.chunk(in_proj_weight, 3, dim=0)
         q_b, k_b, v_b = torch.chunk(in_proj_bias, 3, dim=0)
-        
+
         # TransformerLens expects [n_heads, d_model, d_head] for W_Q, W_K, W_V
         d_model = config_dict["d_model"]
         n_heads = config_dict["n_heads"]
         d_head = d_model // n_heads
-        
+
         new_state_dict[f"blocks.{layer_idx}.attn.W_Q"] = q_w.view(
             n_heads,
             d_head,
@@ -132,11 +134,11 @@ def _build_hooked_model(
             d_head,
             d_model,
         ).transpose(1, 2)
-        
+
         new_state_dict[f"blocks.{layer_idx}.attn.b_Q"] = q_b.view(n_heads, d_head)
         new_state_dict[f"blocks.{layer_idx}.attn.b_K"] = k_b.view(n_heads, d_head)
         new_state_dict[f"blocks.{layer_idx}.attn.b_V"] = v_b.view(n_heads, d_head)
-        
+
         # Output weight W_O [n_heads, d_head, d_model]
         out_proj_weight = state_dict[f"blocks.{layer_idx}.attention.out_proj.weight"]
         new_state_dict[f"blocks.{layer_idx}.attn.W_O"] = out_proj_weight.view(
@@ -147,7 +149,7 @@ def _build_hooked_model(
         new_state_dict[f"blocks.{layer_idx}.attn.b_O"] = state_dict[
             f"blocks.{layer_idx}.attention.out_proj.bias"
         ]
-        
+
         # LayerNorm 2
         new_state_dict[f"blocks.{layer_idx}.ln2.w"] = state_dict[
             f"blocks.{layer_idx}.norm_2.weight"
@@ -155,7 +157,7 @@ def _build_hooked_model(
         new_state_dict[f"blocks.{layer_idx}.ln2.b"] = state_dict[
             f"blocks.{layer_idx}.norm_2.bias"
         ]
-        
+
         # MLP
         new_state_dict[f"blocks.{layer_idx}.mlp.W_in"] = state_dict[
             f"blocks.{layer_idx}.mlp.0.weight"
@@ -169,15 +171,17 @@ def _build_hooked_model(
         new_state_dict[f"blocks.{layer_idx}.mlp.b_out"] = state_dict[
             f"blocks.{layer_idx}.mlp.2.bias"
         ]
-        
+
     # Final LayerNorm
     new_state_dict["ln_final.w"] = state_dict["final_norm.weight"]
     new_state_dict["ln_final.b"] = state_dict["final_norm.bias"]
-    
+
     # Unembed (lm_head)
     new_state_dict["unembed.W_U"] = state_dict["lm_head.weight"].T
     # Original lm_head has no bias, so keep TransformerLens unembed bias at zero.
-    new_state_dict["unembed.b_U"] = torch.zeros(config_dict["vocab_size"], device=device)
-    
+    new_state_dict["unembed.b_U"] = torch.zeros(
+        config_dict["vocab_size"], device=device
+    )
+
     model.load_state_dict(new_state_dict, strict=False)
     return model

@@ -3,7 +3,7 @@ from __future__ import annotations
 import torch
 from torch import Tensor, nn
 
-from .config import ModelConfig
+from eur_ts.config import ModelConfig
 
 
 class TransformerBlock(nn.Module):

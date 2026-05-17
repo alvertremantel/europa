@@ -9,7 +9,7 @@ from typing import cast
 
 import torch
 
-from ..config import ModelConfig, TrainConfig
+from eur_ts.config import ModelConfig, TrainConfig
 from ..data import ArithmeticTokenizer, vocab_for_training_format
 from ..model import SmallCausalTransformer
 
@@ -43,7 +43,9 @@ def initialize_training_state(
     int | None,
 ]:
     if resume_path is None:
-        tokenizer = ArithmeticTokenizer(vocab_for_training_format(config.training_format))
+        tokenizer = ArithmeticTokenizer(
+            vocab_for_training_format(config.training_format)
+        )
         model_config = ModelConfig(
             vocab_size=tokenizer.vocab_size,
             sequence_length=config.sequence_length,
@@ -55,9 +57,22 @@ def initialize_training_state(
         )
         model = SmallCausalTransformer(model_config).to(device)
         optimizer = torch.optim.AdamW(
-            model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
+            model.parameters(),
+            lr=config.learning_rate,
+            weight_decay=config.weight_decay,
         )
-        return tokenizer, model, model_config, optimizer, [], 1, -math.inf, 0, None, None
+        return (
+            tokenizer,
+            model,
+            model_config,
+            optimizer,
+            [],
+            1,
+            -math.inf,
+            0,
+            None,
+            None,
+        )
 
     if not resume_path.exists():
         raise FileNotFoundError(f"resume checkpoint does not exist: {resume_path}")
@@ -66,12 +81,25 @@ def initialize_training_state(
     tokenizer_state = payload.get("tokenizer")
     if not isinstance(tokenizer_state, dict):
         raise ValueError("resume checkpoint is missing tokenizer")
-    tokenizer = ArithmeticTokenizer.from_state(cast(dict[str, list[str]], tokenizer_state))
+    tokenizer = ArithmeticTokenizer.from_state(
+        cast(dict[str, list[str]], tokenizer_state)
+    )
 
     model_config_state = payload.get("model_config")
     if not isinstance(model_config_state, dict):
         raise ValueError("resume checkpoint is missing model_config")
-    model_config = ModelConfig(**cast(dict[str, object], model_config_state))
+    state = cast(dict[str, object], model_config_state)
+    model_config = ModelConfig(
+        vocab_size=_as_int(state["vocab_size"], "model_config.vocab_size"),
+        sequence_length=_as_int(
+            state["sequence_length"], "model_config.sequence_length"
+        ),
+        d_model=_as_int(state["d_model"], "model_config.d_model"),
+        n_heads=_as_int(state["n_heads"], "model_config.n_heads"),
+        n_layers=_as_int(state["n_layers"], "model_config.n_layers"),
+        mlp_hidden=_as_int(state["mlp_hidden"], "model_config.mlp_hidden"),
+        dropout=_as_float(state["dropout"], "model_config.dropout"),
+    )
 
     for field_name in (
         "sequence_length",
@@ -85,7 +113,7 @@ def initialize_training_state(
         actual = getattr(model_config, field_name)
         if requested != actual:
             print(
-                f"Warning: ignoring CLI {field_name}={requested!r} and using checkpoint value {actual!r}."
+                f"Warning: ignoring config value {field_name}={requested!r} and using checkpoint value {actual!r}."
             )
 
     model = SmallCausalTransformer(model_config)
@@ -102,7 +130,9 @@ def initialize_training_state(
     if not isinstance(optimizer_state, dict):
         training_state = payload.get("training_state")
         if isinstance(training_state, dict):
-            optimizer_state = training_state.get("optimizer_state")
+            optimizer_state = cast(dict[str, object], training_state).get(
+                "optimizer_state"
+            )
     if not isinstance(optimizer_state, dict):
         raise ValueError(
             "resume checkpoint does not contain optimizer_state; weights-only resume is not supported"
@@ -113,7 +143,7 @@ def initialize_training_state(
     if not isinstance(rng_state, dict):
         training_state = payload.get("training_state")
         if isinstance(training_state, dict):
-            rng_state = training_state.get("rng_state")
+            rng_state = cast(dict[str, object], training_state).get("rng_state")
     if not isinstance(rng_state, dict) or not restore_rng_state(
         cast(dict[str, object], rng_state)
     ):
@@ -126,7 +156,9 @@ def initialize_training_state(
     if not isinstance(best_exact_match, (float, int)):
         training_state = payload.get("training_state")
         if isinstance(training_state, dict):
-            best_exact_match = training_state.get("best_exact_match")
+            best_exact_match = cast(dict[str, object], training_state).get(
+                "best_exact_match"
+            )
     best_value = (
         float(best_exact_match)
         if isinstance(best_exact_match, (float, int))
@@ -135,11 +167,16 @@ def initialize_training_state(
     global_step_value = payload.get("global_step")
     if not isinstance(global_step_value, int):
         training_state = payload.get("training_state")
-        if isinstance(training_state, dict) and isinstance(
-            training_state.get("global_step"),
+        training_state_dict = (
+            cast(dict[str, object], training_state)
+            if isinstance(training_state, dict)
+            else None
+        )
+        if training_state_dict is not None and isinstance(
+            training_state_dict.get("global_step"),
             int,
         ):
-            global_step_value = cast(int, training_state["global_step"])
+            global_step_value = cast(int, training_state_dict["global_step"])
         else:
             global_step_value = 0
     return (
@@ -162,15 +199,24 @@ def history_from_payload(
     history = payload.get("history")
     if isinstance(history, list):
         payload_history = [
-            cast(dict[str, object], entry) for entry in history if isinstance(entry, dict)
+            cast(dict[str, object], entry)
+            for entry in history
+            if isinstance(entry, dict)
         ]
     else:
         payload_history = []
     training_state = payload.get("training_state")
-    if isinstance(training_state, dict) and isinstance(training_state.get("history"), list):
+    training_state_dict = (
+        cast(dict[str, object], training_state)
+        if isinstance(training_state, dict)
+        else None
+    )
+    if training_state_dict is not None and isinstance(
+        training_state_dict.get("history"), list
+    ):
         payload_history = [
             cast(dict[str, object], entry)
-            for entry in cast(list[object], training_state["history"])
+            for entry in cast(list[object], training_state_dict["history"])
             if isinstance(entry, dict)
         ]
     history_paths = [resume_path.parent / "history.json"]
@@ -188,3 +234,15 @@ def history_from_payload(
                 if len(file_history) >= len(payload_history):
                     return file_history
     return payload_history
+
+
+def _as_int(value: object, field_name: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{field_name} must be an integer")
+    return value
+
+
+def _as_float(value: object, field_name: str) -> float:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise ValueError(f"{field_name} must be numeric")
+    return float(value)

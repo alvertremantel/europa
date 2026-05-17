@@ -9,7 +9,7 @@ from typing import cast
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
-from ..config import TrainConfig
+from eur_ts.config import TrainConfig
 from ..curriculum import (
     build_balanced_example_sample,
     count_curriculum_groups,
@@ -100,24 +100,32 @@ def train_model(config: TrainConfig) -> None:
         effective_model_config.sequence_length,
     )
     if len(val_dataset) == 0:
-        raise ValueError("validation dataset is too small for the configured sequence length")
+        raise ValueError(
+            "validation dataset is too small for the configured sequence length"
+        )
 
     train_examples: list[ArithmeticExample] | None = None
-    static_train_loader: DataLoader[tuple[Tensor, Tensor]] | DataLoader[
-        tuple[Tensor, Tensor, Tensor]
-    ]
+    static_train_loader: (
+        DataLoader[tuple[Tensor, Tensor]] | DataLoader[tuple[Tensor, Tensor, Tensor]]
+    )
     if config.training_mode == "token_stream":
         if config.training_format != "final_only":
-            raise ValueError("scratchpad training formats require --training-mode examples")
+            raise ValueError(
+                'scratchpad training formats require training.training_mode = "examples"'
+            )
         if config.curriculum_name is not None:
-            raise ValueError("curriculum presets require --training-mode examples")
+            raise ValueError(
+                'curriculum presets require training.training_mode = "examples"'
+            )
         train_tokens = load_token_stream(data_dir / "train.txt", tokenizer)
         train_dataset = TokenBlockDataset(
             train_tokens,
             effective_model_config.sequence_length,
         )
         if len(train_dataset) == 0:
-            raise ValueError("training dataset is too small for the configured sequence length")
+            raise ValueError(
+                "training dataset is too small for the configured sequence length"
+            )
         static_train_loader = DataLoader(
             train_dataset,
             batch_size=config.batch_size,
@@ -126,7 +134,9 @@ def train_model(config: TrainConfig) -> None:
             pin_memory=device.type == "cuda",
         )
         if len(static_train_loader) == 0:
-            raise ValueError("training dataset produced no batches; lower --batch-size")
+            raise ValueError(
+                "training dataset produced no batches; lower optimization.batch_size"
+            )
         print(f"loaded token-stream train blocks={len(train_dataset)}")
     elif config.training_mode == "examples":
         raw_examples = load_examples(data_dir / "train.txt", include_metadata=True)
@@ -153,12 +163,16 @@ def train_model(config: TrainConfig) -> None:
             pin_memory=device.type == "cuda",
         )
         if len(static_train_loader) == 0:
-            raise ValueError("example training dataset produced no batches; lower --batch-size")
+            raise ValueError(
+                "example training dataset produced no batches; lower optimization.batch_size"
+            )
         print(
             json.dumps(
                 {
                     "loaded_examples": len(example_dataset),
-                    "curriculum_group_counts": count_curriculum_groups(example_dataset.examples),
+                    "curriculum_group_counts": count_curriculum_groups(
+                        example_dataset.examples
+                    ),
                 },
                 indent=2,
                 sort_keys=True,
@@ -218,7 +232,9 @@ def train_model(config: TrainConfig) -> None:
             f"target epoch {target_epoch} is before checkpoint epoch {start_epoch - 1}"
         )
     if target_epoch == start_epoch - 1:
-        print(f"No epochs remain to train; checkpoint is already at epoch {target_epoch}.")
+        print(
+            f"No epochs remain to train; checkpoint is already at epoch {target_epoch}."
+        )
         write_run_metadata(
             run_metadata_path,
             config=config,
@@ -247,11 +263,13 @@ def train_model(config: TrainConfig) -> None:
         train_loader = static_train_loader
         if config.training_mode == "examples" and config.curriculum_name is not None:
             assert train_examples is not None
-            sampled_examples, counts, weights, stage_name, stage_index = resample_for_curriculum(
-                train_examples,
-                curriculum_name=config.curriculum_name,
-                epoch=epoch,
-                seed=config.seed,
+            sampled_examples, counts, weights, stage_name, stage_index = (
+                resample_for_curriculum(
+                    train_examples,
+                    curriculum_name=config.curriculum_name,
+                    epoch=epoch,
+                    seed=config.seed,
+                )
             )
             curriculum_stage = stage_name
             curriculum_stage_index = stage_index
@@ -271,7 +289,9 @@ def train_model(config: TrainConfig) -> None:
                 pin_memory=device.type == "cuda",
             )
             if len(train_loader) == 0:
-                raise ValueError("curriculum epoch produced no batches; lower --batch-size")
+                raise ValueError(
+                    "curriculum epoch produced no batches; lower optimization.batch_size"
+                )
             print(
                 json.dumps(
                     {
@@ -374,7 +394,9 @@ def train_model(config: TrainConfig) -> None:
             metrics["curriculum_sampling_weights"] = curriculum_sampling_weights
         if config.training_mode == "examples":
             metrics["scratchpad_fraction"] = scratchpad_fraction(
-                balanced_val_examples if balanced_val_examples is not None else train_examples or []
+                balanced_val_examples
+                if balanced_val_examples is not None
+                else train_examples or []
             )
         if resumed_from_epoch is not None:
             metrics["resumed_from"] = resumed_from_epoch

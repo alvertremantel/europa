@@ -8,7 +8,7 @@ from pathlib import Path
 
 import torch
 
-from ..config import ModelConfig, TrainConfig
+from eur_ts.config import ModelConfig, TrainConfig
 from ..data import ArithmeticExample
 from ..model import SmallCausalTransformer
 from ..utils import device_metadata, parameter_count

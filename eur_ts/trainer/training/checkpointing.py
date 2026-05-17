@@ -11,7 +11,7 @@ from typing import cast
 
 import torch
 
-from ..config import ModelConfig, TrainConfig
+from eur_ts.config import ModelConfig, TrainConfig
 from ..data import ArithmeticTokenizer
 from ..model import SmallCausalTransformer
 
@@ -127,7 +127,18 @@ def load_model_checkpoint(
 def _model_config_from_payload(payload: dict[str, object]) -> ModelConfig:
     model_config_state = payload.get("model_config")
     if isinstance(model_config_state, dict):
-        return ModelConfig(**cast(dict[str, object], model_config_state))
+        state = cast(dict[str, object], model_config_state)
+        return ModelConfig(
+            vocab_size=_as_int(state["vocab_size"], "model_config.vocab_size"),
+            sequence_length=_as_int(
+                state["sequence_length"], "model_config.sequence_length"
+            ),
+            d_model=_as_int(state["d_model"], "model_config.d_model"),
+            n_heads=_as_int(state["n_heads"], "model_config.n_heads"),
+            n_layers=_as_int(state["n_layers"], "model_config.n_layers"),
+            mlp_hidden=_as_int(state["mlp_hidden"], "model_config.mlp_hidden"),
+            dropout=_as_float(state["dropout"], "model_config.dropout"),
+        )
     legacy_config = payload.get("config")
     if isinstance(legacy_config, ModelConfig):
         return legacy_config
@@ -246,7 +257,9 @@ class CheckpointManager:
                 target = record
                 break
         else:
-            target = {"created_at": datetime.now(UTC).isoformat()}
+            target = cast(
+                dict[str, object], {"created_at": datetime.now(UTC).isoformat()}
+            )
             records.append(target)
 
         target.update(
@@ -264,7 +277,7 @@ class CheckpointManager:
         return target
 
     def _refresh_roles(self, records: list[dict[str, object]]) -> None:
-        records.sort(key=lambda record: int(record["epoch"]))
+        records.sort(key=lambda record: _as_int(record["epoch"], "manifest epoch"))
         for record in records:
             record["roles"] = []
 
@@ -273,10 +286,12 @@ class CheckpointManager:
 
         keep_last = max(self.config.checkpoint_keep_last, 0)
         latest_records = records[-keep_last:] if keep_last > 0 else []
-        last_epochs = {int(record["epoch"]) for record in latest_records}
+        last_epochs = {
+            _as_int(record["epoch"], "manifest epoch") for record in latest_records
+        }
         for record in records:
             roles = cast(list[str], record["roles"])
-            epoch = int(record["epoch"])
+            epoch = _as_int(record["epoch"], "manifest epoch")
             if epoch in last_epochs:
                 roles.append("last")
 
@@ -284,7 +299,7 @@ class CheckpointManager:
             records,
             key=lambda record: (
                 -float(cast(float, record["exact_match"])),
-                int(record["epoch"]),
+                _as_int(record["epoch"], "manifest epoch"),
             ),
         )
         for record in best_records[: max(self.config.checkpoint_keep_best, 0)]:
@@ -300,14 +315,14 @@ class CheckpointManager:
 
     def _selected_epochs(self, records: list[dict[str, object]]) -> set[int]:
         if self.config.checkpoint_max_kept <= 0:
-            return {int(record["epoch"]) for record in records}
+            return {_as_int(record["epoch"], "manifest epoch") for record in records}
 
         budget = self.config.checkpoint_max_kept
         selected: set[int] = set()
         keep_last = max(self.config.checkpoint_keep_last, 0)
         latest_records = records[-keep_last:] if keep_last > 0 else []
         for record in latest_records:
-            selected.add(int(record["epoch"]))
+            selected.add(_as_int(record["epoch"], "manifest epoch"))
         if len(selected) >= budget:
             return set(sorted(selected)[-budget:])
 
@@ -329,7 +344,7 @@ class CheckpointManager:
                 records,
                 key=lambda record: (
                     -float(cast(float, record["exact_match"])),
-                    int(record["epoch"]),
+                    _as_int(record["epoch"], "manifest epoch"),
                 ),
             ),
         )
@@ -337,13 +352,13 @@ class CheckpointManager:
             for record in group:
                 if len(selected) >= budget:
                     return selected
-                selected.add(int(record["epoch"]))
+                selected.add(_as_int(record["epoch"], "manifest epoch"))
         return selected
 
     def _set_availability(self, records: list[dict[str, object]]) -> None:
         selected = self._selected_epochs(records)
         for record in records:
-            record["available"] = int(record["epoch"]) in selected
+            record["available"] = _as_int(record["epoch"], "manifest epoch") in selected
 
     def _prune_unselected(self, records: list[dict[str, object]]) -> None:
         if self.config.checkpoint_max_kept <= 0:
@@ -366,7 +381,7 @@ class CheckpointManager:
             available_records,
             key=lambda record: (
                 float(cast(float, record["exact_match"])),
-                int(record["epoch"]),
+                _as_int(record["epoch"], "manifest epoch"),
             ),
         )
 
@@ -387,6 +402,18 @@ class CheckpointManager:
             json.dumps(manifest, indent=2) + "\n",
             encoding="utf-8",
         )
+
+
+def _as_int(value: object, field_name: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{field_name} must be an integer")
+    return value
+
+
+def _as_float(value: object, field_name: str) -> float:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise ValueError(f"{field_name} must be numeric")
+    return float(value)
 
 
 def best_exact_match_from_history(history: list[dict[str, object]]) -> float:
