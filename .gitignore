@@ -3,13 +3,13 @@
 __pycache__/
 *.pyc
 
+.wt
+
 .opencode/node_modules/
 .opencode/package.json
 .opencode/package-lock.json
 .opencode/gitignore
 
-web_app/frontend/node_modules/
-web_app/frontend/dist/
 eur_is/frontend/node_modules/
 eur_is/frontend/dist/
 
