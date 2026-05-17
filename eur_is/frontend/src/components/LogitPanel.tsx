@@ -1,20 +1,52 @@
-import type { AnalysisResult } from '../api'
+import type { AnalysisResult, GeneratedAnswerToken } from '../api'
 
 interface LogitPanelProps {
   result: AnalysisResult
+  selectedAnswerTokenIndex: number
+  onSelectedAnswerTokenIndexChange: (value: number) => void
 }
 
-export function LogitPanel({ result }: LogitPanelProps) {
-  const answerTopK = result.top_k_predictions[result.answer_position] ?? []
+export function LogitPanel({
+  result,
+  selectedAnswerTokenIndex,
+  onSelectedAnswerTokenIndexChange,
+}: LogitPanelProps) {
+  const selectedAnswerToken = result.generated_answer_top_k[selectedAnswerTokenIndex] ?? null
+  const answerTopK = selectedAnswerToken?.top_predictions ?? []
+  const hasGeneratedAnswer = result.generated_answer_top_k.length > 0
 
   return (
     <section className="card panel">
       <div className="panel__header">
         <div>
           <h2>Logit lens summary</h2>
-          <p>Inspect the answer-position candidates, then compare the full token trajectory below.</p>
+          <p>
+            Inspect one generated answer token at a time, then compare the full prompt-token
+            trajectory below.
+          </p>
         </div>
+        {hasGeneratedAnswer ? (
+          <label className="select-field">
+            <span>Answer token</span>
+            <select
+              value={selectedAnswerTokenIndex}
+              onChange={(event) => onSelectedAnswerTokenIndexChange(Number(event.target.value))}
+            >
+              {result.generated_answer_top_k.map((entry, index) => (
+                <option key={`${index}-${entry.token}`} value={index}>
+                  {formatAnswerTokenLabel(entry, index)}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </div>
+
+      <p className="panel__subnote">
+        {selectedAnswerToken
+          ? `Viewing token ${selectedAnswerTokenIndex + 1} of ${result.generated_answer.token_count}: ${selectedAnswerToken.token}`
+          : 'No generated answer tokens available.'}
+      </p>
 
       <div className="answer-strip">
         {answerTopK.map((prediction) => (
@@ -50,4 +82,8 @@ export function LogitPanel({ result }: LogitPanelProps) {
       </div>
     </section>
   )
+}
+
+function formatAnswerTokenLabel(entry: GeneratedAnswerToken, index: number): string {
+  return `#${index + 1} · ${entry.token}`
 }

@@ -16,6 +16,7 @@ export function useAnalysisSession() {
   const [error, setError] = useState<string | null>(null)
   const [networkError, setNetworkError] = useState<string | null>(null)
   const [selectedLayer, setSelectedLayer] = useState(0)
+  const [selectedAnswerTokenIndex, setSelectedAnswerTokenIndex] = useState(0)
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>('attention')
   const [networkControls, setNetworkControls] = useState<NetworkControls>(DEFAULT_NETWORK_CONTROLS)
   const abortRef = useRef<AbortController | null>(null)
@@ -49,11 +50,11 @@ export function useAnalysisSession() {
     }
   }, [])
 
-  const answerPrediction = useMemo(() => {
+  const generatedAnswer = useMemo(() => {
     if (!result) {
       return null
     }
-    return result.top_predictions[result.answer_position] ?? null
+    return result.generated_answer
   }, [result])
 
   const submitPrompt = useCallback(async (nextPrompt = prompt) => {
@@ -88,6 +89,7 @@ export function useAnalysisSession() {
       setSelectedLayer((current) =>
         Math.min(current, Math.max(analysis.config.n_layers - 1, 0)),
       )
+      setSelectedAnswerTokenIndex(0)
       void refreshHealth()
     } catch (caughtError) {
       if (!controller.signal.aborted) {
@@ -129,6 +131,9 @@ export function useAnalysisSession() {
       setSelectedLayer((current) =>
         Math.min(current, Math.max(analysis.config.n_layers - 1, 0)),
       )
+      setSelectedAnswerTokenIndex((current) =>
+        Math.min(current, Math.max(analysis.generated_answer_top_k.length - 1, 0)),
+      )
     } catch (caughtError) {
       if (!controller.signal.aborted) {
         setNetworkError(getErrorMessage(caughtError))
@@ -160,7 +165,9 @@ export function useAnalysisSession() {
     activeDetailTab,
     setActiveDetailTab,
     networkControls,
-    answerPrediction,
+    generatedAnswer,
+    selectedAnswerTokenIndex,
+    setSelectedAnswerTokenIndex,
     submitPrompt,
     requestNetworkAnalysis,
     openDetailTab,

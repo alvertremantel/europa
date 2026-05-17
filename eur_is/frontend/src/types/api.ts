@@ -4,6 +4,20 @@ export interface TopPrediction {
   logit?: number | null
 }
 
+export interface GeneratedAnswerToken {
+  token: string
+  top_predictions: TopPrediction[]
+}
+
+export interface GeneratedAnswer {
+  text: string
+  tokens: string[]
+  token_count: number
+  is_correct: boolean
+  is_valid_canonical: boolean
+  validation_error?: string | null
+}
+
 export interface StrongestAttentionPair {
   query_index: number
   key_index: number
@@ -181,6 +195,8 @@ export interface AnalysisResult {
   attention_summary: AttentionSummary
   activation_summary: ActivationSummary
   answer_position: number
+  generated_answer: GeneratedAnswer
+  generated_answer_top_k: GeneratedAnswerToken[]
   config: ModelConfig
   checkpoint: CheckpointInfo
   network?: NetworkAnalysis | null

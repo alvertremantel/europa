@@ -1,13 +1,13 @@
 import { Activity, Brain, Hash, Layers3, Target } from 'lucide-react'
 
-import type { AnalysisResult, TopPrediction } from '../api'
+import type { AnalysisResult, GeneratedAnswer } from '../api'
 
 interface OverviewMetricsProps {
   result: AnalysisResult
-  answerPrediction: TopPrediction | null
+  generatedAnswer: GeneratedAnswer | null
 }
 
-export function OverviewMetrics({ result, answerPrediction }: OverviewMetricsProps) {
+export function OverviewMetrics({ result, generatedAnswer }: OverviewMetricsProps) {
   const cards = [
     {
       label: 'Tokens in prompt',
@@ -23,9 +23,9 @@ export function OverviewMetrics({ result, answerPrediction }: OverviewMetricsPro
     },
     {
       label: 'Answer prediction',
-      value: answerPrediction?.token ?? '—',
+      value: generatedAnswer?.text ?? '—',
       icon: Target,
-      note: answerPrediction ? `${(answerPrediction.confidence * 100).toFixed(1)}% confidence` : 'No result yet',
+      note: formatAnswerStatus(generatedAnswer),
     },
     {
       label: 'Peak residual norm',
@@ -55,6 +55,19 @@ export function OverviewMetrics({ result, answerPrediction }: OverviewMetricsPro
       ))}
     </section>
   )
+}
+
+function formatAnswerStatus(generatedAnswer: GeneratedAnswer | null): string {
+  if (!generatedAnswer) {
+    return 'No result yet'
+  }
+  if (generatedAnswer.is_correct) {
+    return 'Mathematically correct'
+  }
+  if (generatedAnswer.is_valid_canonical) {
+    return 'Mathematically incorrect'
+  }
+  return generatedAnswer.validation_error ?? 'Not a canonical answer'
 }
 
 function strongestHeadWeight(result: AnalysisResult): number {

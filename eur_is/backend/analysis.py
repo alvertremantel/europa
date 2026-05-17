@@ -5,11 +5,30 @@ from typing import Any, TypedDict
 
 import numpy as np
 
+from eur_ts.generator.core import parse_line
+from eur_ts.trainer.formatting import extract_final_answer
+
+ARITHMETIC_MISMATCH_PREFIX = "arithmetic mismatch:"
+
 
 class PredictionSummary(TypedDict):
     token: str
     confidence: float
     logit: float
+
+
+class GeneratedAnswerSummary(TypedDict):
+    text: str
+    tokens: list[str]
+    token_count: int
+    is_correct: bool
+    is_valid_canonical: bool
+    validation_error: str | None
+
+
+class GeneratedAnswerTokenSummary(TypedDict):
+    token: str
+    top_predictions: list[PredictionSummary]
 
 
 def build_top_prediction_summaries(
@@ -37,6 +56,55 @@ def build_top_prediction_summaries(
         top_predictions.append(ranked[0])
 
     return top_predictions, top_k_predictions
+
+
+def build_ranked_predictions_for_distribution(
+    *,
+    probs: np.ndarray,
+    logits: np.ndarray,
+    tokens_by_id: list[str],
+    top_k: int = 5,
+) -> list[PredictionSummary]:
+    top_indices = np.argsort(probs)[-top_k:][::-1]
+    ranked: list[PredictionSummary] = []
+    for token_index in top_indices:
+        ranked.append(
+            {
+                "token": tokens_by_id[int(token_index)],
+                "confidence": float(probs[token_index]),
+                "logit": float(logits[token_index]),
+            }
+        )
+    return ranked
+
+
+def evaluate_generated_answer(
+    *, expression_text: str, generated_text: str
+) -> GeneratedAnswerSummary:
+    final_answer = extract_final_answer(generated_text)
+    line = f"{expression_text} <ans> {final_answer}".strip()
+
+    try:
+        parse_line(line)
+    except ValueError as error:
+        message = str(error)
+        return {
+            "text": final_answer,
+            "tokens": list(final_answer),
+            "token_count": len(final_answer),
+            "is_correct": False,
+            "is_valid_canonical": message.startswith(ARITHMETIC_MISMATCH_PREFIX),
+            "validation_error": message,
+        }
+
+    return {
+        "text": final_answer,
+        "tokens": list(final_answer),
+        "token_count": len(final_answer),
+        "is_correct": True,
+        "is_valid_canonical": True,
+        "validation_error": None,
+    }
 
 
 def build_attention_summary(

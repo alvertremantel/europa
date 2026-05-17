@@ -9,9 +9,13 @@ import torch
 from fastapi import FastAPI, HTTPException
 
 from eur_is.backend.analysis import (
+    GeneratedAnswerSummary,
+    GeneratedAnswerTokenSummary,
+    build_ranked_predictions_for_distribution,
     build_activation_summary,
     build_attention_summary,
     build_top_prediction_summaries,
+    evaluate_generated_answer,
     summarize_checkpoint,
 )
 from eur_is.backend.network_analysis import (
@@ -24,6 +28,8 @@ from eur_is.backend.schemas import (
     AnalyzeResponse,
     AttentionSummaryResponse,
     CheckpointResponse,
+    GeneratedAnswerResponse,
+    GeneratedAnswerToken,
     HealthResponse,
     ModelConfigResponse,
     TopPrediction,
@@ -31,6 +37,7 @@ from eur_is.backend.schemas import (
 from eur_is.backend import settings
 
 logger = logging.getLogger(__name__)
+MAX_GENERATED_ANSWER_TOKENS = 32
 
 app = FastAPI(
     title="Europa ALM-IS Web API",
@@ -81,6 +88,8 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
         )
 
     tokens = [tokenizer.id_to_token[token_id] for token_id in token_ids]
+    prompt_text = tokenizer.decode(token_ids)
+    expression_text = prompt_text.split(" <ans>", maxsplit=1)[0].strip()
     input_tensor = torch.tensor(
         token_ids, dtype=torch.long, device=settings.DEVICE
     ).unsqueeze(0)
@@ -115,6 +124,13 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
             logits=logits_np,
             tokens_by_id=tokenizer.id_to_token,
             top_k=request.top_k,
+        )
+        generated_answer, generated_answer_top_k = _generate_answer_details(
+            model=model,
+            tokenizer=tokenizer,
+            prompt_token_ids=token_ids,
+            top_k=request.top_k,
+            expression_text=expression_text,
         )
         attention_summary = build_attention_summary(
             attention_by_layer=attention_by_layer,
@@ -153,6 +169,24 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
         attention_summary=AttentionSummaryResponse(**attention_summary),
         activation_summary=ActivationSummaryResponse(**activation_summary),
         answer_position=len(tokens) - 1,
+        generated_answer=GeneratedAnswerResponse(
+            text=generated_answer["text"],
+            tokens=generated_answer["tokens"],
+            token_count=generated_answer["token_count"],
+            is_correct=generated_answer["is_correct"],
+            is_valid_canonical=generated_answer["is_valid_canonical"],
+            validation_error=generated_answer["validation_error"],
+        ),
+        generated_answer_top_k=[
+            GeneratedAnswerToken(
+                token=entry["token"],
+                top_predictions=[
+                    TopPrediction(**prediction)
+                    for prediction in entry["top_predictions"]
+                ],
+            )
+            for entry in generated_answer_top_k
+        ],
         config=ModelConfigResponse(
             n_layers=model.cfg.n_layers,
             n_heads=model.cfg.n_heads,
@@ -167,6 +201,59 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
         ),
         network=network_analysis,
     )
+
+
+def _generate_answer_details(
+    *,
+    model,
+    tokenizer,
+    prompt_token_ids: list[int],
+    top_k: int,
+    expression_text: str,
+) -> tuple[GeneratedAnswerSummary, list[GeneratedAnswerTokenSummary]]:
+    generated = torch.tensor(
+        prompt_token_ids, dtype=torch.long, device=settings.DEVICE
+    ).unsqueeze(0)
+    answer_token_ids: list[int] = []
+    answer_top_k: list[GeneratedAnswerTokenSummary] = []
+
+    for _ in range(MAX_GENERATED_ANSWER_TOKENS):
+        window = generated[:, -model.cfg.n_ctx :]
+        step_logits = model(window)[0, -1].detach().cpu()
+        step_probs = torch.softmax(step_logits, dim=-1)
+        ranked = build_ranked_predictions_for_distribution(
+            probs=step_probs.numpy(),
+            logits=step_logits.numpy(),
+            tokens_by_id=tokenizer.id_to_token,
+            top_k=top_k,
+        )
+        next_token_id = int(step_logits.argmax().item())
+        if next_token_id == tokenizer.eos_id:
+            break
+        answer_token_ids.append(next_token_id)
+        answer_top_k.append(
+            {
+                "token": tokenizer.id_to_token[next_token_id],
+                "top_predictions": ranked,
+            }
+        )
+        next_token = torch.tensor(
+            [[next_token_id]], dtype=torch.long, device=settings.DEVICE
+        )
+        generated = torch.cat((generated, next_token), dim=1)
+
+    generated_text = tokenizer.decode(generated.squeeze(0).tolist())
+    if " <ans> " in generated_text:
+        generated_text = generated_text.split(" <ans> ", maxsplit=1)[1]
+    generated_answer = evaluate_generated_answer(
+        expression_text=expression_text,
+        generated_text=generated_text,
+    )
+    generated_answer["tokens"] = [
+        tokenizer.id_to_token[token_id] for token_id in answer_token_ids
+    ]
+    generated_answer["token_count"] = len(answer_token_ids)
+    return generated_answer, answer_top_k
 
 
 @app.get("/api/health", response_model=HealthResponse)

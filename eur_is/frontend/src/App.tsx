@@ -27,7 +27,9 @@ function App() {
     setSelectedLayer,
     activeDetailTab,
     networkControls,
-    answerPrediction,
+    generatedAnswer,
+    selectedAnswerTokenIndex,
+    setSelectedAnswerTokenIndex,
     submitPrompt,
     requestNetworkAnalysis,
     openDetailTab,
@@ -81,7 +83,7 @@ function App() {
 
       {result ? (
         <main className="dashboard">
-          <OverviewMetrics result={result} answerPrediction={answerPrediction} />
+          <OverviewMetrics result={result} generatedAnswer={generatedAnswer} />
 
           <div className="dashboard__primary">
             <TokenPredictionTable result={result} />
@@ -137,7 +139,11 @@ function App() {
               <div
                 className={`detail-panel detail-panel--full ${activeDetailTab === 'logits' ? 'detail-panel--active' : ''}`}
               >
-                <LogitPanel result={result} />
+                <LogitPanel
+                  result={result}
+                  selectedAnswerTokenIndex={selectedAnswerTokenIndex}
+                  onSelectedAnswerTokenIndexChange={setSelectedAnswerTokenIndex}
+                />
               </div>
 
               <div

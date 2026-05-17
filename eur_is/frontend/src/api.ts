@@ -12,6 +12,8 @@ export type {
   AttentionNetworkSummary,
   AttentionSummary,
   AnalyzePromptOptions,
+  GeneratedAnswer,
+  GeneratedAnswerToken,
   CheckpointInfo,
   HealthResponse,
   LogitLensEntry,

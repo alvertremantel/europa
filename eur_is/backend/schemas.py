@@ -28,6 +28,20 @@ class TopPrediction(BaseModel):
     logit: float | None = None
 
 
+class GeneratedAnswerToken(BaseModel):
+    token: str
+    top_predictions: list[TopPrediction]
+
+
+class GeneratedAnswerResponse(BaseModel):
+    text: str
+    tokens: list[str]
+    token_count: int
+    is_correct: bool
+    is_valid_canonical: bool
+    validation_error: str | None = None
+
+
 class StrongestAttentionPair(BaseModel):
     query_index: int
     key_index: int
@@ -76,6 +90,8 @@ class AnalyzeResponse(BaseModel):
     attention_summary: AttentionSummaryResponse
     activation_summary: ActivationSummaryResponse
     answer_position: int
+    generated_answer: GeneratedAnswerResponse
+    generated_answer_top_k: list[GeneratedAnswerToken]
     config: ModelConfigResponse
     checkpoint: CheckpointResponse
     network: dict[str, Any] | None = None

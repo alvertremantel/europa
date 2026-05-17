@@ -124,6 +124,7 @@ code {
 
 .prompt-bar__header p,
 .panel__header p,
+.panel__subnote,
 .status-card p,
 .metric-card span,
 .empty-state p {
@@ -240,7 +241,8 @@ code {
 }
 
 .metric-card p,
-.metric-card span {
+.metric-card span,
+.panel__subnote {
   margin: 0;
 }
 
