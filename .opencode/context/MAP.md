@@ -5,8 +5,8 @@
 - `eur_ts/config/` — canonical training/model config schema, TOML loader, template/guide text, sizing, and `uv run config`
 - `eur_ts/trainer/` — model, tokenizer/data loading, formatting/curriculum, inference, training/checkpointing, interp tooling
 - `eur_ts/evaluator/` — stratified evaluator CLI, sampling, metadata resolution, runner, report writers
-- `eur_is/backend/` — FastAPI API, schemas/settings, checkpoint/resource loading, TransformerLens analysis bridge
-- `eur_is/frontend/` — React/Vite dashboard, API types/client, analysis session hook, network UI components
+- `eur_is/backend/` — FastAPI API, schemas/settings, dual-runtime checkpoint loading, prompt analysis, and optional network analysis (`runtime.py` is the dashboard runtime switch)
+- `eur_is/frontend/` — React/Vite dashboard, API types/client, capability-aware session state, and network/attention/logit panels
 
 ## Project entrypoints and config
 - `pyproject.toml` — package metadata and CLI entrypoints (`generate`, `train`, `evaluate`, `config`)
@@ -16,7 +16,7 @@
 - `eur_ts/`, `eur_is/` — only packaged Python roots; legacy shim roots are removed
 
 ## Supporting code and context
-- `tests/` — config loader/CLI tests, training CLI migration tests, and core smoke tests
+- `tests/` — config loader/CLI tests, training CLI migration tests, core smoke tests, and backend API/runtime tests (`tests/test_is_backend.py`)
 - `scripts/` — repo utility scripts (`analyze_strata_eval.py`, `check_length_safety.py`, `count_problem_sets.py`, `promptize_math.py`, `verify_tl_parity.py`)
 - `info/` — research notes
 - `.opencode/context/` — local working context (`NOTES.md`, `MAP.md`)

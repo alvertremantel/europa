@@ -1,3 +1,15 @@
+export type PositionEncoding = 'absolute' | 'digit_roles'
+
+export type AnalysisRuntime = 'transformerlens' | 'native_pytorch'
+
+export interface AnalysisCapabilities {
+  prompt_analysis: boolean
+  generated_answer: boolean
+  attention_view: boolean
+  network_analysis: boolean
+  circuitsvis_attention: boolean
+}
+
 export interface TopPrediction {
   token: string
   confidence: number
@@ -196,14 +208,20 @@ export interface CheckpointInfo {
   checkpoint_schema_version: number | null
 }
 
-export interface AnalysisResult {
+export interface RuntimeMetadata {
+  position_encoding?: PositionEncoding | null
+  analysis_runtime?: AnalysisRuntime | null
+  capabilities?: AnalysisCapabilities | null
+}
+
+export interface AnalysisResult extends RuntimeMetadata {
   tokens: string[]
-  attention: number[][][][]
+  attention?: number[][][][] | null
   activations: number[][][]
   logits: number[][]
   top_predictions: TopPrediction[]
   top_k_predictions: TopPrediction[][]
-  attention_summary: AttentionSummary
+  attention_summary?: AttentionSummary | null
   activation_summary: ActivationSummary
   answer_position: number
   generated_answer: GeneratedAnswer
@@ -214,7 +232,7 @@ export interface AnalysisResult {
   network?: NetworkAnalysis | null
 }
 
-export interface HealthResponse {
+export interface HealthResponse extends RuntimeMetadata {
   status: string
   device: string
   checkpoint: CheckpointInfo

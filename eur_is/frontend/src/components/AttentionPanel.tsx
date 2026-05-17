@@ -16,6 +16,8 @@ export function AttentionPanel({
   selectedLayer,
   onSelectedLayerChange,
 }: AttentionPanelProps) {
+  const attentionByLayer = result.attention
+  const attentionSummary = result.attention_summary
   const [viewMode, setViewMode] = useState<'layer' | 'stack'>('layer')
   const allHeadIndices = useMemo(
     () => Array.from({ length: result.config.n_heads }, (_, index) => index),
@@ -43,15 +45,15 @@ export function AttentionPanel({
   }, [allHeadIndices, result.config.n_heads, selectedLayer, visibleHeadsByLayer])
   const graphColumns = Math.max(1, Math.min(maxHeadsPerRow, visibleHeads.length || 1))
   const metricRange = useMemo(() => {
-    const values = result.attention_summary.heads.flatMap((layer) =>
+    const values = (attentionSummary?.heads ?? []).flatMap((layer) =>
       layer.map((head) => head[matrixMetric]),
     )
     return {
       min: Math.min(...values, 0),
       max: Math.max(...values, 1),
     }
-  }, [matrixMetric, result.attention_summary.heads])
-  const focusedHead = result.attention_summary.heads[selectedLayer]?.[clampedSelectedHead] ?? null
+  }, [attentionSummary?.heads, matrixMetric])
+  const focusedHead = attentionSummary?.heads[selectedLayer]?.[clampedSelectedHead] ?? null
 
   function setSelectedHeadForLayer(layerIndex: number, headIndex: number) {
     setSelectedHeadsByLayer((current) => ({
@@ -101,6 +103,19 @@ export function AttentionPanel({
     () => Array.from({ length: result.config.n_layers }, (_, layerIndex) => layerIndex),
     [result.config.n_layers],
   )
+
+  if (!attentionByLayer || !attentionSummary) {
+    return (
+      <section className="card panel">
+        <div className="panel__header">
+          <div>
+            <h2>Attention heads</h2>
+            <p>Raw attention patterns are unavailable for the loaded checkpoint mode.</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="card panel">
@@ -171,7 +186,7 @@ export function AttentionPanel({
                 H{headIndex}
               </div>
             ))}
-            {result.attention_summary.heads.map((layer, layerIndex) => [
+            {attentionSummary.heads.map((layer, layerIndex) => [
               <div key={`layer-${layerIndex}`} className="attention-matrix__layer-label">
                 L{layerIndex}
               </div>,
@@ -319,7 +334,7 @@ export function AttentionPanel({
                 layerIndex={selectedLayer}
                 headIndex={headIndex}
                 tokens={result.tokens}
-                attention={result.attention[selectedLayer][headIndex]}
+                attention={attentionByLayer[selectedLayer][headIndex]}
                 focused={clampedSelectedHead === headIndex}
                 onFocus={() => {
                   setSelectedHeadForLayer(selectedLayer, headIndex)
@@ -346,7 +361,7 @@ export function AttentionPanel({
                       layerIndex={layerIndex}
                       headIndex={headIndex}
                       tokens={result.tokens}
-                      attention={result.attention[layerIndex][headIndex]}
+                      attention={attentionByLayer[layerIndex][headIndex]}
                       focused={selectedLayer === layerIndex && clampedSelectedHead === headIndex}
                       onFocus={() => {
                         onSelectedLayerChange(layerIndex)

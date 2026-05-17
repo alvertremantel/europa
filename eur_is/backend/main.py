@@ -3,26 +3,16 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
-import numpy as np
-import torch
 from fastapi import FastAPI, HTTPException
 
 from eur_is.backend.analysis import (
-    GeneratedAnswerSummary,
-    GeneratedAnswerTokenSummary,
-    build_ranked_predictions_for_distribution,
-    build_activation_summary,
-    build_attention_summary,
-    build_top_prediction_summaries,
-    evaluate_generated_answer,
     summarize_problem,
     summarize_checkpoint,
+    summarize_runtime_metadata,
 )
-from eur_is.backend.network_analysis import (
-    clamp_network_options,
-    extract_network_analysis,
-)
+from eur_is.backend.network_analysis import clamp_network_options
 from eur_is.backend.schemas import (
     ActivationSummaryResponse,
     AnalyzeRequest,
@@ -40,6 +30,16 @@ from eur_is.backend import settings
 
 logger = logging.getLogger(__name__)
 MAX_GENERATED_ANSWER_TOKENS = 32
+
+
+def _first_config_value(*values: Any) -> Any:
+    for value in values:
+        if value is not None:
+            return value
+    raise RuntimeError(
+        "Loaded runtime is missing required model configuration metadata."
+    )
+
 
 app = FastAPI(
     title="Europa ALM-IS Web API",
@@ -70,10 +70,8 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
-    model = settings.model
-    tokenizer = settings.tokenizer
-    if tokenizer is None or model is None:
-        raise HTTPException(status_code=503, detail="Model resources are unavailable.")
+    runtime = settings.get_runtime()
+    tokenizer = runtime.tokenizer
 
     problem_metadata = None
     try:
@@ -88,108 +86,111 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
-    if len(token_ids) > model.cfg.n_ctx:
+    try:
+        runtime.ensure_prompt_fits(len(token_ids))
+    except ValueError as error:
         raise HTTPException(
             status_code=400,
-            detail=(
-                f"Prompt is too long for the loaded checkpoint context window "
-                f"({len(token_ids)} tokens > {model.cfg.n_ctx})."
-            ),
+            detail=str(error),
         )
 
-    tokens = [tokenizer.id_to_token[token_id] for token_id in token_ids]
     prompt_text = tokenizer.decode(token_ids)
     expression_text = prompt_text.split(" <ans>", maxsplit=1)[0].strip()
-    input_tensor = torch.tensor(
-        token_ids, dtype=torch.long, device=settings.DEVICE
-    ).unsqueeze(0)
     network_options = clamp_network_options(
         mlp_threshold=request.mlp_threshold,
         top_k=request.top_k,
         top_neurons=request.top_neurons,
         selected_token_index=request.selected_token_index,
-        token_count=len(tokens),
+        token_count=len(token_ids),
     )
 
     try:
-        with torch.no_grad():
-            logits, cache = model.run_with_cache(input_tensor)
-
-        attention_by_layer: list[np.ndarray] = []
-        residual_layers: list[np.ndarray] = []
-        for layer_idx in range(model.cfg.n_layers):
-            attention_by_layer.append(
-                cache[f"blocks.{layer_idx}.attn.hook_pattern"][0].detach().cpu().numpy()
-            )
-            residual_layers.append(
-                cache[f"blocks.{layer_idx}.hook_resid_post"][0].detach().cpu().numpy()
-            )
-
-        stacked_activations = np.stack(residual_layers, axis=1)
-        logits_np = logits[0].detach().cpu().numpy()
-        probs = torch.softmax(logits[0], dim=-1).detach().cpu().numpy()
-
-        top_predictions, top_k_predictions = build_top_prediction_summaries(
-            probs=probs,
-            logits=logits_np,
-            tokens_by_id=tokenizer.id_to_token,
-            top_k=request.top_k,
-        )
-        generated_answer, generated_answer_top_k = _generate_answer_details(
-            model=model,
-            tokenizer=tokenizer,
+        analysis = runtime.analyze_prompt(
             prompt_token_ids=token_ids,
             top_k=request.top_k,
             expression_text=expression_text,
-        )
-        attention_summary = build_attention_summary(
-            attention_by_layer=attention_by_layer,
-            tokens=tokens,
-        )
-        activation_summary = build_activation_summary(
-            stacked_activations=stacked_activations,
+            max_generated_answer_tokens=MAX_GENERATED_ANSWER_TOKENS,
         )
         network_analysis = None
-        if request.include_network:
-            network_analysis = extract_network_analysis(
-                model=model,
-                tokenizer=tokenizer,
-                tokens=tokens,
-                cache=cache,
-                mlp_threshold=float(network_options["mlp_threshold"]),
-                top_k=int(network_options["top_k"]),
-                top_neurons=int(network_options["top_neurons"]),
-                selected_token_index=network_options["selected_token_index"],
+        if request.include_network and runtime.capabilities.network_analysis:
+            network_analysis = runtime.build_network_analysis(
+                analysis=analysis,
+                network_options=network_options,
             )
     except HTTPException:
         raise
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
 
-    checkpoint_model_config = settings.checkpoint_metadata.get("model_config")
+    checkpoint_model_config = runtime.checkpoint_metadata.get("model_config")
     if not isinstance(checkpoint_model_config, dict):
         checkpoint_model_config = {}
+    runtime_metadata = summarize_runtime_metadata(
+        position_encoding=runtime.position_encoding,
+        analysis_runtime=runtime.analysis_runtime,
+        capabilities=runtime.capabilities.to_dict(),
+    )
+    runtime_model_config = getattr(runtime.model, "config", None)
+    runtime_tl_config = getattr(runtime.model, "cfg", None)
+    d_head = _first_config_value(
+        getattr(runtime_tl_config, "d_head", None),
+        checkpoint_model_config.get("d_head"),
+        runtime.d_model // max(runtime.n_heads, 1),
+    )
+    mlp_hidden = _first_config_value(
+        getattr(runtime_tl_config, "d_mlp", None),
+        getattr(runtime_model_config, "mlp_hidden", None),
+        checkpoint_model_config.get("mlp_hidden"),
+    )
+    sequence_length = _first_config_value(
+        getattr(runtime_tl_config, "n_ctx", None),
+        getattr(runtime_model_config, "sequence_length", None),
+        checkpoint_model_config.get("sequence_length"),
+        getattr(runtime, "context_window", None),
+    )
+    vocab_size = _first_config_value(
+        getattr(runtime_tl_config, "d_vocab", None),
+        getattr(runtime_model_config, "vocab_size", None),
+        checkpoint_model_config.get("vocab_size"),
+        tokenizer.vocab_size,
+    )
+    dropout = _first_config_value(
+        getattr(runtime_tl_config, "attn_dropout", None),
+        getattr(runtime_model_config, "dropout", None),
+        checkpoint_model_config.get("dropout"),
+    )
 
     return AnalyzeResponse(
-        tokens=tokens,
-        attention=[layer.tolist() for layer in attention_by_layer],
-        activations=stacked_activations.tolist(),
-        logits=logits_np.tolist(),
-        top_predictions=[TopPrediction(**prediction) for prediction in top_predictions],
+        **runtime_metadata,
+        tokens=analysis.tokens,
+        attention=(
+            [layer.tolist() for layer in analysis.attention_by_layer]
+            if analysis.attention_by_layer is not None
+            else None
+        ),
+        activations=analysis.stacked_activations.tolist(),
+        logits=analysis.logits.tolist(),
+        top_predictions=[
+            TopPrediction(**prediction) for prediction in analysis.top_predictions
+        ],
         top_k_predictions=[
             [TopPrediction(**prediction) for prediction in predictions]
-            for predictions in top_k_predictions
+            for predictions in analysis.top_k_predictions
         ],
-        attention_summary=AttentionSummaryResponse(**attention_summary),
-        activation_summary=ActivationSummaryResponse(**activation_summary),
-        answer_position=len(tokens) - 1,
+        attention_summary=(
+            AttentionSummaryResponse(**analysis.attention_summary)
+            if analysis.attention_summary is not None
+            else None
+        ),
+        activation_summary=ActivationSummaryResponse(**analysis.activation_summary),
+        answer_position=analysis.answer_position,
         generated_answer=GeneratedAnswerResponse(
-            text=generated_answer["text"],
-            tokens=generated_answer["tokens"],
-            token_count=generated_answer["token_count"],
-            is_correct=generated_answer["is_correct"],
-            is_valid_canonical=generated_answer["is_valid_canonical"],
-            validation_error=generated_answer["validation_error"],
+            text=analysis.generated_answer["text"],
+            tokens=analysis.generated_answer["tokens"],
+            token_count=analysis.generated_answer["token_count"],
+            is_correct=analysis.generated_answer["is_correct"],
+            is_valid_canonical=analysis.generated_answer["is_valid_canonical"],
+            validation_error=analysis.generated_answer["validation_error"],
         ),
         generated_answer_top_k=[
             GeneratedAnswerToken(
@@ -199,19 +200,17 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
                     for prediction in entry["top_predictions"]
                 ],
             )
-            for entry in generated_answer_top_k
+            for entry in analysis.generated_answer_top_k
         ],
         config=ModelConfigResponse(
-            n_layers=model.cfg.n_layers,
-            n_heads=model.cfg.n_heads,
-            d_model=model.cfg.d_model,
-            d_head=getattr(model.cfg, "d_head", model.cfg.d_model // model.cfg.n_heads),
-            mlp_hidden=getattr(
-                model.cfg, "d_mlp", checkpoint_model_config.get("mlp_hidden")
-            ),
-            sequence_length=model.cfg.n_ctx,
-            vocab_size=getattr(model.cfg, "d_vocab", tokenizer.vocab_size),
-            dropout=getattr(model.cfg, "attn_dropout", None),
+            n_layers=runtime.n_layers,
+            n_heads=runtime.n_heads,
+            d_model=runtime.d_model,
+            d_head=int(d_head),
+            mlp_hidden=int(mlp_hidden) if mlp_hidden is not None else None,
+            sequence_length=int(sequence_length),
+            vocab_size=int(vocab_size),
+            dropout=float(dropout) if dropout is not None else None,
         ),
         problem=ProblemMetadataResponse(**problem_metadata)
         if problem_metadata
@@ -220,84 +219,45 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
             **summarize_checkpoint(
                 checkpoint_path=str(settings.CHECKPOINT_PATH),
                 device=settings.DEVICE,
-                metadata=settings.checkpoint_metadata,
+                metadata=runtime.checkpoint_metadata,
             )
         ),
         network=network_analysis,
     )
 
 
-def _generate_answer_details(
-    *,
-    model,
-    tokenizer,
-    prompt_token_ids: list[int],
-    top_k: int,
-    expression_text: str,
-) -> tuple[GeneratedAnswerSummary, list[GeneratedAnswerTokenSummary]]:
-    generated = torch.tensor(
-        prompt_token_ids, dtype=torch.long, device=settings.DEVICE
-    ).unsqueeze(0)
-    answer_token_ids: list[int] = []
-    answer_top_k: list[GeneratedAnswerTokenSummary] = []
-
-    for _ in range(MAX_GENERATED_ANSWER_TOKENS):
-        window = generated[:, -model.cfg.n_ctx :]
-        step_logits = model(window)[0, -1].detach().cpu()
-        step_probs = torch.softmax(step_logits, dim=-1)
-        ranked = build_ranked_predictions_for_distribution(
-            probs=step_probs.numpy(),
-            logits=step_logits.numpy(),
-            tokens_by_id=tokenizer.id_to_token,
-            top_k=top_k,
-        )
-        next_token_id = int(step_logits.argmax().item())
-        if next_token_id == tokenizer.eos_id:
-            break
-        answer_token_ids.append(next_token_id)
-        answer_top_k.append(
-            {
-                "token": tokenizer.id_to_token[next_token_id],
-                "top_predictions": ranked,
-            }
-        )
-        next_token = torch.tensor(
-            [[next_token_id]], dtype=torch.long, device=settings.DEVICE
-        )
-        generated = torch.cat((generated, next_token), dim=1)
-
-    generated_text = tokenizer.decode(generated.squeeze(0).tolist())
-    if " <ans> " in generated_text:
-        generated_text = generated_text.split(" <ans> ", maxsplit=1)[1]
-    generated_answer = evaluate_generated_answer(
-        expression_text=expression_text,
-        generated_text=generated_text,
-    )
-    generated_answer["tokens"] = [
-        tokenizer.id_to_token[token_id] for token_id in answer_token_ids
-    ]
-    generated_answer["token_count"] = len(answer_token_ids)
-    return generated_answer, answer_top_k
-
-
 @app.get("/api/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     status = "ok"
     detail = None
+    runtime_metadata = summarize_runtime_metadata(
+        position_encoding=None,
+        analysis_runtime=None,
+        capabilities=None,
+    )
+    metadata = settings.checkpoint_metadata
     try:
         settings.load_resources()
+        if settings.runtime is not None:
+            metadata = settings.runtime.checkpoint_metadata
+            runtime_metadata = summarize_runtime_metadata(
+                position_encoding=settings.runtime.position_encoding,
+                analysis_runtime=settings.runtime.analysis_runtime,
+                capabilities=settings.runtime.capabilities.to_dict(),
+            )
     except RuntimeError as error:
         status = "error"
         detail = str(error)
 
     return HealthResponse(
+        **runtime_metadata,
         status=status,
         device=settings.DEVICE,
         checkpoint=CheckpointResponse(
             **summarize_checkpoint(
                 checkpoint_path=str(settings.CHECKPOINT_PATH),
                 device=settings.DEVICE,
-                metadata=settings.checkpoint_metadata,
+                metadata=metadata,
             )
         ),
         detail=detail,

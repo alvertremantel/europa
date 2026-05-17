@@ -36,9 +36,11 @@ export function OverviewMetrics({ result, generatedAnswer }: OverviewMetricsProp
     },
     {
       label: 'Strongest attention',
-      value: strongestHeadWeight(result).toFixed(3),
+      value: result.attention_summary ? strongestHeadWeight(result).toFixed(3) : '—',
       icon: Brain,
-      note: 'Max weight across all layers and heads',
+      note: result.attention_summary
+        ? 'Max weight across all layers and heads'
+        : 'Unavailable for this checkpoint mode',
     },
   ]
 
@@ -72,6 +74,9 @@ function formatAnswerStatus(generatedAnswer: GeneratedAnswer | null): string {
 }
 
 function strongestHeadWeight(result: AnalysisResult): number {
+  if (!result.attention_summary) {
+    return 0
+  }
   return result.attention_summary.heads.reduce((maxWeight, layer) => {
     return layer.reduce((layerMax, head) => Math.max(layerMax, head.max_weight), maxWeight)
   }, 0)

@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 
 from eur_is.backend.model_utils import get_hooked_model
-from eur_ts.trainer.data import ArithmeticTokenizer
+from eur_ts.trainer.data import ArithmeticTokenizer, POSITION_ENCODING_DIGIT_ROLES
 
 
 def verify_parity():
@@ -22,6 +22,11 @@ def verify_parity():
     from eur_ts.trainer.model import SmallCausalTransformer
 
     model_config = ModelConfig(**config_dict)
+    if model_config.position_encoding == POSITION_ENCODING_DIGIT_ROLES:
+        print(
+            "Skipping parity verification: digit_roles checkpoints are unsupported by TransformerLens parity tooling."
+        )
+        return
     original_model = SmallCausalTransformer(model_config)
     original_model.load_state_dict(checkpoint["model_state"])
     original_model.to(device)

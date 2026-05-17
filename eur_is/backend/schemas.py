@@ -33,6 +33,14 @@ class ProblemMetadataResponse(BaseModel):
     curriculum_group: str
 
 
+class RuntimeCapabilitiesResponse(BaseModel):
+    prompt_analysis: bool
+    generated_answer: bool
+    attention_view: bool
+    network_analysis: bool
+    circuitsvis_attention: bool
+
+
 class TopPrediction(BaseModel):
     token: str
     confidence: float
@@ -91,14 +99,20 @@ class CheckpointResponse(BaseModel):
     checkpoint_schema_version: int | None = None
 
 
-class AnalyzeResponse(BaseModel):
+class RuntimeMetadataResponse(BaseModel):
+    position_encoding: str | None = None
+    analysis_runtime: str | None = None
+    capabilities: RuntimeCapabilitiesResponse | None = None
+
+
+class AnalyzeResponse(RuntimeMetadataResponse):
     tokens: list[str]
-    attention: list[list[list[list[float]]]]
+    attention: list[list[list[list[float]]]] | None = None
     activations: list[list[list[float]]]
     logits: list[list[float]]
     top_predictions: list[TopPrediction]
     top_k_predictions: list[list[TopPrediction]]
-    attention_summary: AttentionSummaryResponse
+    attention_summary: AttentionSummaryResponse | None = None
     activation_summary: ActivationSummaryResponse
     answer_position: int
     generated_answer: GeneratedAnswerResponse
@@ -109,7 +123,7 @@ class AnalyzeResponse(BaseModel):
     network: dict[str, Any] | None = None
 
 
-class HealthResponse(BaseModel):
+class HealthResponse(RuntimeMetadataResponse):
     status: str
     device: str
     checkpoint: CheckpointResponse

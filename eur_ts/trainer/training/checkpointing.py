@@ -12,7 +12,11 @@ from typing import cast
 import torch
 
 from eur_ts.config import ModelConfig, TrainConfig
-from ..data import ArithmeticTokenizer
+from ..data import (
+    ArithmeticTokenizer,
+    POSITION_ENCODING_ABSOLUTE,
+    POSITION_ROLE_VOCAB_SIZE,
+)
 from ..model import SmallCausalTransformer
 
 from .state import capture_rng_state
@@ -138,6 +142,16 @@ def _model_config_from_payload(payload: dict[str, object]) -> ModelConfig:
             n_layers=_as_int(state["n_layers"], "model_config.n_layers"),
             mlp_hidden=_as_int(state["mlp_hidden"], "model_config.mlp_hidden"),
             dropout=_as_float(state["dropout"], "model_config.dropout"),
+            position_encoding=_as_optional_str(
+                state.get("position_encoding"),
+                "model_config.position_encoding",
+                default=POSITION_ENCODING_ABSOLUTE,
+            ),
+            position_vocab_size=_as_optional_int(
+                state.get("position_vocab_size"),
+                "model_config.position_vocab_size",
+                default=POSITION_ROLE_VOCAB_SIZE,
+            ),
         )
     legacy_config = payload.get("config")
     if isinstance(legacy_config, ModelConfig):
@@ -414,6 +428,20 @@ def _as_float(value: object, field_name: str) -> float:
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise ValueError(f"{field_name} must be numeric")
     return float(value)
+
+
+def _as_optional_str(value: object, field_name: str, *, default: str) -> str:
+    if value is None:
+        return default
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} must be a string")
+    return value
+
+
+def _as_optional_int(value: object, field_name: str, *, default: int) -> int:
+    if value is None:
+        return default
+    return _as_int(value, field_name)
 
 
 def best_exact_match_from_history(history: list[dict[str, object]]) -> float:

@@ -11,7 +11,7 @@ import torch
 from torch import Tensor
 
 from .core import load_checkpoint
-from .data import ArithmeticTokenizer
+from .data import ArithmeticTokenizer, POSITION_ENCODING_DIGIT_ROLES
 from .hooks import HookRegistry
 from .visualizer import InterpreterVisualizer
 
@@ -36,7 +36,9 @@ class MechanisticInterpreter:
 
         self.hook_registry = HookRegistry(self.model)
         self.visualizer = InterpreterVisualizer(
-            tokenizer_vocab={index: token for index, token in enumerate(self.tokenizer.id_to_token)}
+            tokenizer_vocab={
+                index: token for index, token in enumerate(self.tokenizer.id_to_token)
+            }
         )
 
     def forward_with_capture(self, input_ids: Tensor | list[int]) -> tuple:
@@ -61,7 +63,18 @@ class MechanisticInterpreter:
         self.hook_registry.capture.sequence_length = input_ids.shape[1]
 
         with torch.no_grad():
-            logits = self.model(input_ids)
+            if self.config.position_encoding == POSITION_ENCODING_DIGIT_ROLES:
+                position_ids = torch.tensor(
+                    [
+                        self.tokenizer.position_role_ids_for_token_ids(row.tolist())
+                        for row in input_ids
+                    ],
+                    dtype=torch.long,
+                    device=self.device,
+                )
+                logits = self.model(input_ids, position_ids)
+            else:
+                logits = self.model(input_ids)
 
         return logits, self.hook_registry.capture
 

@@ -51,10 +51,12 @@ function App() {
     loadingNetwork,
     error,
     networkError,
+    availableDetailTabs,
     selectedLayer,
     setSelectedLayer,
     activeDetailTab,
     networkControls,
+    runtimeCapabilities,
     generatedAnswer,
     selectedAnswerTokenIndex,
     setSelectedAnswerTokenIndex,
@@ -67,11 +69,12 @@ function App() {
 
   const handleOpenDetailTab = useCallback((tab: DetailTab) => {
     openDetailTab(tab)
+    if (tab === 'network' && !runtimeCapabilities?.network_analysis) return
     if (tab !== 'network' || !result) return
     if (!result.network) {
       void requestNetworkAnalysis()
     }
-  }, [openDetailTab, requestNetworkAnalysis, result])
+  }, [openDetailTab, requestNetworkAnalysis, result, runtimeCapabilities?.network_analysis])
 
   useEffect(() => {
     window.localStorage.setItem(DENSITY_STORAGE_KEY, density)
@@ -180,13 +183,15 @@ function App() {
 
           <div className="dashboard__primary">
             <div className="detail-tab-strip" role="tablist" aria-label="Detail panels">
-              <button
-                type="button"
-                className={activeDetailTab === 'attention' ? 'is-active' : ''}
-                onClick={() => handleOpenDetailTab('attention')}
-              >
-                Attention
-              </button>
+              {availableDetailTabs.includes('attention') ? (
+                <button
+                  type="button"
+                  className={activeDetailTab === 'attention' ? 'is-active' : ''}
+                  onClick={() => handleOpenDetailTab('attention')}
+                >
+                  Attention
+                </button>
+              ) : null}
               <button
                 type="button"
                 className={activeDetailTab === 'activations' ? 'is-active' : ''}
@@ -201,13 +206,15 @@ function App() {
               >
                 Logits
               </button>
-              <button
-                type="button"
-                className={activeDetailTab === 'network' ? 'is-active' : ''}
-                onClick={() => handleOpenDetailTab('network')}
-              >
-                Network
-              </button>
+              {availableDetailTabs.includes('network') ? (
+                <button
+                  type="button"
+                  className={activeDetailTab === 'network' ? 'is-active' : ''}
+                  onClick={() => handleOpenDetailTab('network')}
+                >
+                  Network
+                </button>
+              ) : null}
             </div>
 
             <div className={`dashboard__detail-grid ${matchTopRowHeights ? 'dashboard__detail-grid--top-row-collapsed' : ''}`.trim()}>
@@ -215,16 +222,18 @@ function App() {
                 <TokenPredictionTable result={result} matchCollapsedHeight={matchTopRowHeights} onCollapsedStateChange={setPredictionCollapsed} />
               </div>
 
-              <div
-                id="panel-attention"
-                className={`detail-panel ${activeDetailTab === 'attention' ? 'detail-panel--active' : ''}`}
-              >
-                <AttentionPanel
-                  result={result}
-                  selectedLayer={selectedLayer}
-                  onSelectedLayerChange={setSelectedLayer}
-                />
-              </div>
+              {availableDetailTabs.includes('attention') ? (
+                <div
+                  id="panel-attention"
+                  className={`detail-panel ${activeDetailTab === 'attention' ? 'detail-panel--active' : ''}`}
+                >
+                  <AttentionPanel
+                    result={result}
+                    selectedLayer={selectedLayer}
+                    onSelectedLayerChange={setSelectedLayer}
+                  />
+                </div>
+              ) : null}
 
               <div
                 id="panel-activations"
@@ -246,18 +255,20 @@ function App() {
                 />
               </div>
 
-              <div
-                id="panel-network"
-                className={`detail-panel detail-panel--full ${activeDetailTab === 'network' ? 'detail-panel--active' : ''}`}
-              >
-                <NetworkPanel
-                  result={result}
-                  controls={networkControls}
-                  loading={loadingNetwork}
-                  error={networkError}
-                  onRequestNetwork={(controls) => void requestNetworkAnalysis(controls)}
-                />
-              </div>
+              {availableDetailTabs.includes('network') ? (
+                <div
+                  id="panel-network"
+                  className={`detail-panel detail-panel--full ${activeDetailTab === 'network' ? 'detail-panel--active' : ''}`}
+                >
+                  <NetworkPanel
+                    result={result}
+                    controls={networkControls}
+                    loading={loadingNetwork}
+                    error={networkError}
+                    onRequestNetwork={(controls) => void requestNetworkAnalysis(controls)}
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
         </main>

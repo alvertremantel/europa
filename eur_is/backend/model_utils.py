@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
@@ -8,11 +9,24 @@ import torch
 from transformer_lens import HookedTransformer, HookedTransformerConfig
 
 from eur_ts.config import ModelConfig
-from eur_ts.trainer.data import ArithmeticTokenizer
+from eur_ts.trainer.data import (
+    ArithmeticTokenizer,
+    POSITION_ENCODING_ABSOLUTE,
+    POSITION_ROLE_VOCAB_SIZE,
+)
 from eur_ts.trainer.model import SmallCausalTransformer
 from eur_ts.trainer.training.checkpointing import load_checkpoint_payload
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class CheckpointArtifacts:
+    tokenizer: ArithmeticTokenizer
+    model_state: dict[str, torch.Tensor]
+    model_config: dict[str, Any]
+    metadata: dict[str, Any]
+    position_encoding: str
 
 
 def get_hooked_model(checkpoint_path: Path, device: str = "cpu") -> HookedTransformer:
@@ -21,10 +35,10 @@ def get_hooked_model(checkpoint_path: Path, device: str = "cpu") -> HookedTransf
     return model
 
 
-def load_hooked_resources(
+def load_checkpoint_artifacts(
     checkpoint_path: Path,
     device: str = "cpu",
-) -> tuple[HookedTransformer, ArithmeticTokenizer, dict[str, Any]]:
+) -> CheckpointArtifacts:
     payload = load_checkpoint_payload(checkpoint_path, torch.device(device))
     tokenizer_state = payload.get("tokenizer")
     if not isinstance(tokenizer_state, dict):
@@ -49,23 +63,104 @@ def load_hooked_resources(
         else:
             raise ValueError("checkpoint is missing model_config")
 
-    model = _build_hooked_model(
-        state_dict=cast(dict[str, torch.Tensor], model_state),
-        config_dict=cast(dict[str, Any], model_config),
-        device=device,
+    normalized_model_config = _normalize_model_config(
+        cast(dict[str, Any], model_config),
+        vocab_size=tokenizer.vocab_size,
     )
-    model.eval()
-
+    position_encoding = cast(
+        str,
+        normalized_model_config.get("position_encoding") or POSITION_ENCODING_ABSOLUTE,
+    )
     metadata: dict[str, Any] = {
         "epoch": payload.get("epoch"),
         "exact_match": payload.get("exact_match"),
         "val_loss": payload.get("val_loss"),
         "train_loss": payload.get("train_loss"),
-        "model_config": model_config,
+        "model_config": normalized_model_config,
         "train_config": payload.get("train_config"),
         "checkpoint_schema_version": payload.get("checkpoint_schema_version"),
     }
-    return model, tokenizer, metadata
+    return CheckpointArtifacts(
+        tokenizer=tokenizer,
+        model_state=cast(dict[str, torch.Tensor], model_state),
+        model_config=normalized_model_config,
+        metadata=metadata,
+        position_encoding=position_encoding,
+    )
+
+
+def load_hooked_resources(
+    checkpoint_path: Path,
+    device: str = "cpu",
+) -> tuple[HookedTransformer, ArithmeticTokenizer, dict[str, Any]]:
+    artifacts = load_checkpoint_artifacts(checkpoint_path, device=device)
+    if artifacts.position_encoding != POSITION_ENCODING_ABSOLUTE:
+        raise ValueError(
+            "TransformerLens backend support is currently limited to checkpoints with absolute positional embeddings"
+        )
+
+    model = _build_hooked_model(
+        state_dict=artifacts.model_state,
+        config_dict=artifacts.model_config,
+        device=device,
+    )
+    model.eval()
+
+    return model, artifacts.tokenizer, artifacts.metadata
+
+
+def load_native_resources(
+    checkpoint_path: Path,
+    device: str = "cpu",
+) -> tuple[SmallCausalTransformer, ArithmeticTokenizer, dict[str, Any]]:
+    artifacts = load_checkpoint_artifacts(checkpoint_path, device=device)
+    model = SmallCausalTransformer(_build_model_config(artifacts.model_config))
+    model.load_state_dict(artifacts.model_state)
+    model.to(device)
+    model.eval()
+
+    return model, artifacts.tokenizer, artifacts.metadata
+
+
+def _build_model_config(config_dict: dict[str, Any]) -> ModelConfig:
+    return ModelConfig(
+        vocab_size=int(config_dict["vocab_size"]),
+        sequence_length=int(config_dict.get("sequence_length", 64)),
+        d_model=int(config_dict["d_model"]),
+        n_heads=int(config_dict["n_heads"]),
+        n_layers=int(config_dict["n_layers"]),
+        mlp_hidden=int(config_dict["mlp_hidden"]),
+        dropout=float(config_dict["dropout"]),
+        position_encoding=cast(
+            str,
+            config_dict.get("position_encoding") or POSITION_ENCODING_ABSOLUTE,
+        ),
+        position_vocab_size=int(
+            config_dict.get("position_vocab_size", POSITION_ROLE_VOCAB_SIZE)
+        ),
+    )
+
+
+def _normalize_model_config(
+    config_dict: dict[str, Any], *, vocab_size: int
+) -> dict[str, Any]:
+    return {
+        **config_dict,
+        "vocab_size": int(config_dict.get("vocab_size", vocab_size)),
+        "sequence_length": int(config_dict.get("sequence_length", 64)),
+        "d_model": int(config_dict["d_model"]),
+        "n_heads": int(config_dict["n_heads"]),
+        "n_layers": int(config_dict["n_layers"]),
+        "mlp_hidden": int(config_dict["mlp_hidden"]),
+        "dropout": float(config_dict["dropout"]),
+        "position_encoding": cast(
+            str,
+            config_dict.get("position_encoding") or POSITION_ENCODING_ABSOLUTE,
+        ),
+        "position_vocab_size": int(
+            config_dict.get("position_vocab_size", POSITION_ROLE_VOCAB_SIZE)
+        ),
+    }
 
 
 def _build_hooked_model(

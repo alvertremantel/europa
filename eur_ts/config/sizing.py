@@ -7,7 +7,7 @@ from eur_ts.trainer.utils import parameter_count
 from .schema import ModelConfig, TrainConfig
 
 
-def model_size_from_config(config: TrainConfig) -> dict[str, int]:
+def model_size_from_config(config: TrainConfig) -> dict[str, int | str]:
     vocab = vocab_for_training_format(config.training_format)
     model = SmallCausalTransformer(
         ModelConfig(
@@ -18,6 +18,7 @@ def model_size_from_config(config: TrainConfig) -> dict[str, int]:
             n_layers=config.n_layers,
             mlp_hidden=config.mlp_hidden,
             dropout=config.dropout,
+            position_encoding=config.position_encoding,
         )
     )
     return {
@@ -31,4 +32,5 @@ def model_size_from_config(config: TrainConfig) -> dict[str, int]:
         "n_heads": config.n_heads,
         "n_layers": config.n_layers,
         "mlp_hidden": config.mlp_hidden,
+        "position_encoding": config.position_encoding,
     }
