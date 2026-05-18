@@ -1,16 +1,24 @@
+# development gunk
 .venv/
 .ruff_cache/
 __pycache__/
 *.pyc
 
+# my worktrees
 .wt
 
+# opencode gunk
 .opencode/node_modules/
 .opencode/package.json
 .opencode/package-lock.json
 .opencode/gitignore
 
+# harness gunk
+.opencode/artifacts/*/old/
+
+# europa interp stuff
 eur_is/frontend/node_modules/
 eur_is/frontend/dist/
 
+# data generation, collection, + models
 output/
