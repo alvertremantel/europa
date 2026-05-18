@@ -81,14 +81,14 @@ def read_examples(file_path: Path, limit: int) -> list[str]:
 
 
 def answer_from_line(line: str) -> str:
-    parts = line.split(" <ans> ", maxsplit=1)
+    parts = line.split(" = ", maxsplit=1)
     if len(parts) != 2:
         raise ValueError(f"invalid sample line: {line!r}")
     return parts[1]
 
 
 def prompt_from_line(line: str) -> str:
-    parts = line.split(" <ans> ", maxsplit=1)
+    parts = line.split(" = ", maxsplit=1)
     if len(parts) != 2:
         raise ValueError(f"invalid sample line: {line!r}")
-    return f"{parts[0]} <ans>"
+    return f"{parts[0]} ="

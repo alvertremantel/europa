@@ -91,7 +91,7 @@ def evaluate_generated_answer(
     *, expression_text: str, generated_text: str
 ) -> GeneratedAnswerSummary:
     final_answer = extract_final_answer(generated_text)
-    line = f"{expression_text} <ans> {final_answer}".strip()
+    line = f"<do> <calc> {expression_text} = {final_answer}".strip()
 
     try:
         parse_line(line)

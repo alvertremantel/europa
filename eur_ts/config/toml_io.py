@@ -10,7 +10,7 @@ from eur_ts.trainer.curriculum import PRESETS
 from .schema import TrainConfig
 
 ALLOWED_TRAINING_MODES = {"token_stream", "examples"}
-ALLOWED_POSITION_ENCODINGS = {"absolute", "digit_roles"}
+ALLOWED_POSITION_ENCODINGS = {"type_place"}
 ALLOWED_TRAINING_FORMATS = {
     "final_only",
     "light_scratchpad",

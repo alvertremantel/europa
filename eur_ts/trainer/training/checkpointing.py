@@ -14,8 +14,9 @@ import torch
 from eur_ts.config import ModelConfig, TrainConfig
 from ..data import (
     ArithmeticTokenizer,
-    POSITION_ENCODING_ABSOLUTE,
-    POSITION_ROLE_VOCAB_SIZE,
+    PLACE_VOCAB_SIZE,
+    POSITION_ENCODING_TYPE_PLACE,
+    TOKEN_TYPE_VOCAB_SIZE,
 )
 from ..model import SmallCausalTransformer
 
@@ -142,15 +143,16 @@ def _model_config_from_payload(payload: dict[str, object]) -> ModelConfig:
             n_layers=_as_int(state["n_layers"], "model_config.n_layers"),
             mlp_hidden=_as_int(state["mlp_hidden"], "model_config.mlp_hidden"),
             dropout=_as_float(state["dropout"], "model_config.dropout"),
-            position_encoding=_as_optional_str(
-                state.get("position_encoding"),
-                "model_config.position_encoding",
-                default=POSITION_ENCODING_ABSOLUTE,
+            position_encoding=_required_position_encoding(state),
+            token_type_vocab_size=_as_optional_int(
+                state.get("token_type_vocab_size"),
+                "model_config.token_type_vocab_size",
+                default=TOKEN_TYPE_VOCAB_SIZE,
             ),
-            position_vocab_size=_as_optional_int(
-                state.get("position_vocab_size"),
-                "model_config.position_vocab_size",
-                default=POSITION_ROLE_VOCAB_SIZE,
+            place_vocab_size=_as_optional_int(
+                state.get("place_vocab_size"),
+                "model_config.place_vocab_size",
+                default=PLACE_VOCAB_SIZE,
             ),
         )
     legacy_config = payload.get("config")
@@ -435,6 +437,15 @@ def _as_optional_str(value: object, field_name: str, *, default: str) -> str:
         return default
     if not isinstance(value, str):
         raise ValueError(f"{field_name} must be a string")
+    return value
+
+
+def _required_position_encoding(state: dict[str, object]) -> str:
+    value = state.get("position_encoding")
+    if not isinstance(value, str):
+        raise ValueError("model_config.position_encoding is required")
+    if value != POSITION_ENCODING_TYPE_PLACE:
+        raise ValueError(f"unsupported checkpoint position encoding: {value!r}")
     return value
 
 

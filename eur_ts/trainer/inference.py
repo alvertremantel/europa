@@ -11,7 +11,6 @@ from .data import (
     ArithmeticExample,
     ArithmeticTokenizer,
     ExampleSequenceDataset,
-    POSITION_ENCODING_DIGIT_ROLES,
 )
 from .formatting import extract_final_answer, final_answer_from_line
 from .model import SmallCausalTransformer
@@ -23,9 +22,10 @@ def loss_for_batch(
     inputs: Tensor,
     targets: Tensor,
     *,
-    position_ids: Tensor | None = None,
+    type_ids: Tensor | None = None,
+    place_ids: Tensor | None = None,
 ) -> Tensor:
-    logits = _forward_model(model, inputs, position_ids=position_ids)
+    logits = _forward_model(model, inputs, type_ids=type_ids, place_ids=place_ids)
     return F.cross_entropy(logits.reshape(-1, logits.size(-1)), targets.reshape(-1))
 
 
@@ -35,9 +35,10 @@ def loss_for_example_batch(
     target_ids: Tensor,
     loss_mask: Tensor,
     *,
-    position_ids: Tensor | None = None,
+    type_ids: Tensor | None = None,
+    place_ids: Tensor | None = None,
 ) -> Tensor:
-    logits = _forward_model(model, input_ids, position_ids=position_ids)
+    logits = _forward_model(model, input_ids, type_ids=type_ids, place_ids=place_ids)
     token_loss = F.cross_entropy(
         logits.reshape(-1, logits.size(-1)),
         target_ids.reshape(-1),
@@ -51,24 +52,26 @@ def loss_for_example_batch(
 @torch.inference_mode()
 def evaluate_loss(
     model: SmallCausalTransformer,
-    data_loader: DataLoader[tuple[Tensor, Tensor, Tensor]],
+    data_loader: DataLoader[tuple[Tensor, Tensor, Tensor, Tensor]],
     device: torch.device,
     max_batches: int,
 ) -> float:
     model.eval()
     total_loss = 0.0
     total_batches = 0
-    for total_batches, (inputs, position_ids, targets) in enumerate(
+    for total_batches, (inputs, type_ids, place_ids, targets) in enumerate(
         data_loader, start=1
     ):
         inputs = inputs.to(device, non_blocking=device.type == "cuda")
-        position_ids = position_ids.to(device, non_blocking=device.type == "cuda")
+        type_ids = type_ids.to(device, non_blocking=device.type == "cuda")
+        place_ids = place_ids.to(device, non_blocking=device.type == "cuda")
         targets = targets.to(device, non_blocking=device.type == "cuda")
         total_loss += loss_for_batch(
             model,
             inputs,
             targets,
-            position_ids=position_ids,
+            type_ids=type_ids,
+            place_ids=place_ids,
         ).item()
         if total_batches >= max_batches:
             break
@@ -94,9 +97,10 @@ def evaluate_balanced_loss(
         pin_memory=device.type == "cuda",
     )
     losses: list[Tensor] = []
-    for inputs, position_ids, targets, loss_mask in loader:
+    for inputs, type_ids, place_ids, targets, loss_mask in loader:
         inputs = inputs.to(device, non_blocking=device.type == "cuda")
-        position_ids = position_ids.to(device, non_blocking=device.type == "cuda")
+        type_ids = type_ids.to(device, non_blocking=device.type == "cuda")
+        place_ids = place_ids.to(device, non_blocking=device.type == "cuda")
         targets = targets.to(device, non_blocking=device.type == "cuda")
         loss_mask = loss_mask.to(device, non_blocking=device.type == "cuda")
         losses.append(
@@ -105,7 +109,8 @@ def evaluate_balanced_loss(
                 inputs,
                 targets,
                 loss_mask,
-                position_ids=position_ids,
+                type_ids=type_ids,
+                place_ids=place_ids,
             ).cpu()
         )
     if not losses:
@@ -122,33 +127,40 @@ def generate_completion(
     device: torch.device,
 ) -> str:
     model.eval()
-    token_ids, position_role_ids = tokenizer.encode_prompt_with_roles(prompt)
+    token_ids, type_ids, place_ids = tokenizer.encode_prompt_with_type_place(prompt)
     generated = torch.tensor(token_ids, dtype=torch.long, device=device).unsqueeze(0)
-    generated_position_ids = torch.tensor(
-        position_role_ids,
-        dtype=torch.long,
-        device=device,
+    generated_type_ids = torch.tensor(
+        type_ids, dtype=torch.long, device=device
+    ).unsqueeze(0)
+    generated_place_ids = torch.tensor(
+        place_ids, dtype=torch.long, device=device
     ).unsqueeze(0)
 
     for _ in range(max_new_tokens):
         window = generated[:, -model.config.sequence_length :]
-        window_position_ids = generated_position_ids[:, -model.config.sequence_length :]
-        logits = _forward_model(model, window, position_ids=window_position_ids)
+        window_type_ids = generated_type_ids[:, -model.config.sequence_length :]
+        window_place_ids = generated_place_ids[:, -model.config.sequence_length :]
+        logits = _forward_model(
+            model, window, type_ids=window_type_ids, place_ids=window_place_ids
+        )
         next_token_id = logits[:, -1].argmax(dim=-1, keepdim=True)
         generated = torch.cat((generated, next_token_id), dim=1)
-        next_position_ids = torch.tensor(
-            [tokenizer.position_role_ids_for_token_ids(generated.squeeze(0).tolist())],
+        next_type_ids, next_place_ids = tokenizer.type_place_ids_for_token_ids(
+            generated.squeeze(0).tolist()
+        )
+        generated_type_ids = torch.tensor(
+            [next_type_ids],
             dtype=torch.long,
             device=device,
         )
-        generated_position_ids = next_position_ids
+        generated_place_ids = torch.tensor(
+            [next_place_ids], dtype=torch.long, device=device
+        )
         if next_token_id.item() == tokenizer.eos_id:
             break
 
-    decoded = tokenizer.decode(generated.squeeze(0).tolist())
-    if " <ans> " not in decoded:
-        return extract_final_answer(decoded)
-    return extract_final_answer(decoded.split(" <ans> ", maxsplit=1)[1])
+    answer_ids = generated.squeeze(0).tolist()[len(token_ids) :]
+    return extract_final_answer(tokenizer.decode_answer_tokens(answer_ids))
 
 
 @torch.inference_mode()
@@ -209,12 +221,11 @@ def _forward_model(
     model: SmallCausalTransformer,
     input_ids: Tensor,
     *,
-    position_ids: Tensor | None = None,
+    type_ids: Tensor | None = None,
+    place_ids: Tensor | None = None,
 ) -> Tensor:
-    if model.config.position_encoding == POSITION_ENCODING_DIGIT_ROLES:
-        if position_ids is None:
-            raise ValueError(
-                "digit_roles models require position_ids for forward passes"
-            )
-        return model(input_ids, position_ids)
-    return model(input_ids)
+    if type_ids is None or place_ids is None:
+        raise ValueError(
+            "type_place models require type_ids and place_ids for forward passes"
+        )
+    return model(input_ids, type_ids, place_ids)

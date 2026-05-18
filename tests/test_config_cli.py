@@ -29,7 +29,7 @@ n_heads = 4
 n_layers = 1
 mlp_hidden = 64
 dropout = 0.1
-position_encoding = "digit_roles"
+position_encoding = "type_place"
 
 [optimization]
 batch_size = 8

@@ -24,10 +24,18 @@ def format_training_line(line: str, training_format: str) -> tuple[str, str]:
         return line.strip(), "final_only"
     if training_format == "parentheses_intermediate":
         transformed = _format_parentheses_intermediate(line)
-        return (transformed, "parentheses_intermediate") if transformed else (line.strip(), "final_only")
+        return (
+            (transformed, "parentheses_intermediate")
+            if transformed
+            else (line.strip(), "final_only")
+        )
     if training_format == "multiply_intermediate":
         transformed = _format_multiply_intermediate(line)
-        return (transformed, "multiply_intermediate") if transformed else (line.strip(), "final_only")
+        return (
+            (transformed, "multiply_intermediate")
+            if transformed
+            else (line.strip(), "final_only")
+        )
     if training_format == "light_scratchpad":
         transformed = _format_parentheses_intermediate(line)
         if transformed is not None:
@@ -43,7 +51,7 @@ def format_training_line(line: str, training_format: str) -> tuple[str, str]:
 
 
 def final_answer_from_line(line: str) -> str:
-    answer_part = line.strip().split(" <ans> ", maxsplit=1)[1]
+    answer_part = line.strip().split(" = ", maxsplit=1)[1]
     if " <final> " in answer_part:
         return answer_part.rsplit(" <final> ", maxsplit=1)[1].strip()
     return answer_part.strip()
@@ -99,5 +107,5 @@ def _format_multiply_intermediate(line: str) -> str | None:
 
 
 def _with_work(line: str, intermediate: str) -> str:
-    prompt, answer = line.strip().split(" <ans> ", maxsplit=1)
-    return f"{prompt} <ans> <work> <step> {intermediate} <final> {answer}"
+    prompt, answer = line.strip().split(" = ", maxsplit=1)
+    return f"{prompt} = <work> <step> {intermediate} <final> {answer}"

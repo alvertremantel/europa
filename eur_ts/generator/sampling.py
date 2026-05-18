@@ -44,7 +44,7 @@ def apply_operation(op: str, left: int, right: int) -> int:
 
 
 def format_sample(sample: Sample) -> str:
-    return f"{' '.join(sample.expression_fields)} = <ans> {format_signed_number(sample.answer)}"
+    return f"<do> <calc> {' '.join(sample.expression_fields)} = {format_signed_number(sample.answer)}"
 
 
 def shuffled_samples(samples: list[Sample], *, seed: int, kind: str) -> list[Sample]:

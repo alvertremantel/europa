@@ -41,6 +41,20 @@ def _first_config_value(*values: Any) -> Any:
     )
 
 
+def _expression_from_prompt(prompt: str) -> str:
+    fields = prompt.strip().split()
+    if fields[:2] == ["<do>", "<calc>"]:
+        fields = fields[2:]
+    if "=" in fields:
+        fields = fields[: fields.index("=")]
+    return " ".join(fields)
+
+
+def _classification_prompt(prompt: str) -> str:
+    expression = _expression_from_prompt(prompt)
+    return f"{expression} =" if expression else "="
+
+
 app = FastAPI(
     title="Europa ALM-IS Web API",
     description=(
@@ -75,9 +89,7 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
 
     problem_metadata = None
     try:
-        problem_metadata = summarize_problem(
-            cleaned_prompt.split(" <ans>", maxsplit=1)[0].strip()
-        )
+        problem_metadata = summarize_problem(_classification_prompt(cleaned_prompt))
     except ValueError as error:
         logger.warning("Unable to classify prompt %r: %s", cleaned_prompt, error)
 
@@ -95,7 +107,7 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
         )
 
     prompt_text = tokenizer.decode(token_ids)
-    expression_text = prompt_text.split(" <ans>", maxsplit=1)[0].strip()
+    expression_text = _expression_from_prompt(prompt_text)
     network_options = clamp_network_options(
         mlp_threshold=request.mlp_threshold,
         top_k=request.top_k,

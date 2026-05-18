@@ -52,7 +52,7 @@ Europa uses a deliberately nonstandard arithmetic representation to keep the tas
 
 - numbers are rendered as **8-digit zero-padded reversed decimals**,
 - negatives are wrapped like `(-60000000)`,
-- prompts include an `<ans>` token that marks the answer boundary.
+- prompts begin with `<do> <calc>` and end the expression at `=` before answer generation.
 
 Datasets span categories such as binary arithmetic, three-input expressions, parenthesized expressions, and negative-input variants. This gives the project a controlled behavioral landscape for both training and post-hoc analysis.
 

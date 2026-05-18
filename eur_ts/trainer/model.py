@@ -4,7 +4,7 @@ import torch
 from torch import Tensor, nn
 
 from eur_ts.config import ModelConfig
-from .tokenizer import POSITION_ENCODING_ABSOLUTE, POSITION_ENCODING_DIGIT_ROLES
+from .tokenizer import PLACE_NONE, POSITION_ENCODING_TYPE_PLACE
 
 
 class TransformerBlock(nn.Module):
@@ -36,10 +36,11 @@ class TransformerBlock(nn.Module):
             ),
             diagonal=1,
         )
+        normalized = self.norm_1(hidden_states)
         attended, _ = self.attention(
-            self.norm_1(hidden_states),
-            self.norm_1(hidden_states),
-            self.norm_1(hidden_states),
+            normalized,
+            normalized,
+            normalized,
             attn_mask=causal_mask,
             need_weights=False,
         )
@@ -51,17 +52,18 @@ class TransformerBlock(nn.Module):
 class SmallCausalTransformer(nn.Module):
     def __init__(self, config: ModelConfig) -> None:
         super().__init__()
-        self.config = config
-        self.token_embedding = nn.Embedding(config.vocab_size, config.d_model)
-        if config.position_encoding == POSITION_ENCODING_ABSOLUTE:
-            position_vocab_size = config.sequence_length
-        elif config.position_encoding == POSITION_ENCODING_DIGIT_ROLES:
-            position_vocab_size = config.position_vocab_size
-        else:
+        if config.position_encoding != POSITION_ENCODING_TYPE_PLACE:
             raise ValueError(
                 f"unsupported position encoding: {config.position_encoding!r}"
             )
-        self.position_embedding = nn.Embedding(position_vocab_size, config.d_model)
+        self.config = config
+        self.token_embedding = nn.Embedding(config.vocab_size, config.d_model)
+        self.type_embedding = nn.Embedding(config.token_type_vocab_size, config.d_model)
+        self.place_embedding = nn.Embedding(
+            config.place_vocab_size,
+            config.d_model,
+            padding_idx=PLACE_NONE,
+        )
         self.dropout = nn.Dropout(config.dropout)
         self.blocks = nn.ModuleList(
             [TransformerBlock(config) for _ in range(config.n_layers)]
@@ -70,36 +72,32 @@ class SmallCausalTransformer(nn.Module):
         self.lm_head = nn.Linear(config.d_model, config.vocab_size, bias=False)
         self.lm_head.weight = self.token_embedding.weight
 
-    def forward(self, input_ids: Tensor, position_ids: Tensor | None = None) -> Tensor:
+    def forward(
+        self,
+        input_ids: Tensor,
+        type_ids: Tensor | None = None,
+        place_ids: Tensor | None = None,
+    ) -> Tensor:
         batch_size, sequence_length = input_ids.shape
         if sequence_length > self.config.sequence_length:
             raise ValueError(
                 f"sequence length {sequence_length} exceeds model limit {self.config.sequence_length}"
             )
+        if type_ids is None or place_ids is None:
+            raise ValueError(
+                "type_place encoding requires explicit type_ids and place_ids"
+            )
+        if type_ids.shape != input_ids.shape or place_ids.shape != input_ids.shape:
+            raise ValueError("type_ids and place_ids shapes must match input_ids")
 
-        hidden_states = self.token_embedding(input_ids)
-        if self.config.position_encoding == POSITION_ENCODING_ABSOLUTE:
-            if position_ids is None:
-                position_ids = torch.arange(sequence_length, device=input_ids.device)
-            pos_embeds = self.position_embedding(position_ids)
-            if pos_embeds.ndim == 2:
-                pos_embeds = pos_embeds.unsqueeze(0)
-        else:
-            if position_ids is None:
-                raise ValueError(
-                    "digit_roles position encoding requires explicit position_ids"
-                )
-            if position_ids.shape != input_ids.shape:
-                raise ValueError(
-                    "position_ids shape must match input_ids for digit_roles encoding"
-                )
-            pos_embeds = self.position_embedding(position_ids)
-        hidden_states = hidden_states + pos_embeds
+        hidden_states = (
+            self.token_embedding(input_ids)
+            + self.type_embedding(type_ids)
+            + self.place_embedding(place_ids)
+        )
         hidden_states = self.dropout(hidden_states)
-
         for block in self.blocks:
             hidden_states = block(hidden_states)
-
         hidden_states = self.final_norm(hidden_states)
         logits = self.lm_head(hidden_states)
         if logits.shape[:2] != (batch_size, sequence_length):

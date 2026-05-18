@@ -29,7 +29,7 @@ n_heads = 4
 n_layers = 1
 mlp_hidden = 64
 dropout = 0.1
-position_encoding = "digit_roles"
+position_encoding = "type_place"
 
 [optimization]
 batch_size = 8
@@ -80,7 +80,7 @@ def test_load_train_config_parses_valid_toml(tmp_path: Path) -> None:
     assert config.device == "auto"
     assert config.sequence_length == 32
     assert config.n_heads == 4
-    assert config.position_encoding == "digit_roles"
+    assert config.position_encoding == "type_place"
     assert config.additional_epochs is None
     assert config.curriculum_name is None
     assert config.balanced_val_batch_size is None
