@@ -28,7 +28,7 @@ This writes:
 - `train.txt`
 - `val.txt`
 - `test.txt`
-- `meta.json`
+- `meta.toml`
 
 Key format rules:
 
@@ -65,6 +65,13 @@ uv run config --size train-config.toml
 ```
 
 Use them to understand fields and inspect derived model-size metrics before launching a run.
+`uv run config --size` emits TOML, for example:
+
+```toml
+[model_size]
+total_parameters = 4760000
+total_virtual_neurons = 393216
+```
 
 ## 3. Train a model
 
@@ -77,9 +84,9 @@ Typical run outputs include:
 - `checkpoint-best.pt`
 - `checkpoint-last.pt`
 - `checkpoints/epoch-XXXX.pt`
-- `checkpoints/manifest.json`
-- `history.json`
-- `run-metadata.json`
+- `checkpoints/manifest.toml`
+- `history.toml`
+- `run-metadata.toml`
 
 Notes:
 
@@ -110,9 +117,9 @@ uv run evaluate \
 
 Evaluation writes report files next to the checkpoint, including:
 
-- `*.summary.json`
+- `*.summary.toml`
 - `*.kinds.csv`
-- `*.errors.jsonl`
+- `*.errors.toml`
 
 This is the main way to inspect performance by category and by fine-grained problem kind.
 
