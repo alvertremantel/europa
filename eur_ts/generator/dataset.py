@@ -129,7 +129,7 @@ def generate_dataset(config: Config) -> None:
         "categories": ["binary", "three_input", "parentheses", "negative_input"],
         "binary_operations": list(BINARY_OPERATIONS),
         "composite_operations": list(COMPOSITE_OPERATIONS),
-        "special_tokens": ["<ans>"],
+        "special_tokens": ["<do>", "<calc>"],
         "operator_tokens": ["+", "-", "*", "/", "=", "(", ")"],
         "bands": {band.name: [band.start, band.end] for band in BANDS},
         "kind_definitions": kind_definitions,

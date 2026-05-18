@@ -1,4 +1,4 @@
-export type PositionEncoding = 'absolute' | 'digit_roles'
+export type PositionEncoding = 'type_place'
 
 export type AnalysisRuntime = 'transformerlens' | 'native_pytorch'
 

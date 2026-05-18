@@ -22,14 +22,12 @@ from eur_is.backend.analysis import (
 )
 from eur_is.backend.model_utils import (
     load_checkpoint_artifacts,
-    load_hooked_resources,
     load_native_resources,
 )
 from eur_is.backend.network_analysis import extract_network_analysis
 from eur_ts.trainer.data import (
     ArithmeticTokenizer,
-    POSITION_ENCODING_ABSOLUTE,
-    POSITION_ENCODING_DIGIT_ROLES,
+    POSITION_ENCODING_TYPE_PLACE,
 )
 from eur_ts.trainer.hooks import HookRegistry
 from eur_ts.trainer.model import SmallCausalTransformer
@@ -237,9 +235,7 @@ class BaseCheckpointRuntime(ABC):
                 }
             )
 
-        generated_text = self.tokenizer.decode(generated_token_ids)
-        if " <ans> " in generated_text:
-            generated_text = generated_text.split(" <ans> ", maxsplit=1)[1]
+        generated_text = self.tokenizer.decode_answer_tokens(answer_token_ids)
         generated_answer = evaluate_generated_answer(
             expression_text=expression_text,
             generated_text=generated_text,
@@ -355,14 +351,14 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
             dtype=torch.long,
             device=self.device,
         ).unsqueeze(0)
-        position_ids = torch.tensor(
-            [self.tokenizer.position_role_ids_for_token_ids(prompt_token_ids)],
-            dtype=torch.long,
-            device=self.device,
+        type_ids, place_ids = self.tokenizer.type_place_ids_for_token_ids(
+            prompt_token_ids
         )
+        type_tensor = torch.tensor([type_ids], dtype=torch.long, device=self.device)
+        place_tensor = torch.tensor([place_ids], dtype=torch.long, device=self.device)
         with HookRegistry(self.model) as hooks:
             with torch.no_grad():
-                logits = self.model(input_tensor, position_ids)
+                logits = self.model(input_tensor, type_tensor, place_tensor)
         if len(hooks.capture.layer_outputs) != self.n_layers:
             raise RuntimeError("native runtime did not capture all transformer layers")
         stacked_activations = np.stack(
@@ -380,22 +376,26 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
         )
 
     def _next_token_logits(self, generated_token_ids: list[int]) -> torch.Tensor:
-        position_role_ids = self.tokenizer.position_role_ids_for_token_ids(
+        type_ids, place_ids = self.tokenizer.type_place_ids_for_token_ids(
             generated_token_ids
         )
         window_token_ids = generated_token_ids[-self.context_window :]
-        window_position_ids = position_role_ids[-self.context_window :]
+        window_type_ids = type_ids[-self.context_window :]
+        window_place_ids = place_ids[-self.context_window :]
         window = torch.tensor(
             window_token_ids,
             dtype=torch.long,
             device=self.device,
         ).unsqueeze(0)
-        window_roles = torch.tensor(
-            window_position_ids,
+        window_types = torch.tensor(
+            window_type_ids,
             dtype=torch.long,
             device=self.device,
         ).unsqueeze(0)
-        return self.model(window, window_roles)[0, -1].detach().cpu()
+        window_places = torch.tensor(
+            window_place_ids, dtype=torch.long, device=self.device
+        ).unsqueeze(0)
+        return self.model(window, window_types, window_places)[0, -1].detach().cpu()
 
 
 def load_checkpoint_runtime(
@@ -404,20 +404,7 @@ def load_checkpoint_runtime(
     device: str,
 ) -> BaseCheckpointRuntime:
     artifacts = load_checkpoint_artifacts(checkpoint_path, device=device)
-    if artifacts.position_encoding == POSITION_ENCODING_ABSOLUTE:
-        model, tokenizer, metadata = load_hooked_resources(
-            checkpoint_path, device=device
-        )
-        return TransformerLensRuntime(
-            checkpoint_path=checkpoint_path,
-            device=device,
-            model=model,
-            tokenizer=tokenizer,
-            checkpoint_metadata=metadata,
-            position_encoding=artifacts.position_encoding,
-            capabilities=TRANSFORMERLENS_CAPABILITIES,
-        )
-    if artifacts.position_encoding == POSITION_ENCODING_DIGIT_ROLES:
+    if artifacts.position_encoding == POSITION_ENCODING_TYPE_PLACE:
         model, tokenizer, metadata = load_native_resources(
             checkpoint_path, device=device
         )

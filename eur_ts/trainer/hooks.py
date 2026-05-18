@@ -18,7 +18,8 @@ class ActivationCapture:
 
     # Embeddings
     token_embeds: Tensor | None = None
-    pos_embeds: Tensor | None = None
+    type_embeds: Tensor | None = None
+    place_embeds: Tensor | None = None
     combined_embeds: Tensor | None = None
 
     # Per-layer activations
@@ -43,7 +44,8 @@ class ActivationCapture:
     def clear(self) -> None:
         """Clear all captured activations."""
         self.token_embeds = None
-        self.pos_embeds = None
+        self.type_embeds = None
+        self.place_embeds = None
         self.combined_embeds = None
         self.layer_inputs.clear()
         self.layer_outputs.clear()
@@ -77,8 +79,13 @@ class HookRegistry:
         )
         self.handles.append(handle)
 
-        handle = self.model.position_embedding.register_forward_hook(
-            self._make_embedding_hook("pos_embeds")
+        handle = self.model.type_embedding.register_forward_hook(
+            self._make_embedding_hook("type_embeds")
+        )
+        self.handles.append(handle)
+
+        handle = self.model.place_embedding.register_forward_hook(
+            self._make_embedding_hook("place_embeds")
         )
         self.handles.append(handle)
 
@@ -91,7 +98,9 @@ class HookRegistry:
             self.handles.append(handle)
 
             # Layer output
-            handle = block.register_forward_hook(self._make_layer_output_hook(layer_idx))
+            handle = block.register_forward_hook(
+                self._make_layer_output_hook(layer_idx)
+            )
             self.handles.append(handle)
 
             # Attention-specific hooks

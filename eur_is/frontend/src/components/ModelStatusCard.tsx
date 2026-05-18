@@ -91,7 +91,7 @@ function buildCapabilityLimitations(capabilities: AnalysisCapabilities | null): 
 
 function formatPositionEncoding(value: string | null | undefined): string {
   if (!value) return '—'
-  if (value === 'digit_roles') return 'digit roles'
+  if (value === 'type_place') return 'type/place'
   return value
 }
 

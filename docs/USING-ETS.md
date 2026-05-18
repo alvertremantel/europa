@@ -32,7 +32,7 @@ This writes:
 
 Key format rules:
 
-- each row is `<expression> = <ans> <result>`
+- each row is `<do> <calc> <expression> = <result>`
 - numbers are 8-digit zero-padded reversed decimals
 - negatives are formatted like `(-60000000)`
 
@@ -92,7 +92,7 @@ Notes:
 ```bash
 uv run train predict \
   --checkpoint runs/my-run/checkpoint-best.pt \
-  --prompt "03000000 + 03000000 = <ans>"
+  --prompt "<do> <calc> 03000000 + 03000000 ="
 ```
 
 Useful options:

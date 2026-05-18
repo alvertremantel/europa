@@ -1,10 +1,10 @@
 #!/bin/bash
 # promptize - Convert regular math problems to reversed-digit prompt format
 # Usage: ./promptize "2 + 2"
-# Output: "02000000 + 02000000 = <ans> 04000000"
+# Output: "<do> <calc> 02000000 + 02000000 = 04000000"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PYTHON_SCRIPT="$SCRIPT_DIR/scripts/math/promptize_math.py"
+PYTHON_SCRIPT="$SCRIPT_DIR/python/promptize_math.py"
 
 if [ ! -f "$PYTHON_SCRIPT" ]; then
     echo "Error: promptize_math.py not found at $PYTHON_SCRIPT" >&2

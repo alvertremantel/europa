@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Sequence
 
-LEGACY_BASE_VOCAB = [
+BASE_VOCAB_TOKENS = [
     "<pad>",
-    "<bos>",
+    "<do>",
     "<eos>",
     "<sep>",
-    "<ans>",
+    "<calc>",
     "undefined",
     "remainder",
     "+",
@@ -28,11 +28,13 @@ LEGACY_BASE_VOCAB = [
     "8",
     "9",
 ]
+LEGACY_BASE_VOCAB = BASE_VOCAB_TOKENS
 SCRATCHPAD_TOKENS = ["<work>", "<step>", "<final>"]
-BASE_VOCAB = list(LEGACY_BASE_VOCAB)
+BASE_VOCAB = list(BASE_VOCAB_TOKENS)
 
 SPECIAL_FIELD_TOKENS = {
-    "<ans>",
+    "<do>",
+    "<calc>",
     "<work>",
     "<step>",
     "<final>",
@@ -40,36 +42,49 @@ SPECIAL_FIELD_TOKENS = {
     "remainder",
 }
 
-POSITION_ENCODING_ABSOLUTE = "absolute"
-POSITION_ENCODING_DIGIT_ROLES = "digit_roles"
-POSITION_ROLE_NONE = 0
+POSITION_ENCODING_TYPE_PLACE = "type_place"
+TOKEN_TYPE_INFO = 0
+TOKEN_TYPE_OPERATOR = 1
+TOKEN_TYPE_DIGIT = 2
+TOKEN_TYPE_VOCAB_SIZE = 3
+PLACE_NONE = 0
 NUMBER_DIGIT_COUNT = 8
-POSITION_ROLE_VOCAB_SIZE = NUMBER_DIGIT_COUNT + 1
-SEPARATOR_TOKENS = {"<pad>", "<bos>", "<eos>", "<sep>"}
+PLACE_VOCAB_SIZE = NUMBER_DIGIT_COUNT + 1
+OPERATOR_TOKENS = {"+", "-", "*", "/", "=", "(", ")"}
+INFO_TOKENS = {"<pad>", "<do>", "<eos>", "<sep>", *SPECIAL_FIELD_TOKENS}
+SEPARATOR_TOKENS = {"<pad>", "<do>", "<eos>", "<sep>", "<calc>"}
 
 
 def vocab_for_training_format(training_format: str) -> list[str]:
     if training_format == "final_only":
-        return list(LEGACY_BASE_VOCAB)
+        return list(BASE_VOCAB_TOKENS)
     return [
-        *LEGACY_BASE_VOCAB[:5],
+        *BASE_VOCAB_TOKENS[:5],
         *SCRATCHPAD_TOKENS,
-        *LEGACY_BASE_VOCAB[5:],
+        *BASE_VOCAB_TOKENS[5:],
     ]
 
 
 class ArithmeticTokenizer:
     def __init__(self, vocab: Sequence[str] | None = None) -> None:
         tokens = list(vocab) if vocab is not None else list(BASE_VOCAB)
+        if "<bos>" in tokens or "<ans>" in tokens:
+            raise ValueError(
+                "legacy tokenizer vocabulary with <bos>/<ans> is unsupported"
+            )
+        if len(tokens) <= 4 or tokens[1] != "<do>" or tokens[4] != "<calc>":
+            raise ValueError(
+                "tokenizer vocabulary must keep <do> at id 1 and <calc> at id 4"
+            )
         self.id_to_token = tokens
         self.token_to_id = {token: index for index, token in enumerate(tokens)}
 
         self.pad_id = self.token_to_id["<pad>"]
-        self.bos_id = self.token_to_id["<bos>"]
+        self.do_id = self.token_to_id["<do>"]
         self.eos_id = self.token_to_id["<eos>"]
         self.sep_id = self.token_to_id["<sep>"]
-        self.answer_token = "<ans>"
-        self.answer_id = self.token_to_id[self.answer_token]
+        self.calc_token = "<calc>"
+        self.calc_id = self.token_to_id[self.calc_token]
 
     @property
     def vocab_size(self) -> int:
@@ -87,111 +102,96 @@ class ArithmeticTokenizer:
         include_eos: bool,
         append_trailing_separator: bool,
     ) -> list[int]:
+        token_ids, _, _ = self.encode_fields_with_type_place(
+            fields,
+            include_eos=include_eos,
+            append_trailing_separator=append_trailing_separator,
+        )
+        return token_ids
+
+    def encode_fields_with_type_place(
+        self,
+        fields: Sequence[str],
+        *,
+        include_eos: bool,
+        append_trailing_separator: bool,
+    ) -> tuple[list[int], list[int], list[int]]:
         if not fields:
             raise ValueError("cannot encode an empty field sequence")
 
-        token_ids = [self.bos_id]
+        token_ids: list[int] = []
         for index, field in enumerate(fields):
             token_ids.extend(self.encode_field(field))
             if index < len(fields) - 1 or append_trailing_separator:
                 token_ids.append(self.sep_id)
         if include_eos:
             token_ids.append(self.eos_id)
-        return token_ids
-
-    def encode_fields_with_roles(
-        self,
-        fields: Sequence[str],
-        *,
-        include_eos: bool,
-        append_trailing_separator: bool,
-    ) -> tuple[list[int], list[int]]:
-        if not fields:
-            raise ValueError("cannot encode an empty field sequence")
-
-        token_ids = [self.bos_id]
-        position_role_ids = [POSITION_ROLE_NONE]
-        for index, field in enumerate(fields):
-            encoded_field = self.encode_field(field)
-            field_roles = self._field_position_roles(field)
-            if len(encoded_field) != len(field_roles):
-                raise RuntimeError(
-                    f"field role count did not match encoded token count for {field!r}"
-                )
-            token_ids.extend(encoded_field)
-            position_role_ids.extend(field_roles)
-            if index < len(fields) - 1 or append_trailing_separator:
-                token_ids.append(self.sep_id)
-                position_role_ids.append(POSITION_ROLE_NONE)
-        if include_eos:
-            token_ids.append(self.eos_id)
-            position_role_ids.append(POSITION_ROLE_NONE)
-        return token_ids, position_role_ids
+        type_ids, place_ids = self.type_place_ids_for_token_ids(token_ids)
+        return token_ids, type_ids, place_ids
 
     def encode_line(self, line: str) -> list[int]:
-        token_ids, _ = self.encode_fields_with_roles(
-            line.strip().split(),
-            include_eos=True,
-            append_trailing_separator=False,
-        )
+        token_ids, _, _ = self.encode_line_with_type_place(line)
         return token_ids
 
-    def encode_line_with_roles(self, line: str) -> tuple[list[int], list[int]]:
-        return self.encode_fields_with_roles(
-            line.strip().split(),
-            include_eos=True,
-            append_trailing_separator=False,
-        )
+    def encode_line_with_type_place(
+        self, line: str
+    ) -> tuple[list[int], list[int], list[int]]:
+        fields = _normalize_line_fields(line)
+        token_ids = self._encode_canonical_fields(fields, include_eos=True)
+        type_ids, place_ids = self.type_place_ids_for_token_ids(token_ids)
+        return token_ids, type_ids, place_ids
 
     def encode_prompt(self, prompt: str) -> list[int]:
-        fields = prompt.strip().split()
-        if not fields:
-            raise ValueError("prompt cannot be empty")
-        if self.answer_token in fields:
-            fields = fields[: fields.index(self.answer_token) + 1]
-        else:
-            fields.append(self.answer_token)
-        token_ids, _ = self.encode_fields_with_roles(
-            fields,
-            include_eos=False,
-            append_trailing_separator=True,
-        )
+        token_ids, _, _ = self.encode_prompt_with_type_place(prompt)
         return token_ids
 
-    def encode_prompt_with_roles(self, prompt: str) -> tuple[list[int], list[int]]:
-        fields = prompt.strip().split()
-        if not fields:
-            raise ValueError("prompt cannot be empty")
-        if self.answer_token in fields:
-            fields = fields[: fields.index(self.answer_token) + 1]
-        else:
-            fields.append(self.answer_token)
-        return self.encode_fields_with_roles(
-            fields,
-            include_eos=False,
-            append_trailing_separator=True,
-        )
+    def encode_prompt_with_type_place(
+        self, prompt: str
+    ) -> tuple[list[int], list[int], list[int]]:
+        fields = _normalize_prompt_fields(prompt)
+        token_ids = self._encode_canonical_fields(fields, include_eos=False)
+        type_ids, place_ids = self.type_place_ids_for_token_ids(token_ids)
+        return token_ids, type_ids, place_ids
 
-    def position_role_ids_for_token_ids(self, token_ids: Sequence[int]) -> list[int]:
-        role_ids: list[int] = []
-        current_field: list[str] = []
+    def _encode_canonical_fields(
+        self, fields: Sequence[str], *, include_eos: bool
+    ) -> list[int]:
+        if len(fields) < 4 or fields[0] != "<do>" or fields[1] != "<calc>":
+            raise ValueError("canonical fields must begin with <do> <calc>")
+        token_ids = [self.do_id, self.calc_id]
+        for index, field in enumerate(fields[2:], start=2):
+            token_ids.extend(self.encode_field(field))
+            if field == "=" or index < len(fields) - 1:
+                token_ids.append(self.sep_id)
+        if include_eos:
+            token_ids.append(self.eos_id)
+        return token_ids
 
-        for token_id in token_ids:
+    def type_place_ids_for_token_ids(
+        self, token_ids: Sequence[int]
+    ) -> tuple[list[int], list[int]]:
+        type_ids = [_token_type(self.id_to_token[token_id]) for token_id in token_ids]
+        place_ids = [PLACE_NONE] * len(token_ids)
+        run: list[int] = []
+
+        def flush() -> None:
+            if not run:
+                return
+            if len(run) <= NUMBER_DIGIT_COUNT:
+                for place, token_index in enumerate(run, start=1):
+                    place_ids[token_index] = place
+            run.clear()
+
+        for index, token_id in enumerate(token_ids):
             token = self.id_to_token[token_id]
-            if token in SEPARATOR_TOKENS:
-                if current_field:
-                    role_ids.extend(_field_token_position_roles(current_field))
-                    current_field = []
-                role_ids.append(POSITION_ROLE_NONE)
+            if token.isdigit():
+                run.append(index)
+                if len(run) == NUMBER_DIGIT_COUNT:
+                    flush()
                 continue
-            current_field.append(token)
-
-        if current_field:
-            role_ids.extend(_field_token_position_roles(current_field))
-
-        if len(role_ids) != len(token_ids):
-            raise RuntimeError("position role IDs must align with token IDs")
-        return role_ids
+            flush()
+        flush()
+        return type_ids, place_ids
 
     def decode(self, token_ids: Sequence[int]) -> str:
         fields: list[str] = []
@@ -199,7 +199,7 @@ class ArithmeticTokenizer:
 
         for token_id in token_ids:
             token = self.id_to_token[token_id]
-            if token in {"<pad>", "<bos>"}:
+            if token == "<pad>":
                 continue
             if token == "<eos>":
                 break
@@ -208,11 +208,20 @@ class ArithmeticTokenizer:
                     fields.append("".join(current_field))
                     current_field = []
                 continue
+            if token in SPECIAL_FIELD_TOKENS:
+                if current_field:
+                    fields.append("".join(current_field))
+                    current_field = []
+                fields.append(token)
+                continue
             current_field.append(token)
 
         if current_field:
             fields.append("".join(current_field))
         return " ".join(fields)
+
+    def decode_answer_tokens(self, token_ids: Sequence[int]) -> str:
+        return self.decode(token_ids)
 
     def to_state(self) -> dict[str, list[str]]:
         return {"vocab": self.id_to_token}
@@ -221,27 +230,42 @@ class ArithmeticTokenizer:
     def from_state(cls, state: dict[str, list[str]]) -> "ArithmeticTokenizer":
         return cls(vocab=state["vocab"])
 
-    def _field_position_roles(self, field: str) -> list[int]:
-        if field in SPECIAL_FIELD_TOKENS:
-            return _field_token_position_roles([field])
-        return _field_token_position_roles(list(field))
+
+def _token_type(token: str) -> int:
+    if token.isdigit():
+        return TOKEN_TYPE_DIGIT
+    if token in OPERATOR_TOKENS:
+        return TOKEN_TYPE_OPERATOR
+    return TOKEN_TYPE_INFO
 
 
-def _field_token_position_roles(tokens: Sequence[str]) -> list[int]:
-    if len(tokens) == 1 and tokens[0] in SPECIAL_FIELD_TOKENS:
-        return [POSITION_ROLE_NONE]
-    if 1 <= len(tokens) <= NUMBER_DIGIT_COUNT and all(
-        token.isdigit() for token in tokens
-    ):
-        return list(range(1, len(tokens) + 1))
-    if len(tokens) >= 2 and tokens[0] == "(" and tokens[1] == "-":
-        roles = [POSITION_ROLE_NONE, POSITION_ROLE_NONE]
-        next_digit_role = 1
-        for token in tokens[2:]:
-            if token.isdigit() and next_digit_role <= NUMBER_DIGIT_COUNT:
-                roles.append(next_digit_role)
-                next_digit_role += 1
-            else:
-                roles.append(POSITION_ROLE_NONE)
-        return roles
-    return [POSITION_ROLE_NONE] * len(tokens)
+def _normalize_prompt_fields(prompt: str) -> list[str]:
+    fields = prompt.strip().split()
+    if not fields:
+        raise ValueError("prompt cannot be empty")
+    if fields[:2] != ["<do>", "<calc>"]:
+        fields = ["<do>", "<calc>", *fields]
+    if "<ans>" in fields or "<bos>" in fields:
+        raise ValueError("legacy <bos>/<ans> prompt tokens are unsupported")
+    if "<eos>" in fields:
+        fields = fields[: fields.index("<eos>")]
+    if "=" not in fields:
+        fields.append("=")
+    else:
+        fields = fields[: fields.index("=") + 1]
+    return fields
+
+
+def _normalize_line_fields(line: str) -> list[str]:
+    fields = line.strip().split()
+    if not fields:
+        raise ValueError("line cannot be empty")
+    if fields[:2] != ["<do>", "<calc>"]:
+        raise ValueError("sample lines must begin with <do> <calc>")
+    if "<ans>" in fields or "<bos>" in fields:
+        raise ValueError("legacy <bos>/<ans> sample tokens are unsupported")
+    if "=" not in fields:
+        raise ValueError("sample line is missing '='")
+    if fields.index("=") >= len(fields) - 1:
+        raise ValueError("sample line is missing answer after '='")
+    return fields

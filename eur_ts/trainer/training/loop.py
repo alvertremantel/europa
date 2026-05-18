@@ -20,7 +20,7 @@ from ..data import (
     ExampleSequenceDataset,
     TokenBlockDataset,
     load_examples,
-    load_token_stream_with_roles,
+    load_token_stream_with_type_place,
     transform_examples,
 )
 from ..inference import (
@@ -94,12 +94,13 @@ def train_model(config: TrainConfig) -> None:
         )
     )
 
-    val_tokens, val_position_ids = load_token_stream_with_roles(
+    val_tokens, val_type_ids, val_place_ids = load_token_stream_with_type_place(
         data_dir / "val.txt", tokenizer
     )
     val_dataset = TokenBlockDataset(
         val_tokens,
-        val_position_ids,
+        val_type_ids,
+        val_place_ids,
         effective_model_config.sequence_length,
     )
     if len(val_dataset) == 0:
@@ -109,8 +110,8 @@ def train_model(config: TrainConfig) -> None:
 
     train_examples: list[ArithmeticExample] | None = None
     static_train_loader: (
-        DataLoader[tuple[Tensor, Tensor, Tensor]]
-        | DataLoader[tuple[Tensor, Tensor, Tensor, Tensor]]
+        DataLoader[tuple[Tensor, Tensor, Tensor, Tensor]]
+        | DataLoader[tuple[Tensor, Tensor, Tensor, Tensor, Tensor]]
     )
     if config.training_mode == "token_stream":
         if config.training_format != "final_only":
@@ -121,12 +122,13 @@ def train_model(config: TrainConfig) -> None:
             raise ValueError(
                 'curriculum presets require training.training_mode = "examples"'
             )
-        train_tokens, train_position_ids = load_token_stream_with_roles(
-            data_dir / "train.txt", tokenizer
+        train_tokens, train_type_ids, train_place_ids = (
+            load_token_stream_with_type_place(data_dir / "train.txt", tokenizer)
         )
         train_dataset = TokenBlockDataset(
             train_tokens,
-            train_position_ids,
+            train_type_ids,
+            train_place_ids,
             effective_model_config.sequence_length,
         )
         if len(train_dataset) == 0:
@@ -315,12 +317,15 @@ def train_model(config: TrainConfig) -> None:
 
         for step, batch in enumerate(train_loader, start=1):
             if config.training_mode == "examples":
-                inputs, input_position_ids, targets, loss_mask = batch
+                inputs, input_type_ids, input_place_ids, targets, loss_mask = batch
             else:
-                inputs, input_position_ids, targets = batch
+                inputs, input_type_ids, input_place_ids, targets = batch
                 loss_mask = None
             inputs = inputs.to(device, non_blocking=device.type == "cuda")
-            input_position_ids = input_position_ids.to(
+            input_type_ids = input_type_ids.to(
+                device, non_blocking=device.type == "cuda"
+            )
+            input_place_ids = input_place_ids.to(
                 device, non_blocking=device.type == "cuda"
             )
             targets = targets.to(device, non_blocking=device.type == "cuda")
@@ -333,7 +338,8 @@ def train_model(config: TrainConfig) -> None:
                     model,
                     inputs,
                     targets,
-                    position_ids=input_position_ids,
+                    type_ids=input_type_ids,
+                    place_ids=input_place_ids,
                 )
             else:
                 loss = loss_for_example_batch(
@@ -341,7 +347,8 @@ def train_model(config: TrainConfig) -> None:
                     inputs,
                     targets,
                     loss_mask,
-                    position_ids=input_position_ids,
+                    type_ids=input_type_ids,
+                    place_ids=input_place_ids,
                 ).mean()
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=config.grad_clip)

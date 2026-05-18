@@ -78,10 +78,10 @@ def transform_examples(
 
 
 def _split_line(line: str) -> tuple[str, str]:
-    parts = line.split(" <ans> ", maxsplit=1)
+    parts = line.split(" = ", maxsplit=1)
     if len(parts) != 2:
         raise ValueError(f"invalid sample line: {line!r}")
-    return f"{parts[0]} <ans>", parts[1]
+    return f"{parts[0]} =", parts[1]
 
 
 def _band_pattern_from_kind(kind: str) -> tuple[str, ...] | None:

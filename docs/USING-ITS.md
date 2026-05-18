@@ -82,13 +82,13 @@ If a checkpoint cannot be found or loaded, the backend health endpoint will repo
 
 1. Train or locate a checkpoint with ETS.
 2. Start ITS with that checkpoint.
-3. Submit arithmetic prompts ending at the `<ans>` boundary.
+3. Submit arithmetic prompts beginning with `<do> <calc>` and ending at `=`.
 4. Inspect predictions, attention, activations, and network summaries.
 
 Example prompt:
 
 ```text
-03000000 + 03000000 = <ans>
+<do> <calc> 03000000 + 03000000 =
 ```
 
 ## Troubleshooting

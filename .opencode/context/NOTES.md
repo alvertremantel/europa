@@ -7,20 +7,20 @@
 - Packaging now includes only `eur_ts` and `eur_is`; pytest is in the dev dependency group.
 - `tests/` now covers config parsing, config CLI behavior, training CLI migration, plus core smoke behavior.
 - Repository utility scripts now live directly under `scripts/` rather than nested `scripts/math/` or `scripts/verify/` paths.
-- Fresh training config now supports `model.position_encoding`, with `digit_roles` as the intended new training mode for number-place-only positional embeddings; legacy checkpoints without that field still load as `absolute`.
-- The backend dashboard now auto-selects a runtime by checkpoint mode:
-  - `absolute` checkpoints use TransformerLens and keep the full network-analysis path.
-  - `digit_roles` checkpoints use the native PyTorch model and expose capability-gated core analysis without startup failure.
+- Fresh training config now supports only `model.position_encoding = "type_place"`: token identity embeddings are combined with learned token-type vectors (`info`, `operator`, `digit`) and digit place vectors (`place_1` through `place_8`).
+- Legacy `absolute` and `digit_roles` checkpoints are intentionally unsupported and should fail with clear loader errors.
+- The dataset/prompt protocol is now `<do> <calc> <expression> = <result>` for lines and `<do> <calc> <expression> =` for prompts; `<bos>` and `<ans>` are unsupported legacy tokens.
+- The backend dashboard uses the native PyTorch runtime for `type_place` checkpoints and exposes capability-gated core analysis without TransformerLens parity.
 - Frontend API/session state now carries `position_encoding`, `analysis_runtime`, and `capabilities`, and the UI hides unsupported views instead of relying on backend errors.
 
 ## Active work
-- Dual-checkpoint dashboard support is implemented but still unreviewed; next validation should use real `absolute` and `digit_roles` checkpoints end-to-end.
+- Type/place dashboard support is implemented but still needs end-to-end validation with a real fresh `type_place` checkpoint.
 
 ## Immediate next steps
 - Use canonical imports (`eur_ts.*` / `eur_is.*`) in all future code and docs.
 - Keep docs, helper scripts, and tooling aligned with the TOML-only training interface.
-- If checkpoint behavior changes, preserve payload compatibility for existing run artifacts.
-- Run manual backend/UI smoke checks with real checkpoints from both runtime families.
+- Checkpoint payload compatibility is intentionally broken for legacy embedding/protocol artifacts; keep loader errors explicit.
+- Run manual backend/UI smoke checks with a real `type_place` checkpoint.
 - Decide later whether native-mode attention/network summaries should stay limited or gain deeper parity with the TransformerLens path.
 
 ## Durable notes / decisions
@@ -28,9 +28,9 @@
 - Keep checkpoint payload compatibility in mind, but old top-level trainer/generator/evaluator import shims are gone.
 - Training conditions are TOML-only; do not use legacy training-condition flags with `uv run train train`.
 - `eur_ts.config` is the canonical home for train/model config schema, TOML loading, guide/template text, and size reporting.
-- The canonical specialized positional-embedding experiment is `model.position_encoding = "digit_roles"`: only digit positions within canonical 8-digit numbers get learned position-role embeddings; operators/control tokens get none.
-- For compatibility, missing checkpoint `position_encoding` metadata implies legacy `absolute` position embeddings.
-- Backend runtime switching is now canonical for the dashboard: frontend behavior should branch from structured capability metadata, not error strings or manual mode toggles.
+- The canonical specialized embedding experiment is `model.position_encoding = "type_place"`: info/operator/digit token types get learned type vectors, and digits additionally receive learned place vectors inside canonical numbers.
+- Missing or legacy checkpoint `position_encoding` metadata is invalid.
+- Backend runtime capability metadata remains canonical for the dashboard; frontend behavior should branch from structured capability metadata, not error strings or manual mode toggles.
 - Backend command: `uv run uvicorn eur_is.backend.main:app --reload`.
 - Frontend app directory: `eur_is/frontend/`.
 - Frontend dashboard is optimized for fullscreen 4K use; density preference is stored under `eur-is-density-mode`, and shortcuts include `/` prompt focus, `[`/`]` layer stepping, and `1`-`5` panel jumps.

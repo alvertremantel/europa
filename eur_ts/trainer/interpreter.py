@@ -11,7 +11,7 @@ import torch
 from torch import Tensor
 
 from .core import load_checkpoint
-from .data import ArithmeticTokenizer, POSITION_ENCODING_DIGIT_ROLES
+from .data import ArithmeticTokenizer
 from .hooks import HookRegistry
 from .visualizer import InterpreterVisualizer
 
@@ -63,18 +63,17 @@ class MechanisticInterpreter:
         self.hook_registry.capture.sequence_length = input_ids.shape[1]
 
         with torch.no_grad():
-            if self.config.position_encoding == POSITION_ENCODING_DIGIT_ROLES:
-                position_ids = torch.tensor(
-                    [
-                        self.tokenizer.position_role_ids_for_token_ids(row.tolist())
-                        for row in input_ids
-                    ],
-                    dtype=torch.long,
-                    device=self.device,
-                )
-                logits = self.model(input_ids, position_ids)
-            else:
-                logits = self.model(input_ids)
+            type_place = [
+                self.tokenizer.type_place_ids_for_token_ids(row.tolist())
+                for row in input_ids
+            ]
+            type_ids = torch.tensor(
+                [item[0] for item in type_place], dtype=torch.long, device=self.device
+            )
+            place_ids = torch.tensor(
+                [item[1] for item in type_place], dtype=torch.long, device=self.device
+            )
+            logits = self.model(input_ids, type_ids, place_ids)
 
         return logits, self.hook_registry.capture
 

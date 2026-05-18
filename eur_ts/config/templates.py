@@ -26,7 +26,7 @@ n_heads = ""
 n_layers = ""
 mlp_hidden = ""
 dropout = ""
-position_encoding = ""     # digit_roles | absolute
+position_encoding = ""     # type_place
 
 [optimization]
 batch_size = ""
@@ -94,7 +94,7 @@ Each variable below appears in train-config.toml.
 - n_layers (integer, required): Number of transformer blocks.
 - mlp_hidden (integer, required): Hidden width of each block MLP.
 - dropout (float, required): Dropout probability in [0.0, 1.0].
-- position_encoding (string, required): "digit_roles" for number-place-only positional embeddings or "absolute" for legacy absolute positions.
+- position_encoding (string, required): "type_place" for token type plus digit-place embeddings.
 
 [optimization]
 - batch_size (integer, required): Training batch size.

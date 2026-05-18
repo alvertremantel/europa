@@ -12,8 +12,9 @@ class ModelConfig:
     n_layers: int = 6
     mlp_hidden: int = 1024
     dropout: float = 0.1
-    position_encoding: str = "absolute"
-    position_vocab_size: int = 9
+    position_encoding: str = "type_place"
+    token_type_vocab_size: int = 3
+    place_vocab_size: int = 9
 
 
 @dataclass(frozen=True)
@@ -40,7 +41,7 @@ class TrainConfig:
     n_layers: int = 6
     mlp_hidden: int = 1024
     dropout: float = 0.1
-    position_encoding: str = "digit_roles"
+    position_encoding: str = "type_place"
     checkpoint_keep_last: int = 5
     checkpoint_max_kept: int = 10
     checkpoint_keep_best: int = 1

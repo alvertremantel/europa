@@ -16,7 +16,7 @@ Four CLI entrypoints are defined in `pyproject.toml` — **do not** run `python 
 uv run generate --output-dir data/my-dataset          # generate dataset
 uv run config --new                                   # create train-config.toml in CWD
 uv run train train train-config.toml                  # train from TOML config
-uv run train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "03000000 + 03000000 = <ans>"
+uv run train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 ="
 uv run evaluate --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
 ```
 
@@ -41,9 +41,9 @@ Supporting:
 
 ## Dataset format
 
-Each line: `<expression> = <ans> <result>`
+Each line: `<do> <calc> <expression> = <result>`
 
-Numbers are **8-digit zero-padded decimals, reversed** (e.g. 6 → `60000000`). Negatives: `(-60000000)`. `<ans>` marks the prompt/answer boundary.
+Numbers are **8-digit zero-padded decimals, reversed** (e.g. 6 → `60000000`). Negatives: `(-60000000)`. `<do> <calc>` starts calculation prompts; `=` remains followed by a separator in tokenized prompts.
 
 Output files: `train.txt`, `val.txt`, `test.txt`, `meta.json`.
 

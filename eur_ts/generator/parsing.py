@@ -29,10 +29,10 @@ class ParsedSample:
 
 def parse_line(line: str) -> ParsedSample:
     parts = line.strip().split()
-    if len(parts) < 6 or parts[-3] != "=" or parts[-2] != "<ans>":
+    if len(parts) < 7 or parts[0] != "<do>" or parts[1] != "<calc>" or parts[-2] != "=":
         raise ValueError(f"invalid sample format: {line!r}")
 
-    expression_fields = tuple(parts[:-3])
+    expression_fields = tuple(parts[2:-2])
     answer = parse_signed_number(parts[-1])
 
     if len(expression_fields) == 3:
