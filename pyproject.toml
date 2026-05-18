@@ -22,6 +22,7 @@ generate = "eur_ts.generator.cli:main"
 train = "eur_ts.trainer.main:main"
 evaluate = "eur_ts.evaluator.cli:main"
 config = "eur_ts.config.cli:main"
+its-export = "eur_is.export.cli:main"
 
 [dependency-groups]
 dev = [

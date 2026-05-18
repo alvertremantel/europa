@@ -80,6 +80,12 @@ Minimal setup:
 uv sync
 ```
 
+Headless ITS export:
+
+```bash
+uv run its-export --checkpoint runs/my-run/checkpoint-best.pt --prompt "03000000 + 03000000 = <ans>" --output /tmp/eis-export.zip --zip
+```
+
 ## Where to go next
 
 - Training suite usage: [`docs/USING-ETS.md`](docs/USING-ETS.md)

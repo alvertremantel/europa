@@ -246,3 +246,8 @@ export interface ApiErrorDetail {
 export interface AnalyzePromptOptions extends Partial<NetworkControls> {
   include_network?: boolean
 }
+
+export interface ExportAnalysisOptions extends Partial<NetworkControls> {
+  sections?: Array<'raw' | 'tables' | 'tensors' | 'markdown' | 'png'>
+  output_format?: 'zip'
+}

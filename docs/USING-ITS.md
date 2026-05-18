@@ -68,9 +68,11 @@ npm run dev --prefix eur_is/frontend
 The backend exposes:
 
 - `POST /api/analyze`
+- `POST /api/export`
 - `GET /api/health`
 
 The analyze endpoint returns the dashboard payload, including checkpoint metadata and optional network summaries when `include_network=true` is requested.
+The export endpoint returns a zip bundle with raw JSON, CSV/JSONL tables, Markdown summary, and backend-generated PNG assets. If attention or network data is unavailable for the loaded runtime, the bundle still includes placeholder PNGs plus manifest notes.
 
 ## Checkpoint requirements
 
@@ -84,6 +86,7 @@ If a checkpoint cannot be found or loaded, the backend health endpoint will repo
 2. Start ITS with that checkpoint.
 3. Submit arithmetic prompts ending at the `<ans>` boundary.
 4. Inspect predictions, attention, activations, and network summaries.
+5. Use **Dump data** in the dashboard to download a backend-generated export zip.
 
 Example prompt:
 
@@ -96,6 +99,28 @@ Example prompt:
 - **Checkpoint not found**: verify the path passed to `its-start.sh`.
 - **Slow or failing analysis**: prefer a CUDA-capable environment.
 - **Frontend cannot reach backend**: confirm the backend is running on port `8000`.
+
+## CLI export
+
+Single prompt zip:
+
+```bash
+uv run its-export --checkpoint runs/my-run/checkpoint-best.pt --prompt "03000000 + 03000000 = <ans>" --output /tmp/eis-export.zip --zip
+```
+
+Single prompt directory bundle:
+
+```bash
+uv run its-export --checkpoint runs/my-run/checkpoint-best.pt --prompt "03000000 + 03000000 = <ans>" --output /tmp/eis-export --directory
+```
+
+Batch prompt export:
+
+```bash
+uv run its-export --checkpoint runs/my-run/checkpoint-best.pt --prompts-file prompts.txt --output /tmp/eis-export-batch --directory
+```
+
+Config-file support is isolated in `eur_is/export/config_io.py`; today that seam accepts mapping-based options and JSON config files, and future TOML loading should land there without changing the serializers or CLI surface.
 
 ## Related docs
 
