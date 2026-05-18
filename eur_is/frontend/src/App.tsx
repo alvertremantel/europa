@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAnalysisSession } from './hooks/useAnalysisSession'
 import { EXAMPLE_PROMPTS } from './constants'
 import { getPanelShortcutTarget, type DetailTab } from './keyboardShortcuts'
+import { exportAnalysisDump } from './api'
 
 import { ActivationPanel } from './components/ActivationPanel'
 import { AttentionPanel } from './components/AttentionPanel'
@@ -42,6 +43,8 @@ function App() {
   const [predictionCollapsed, setPredictionCollapsed] = useState(false)
   const [activationCollapsed, setActivationCollapsed] = useState(false)
   const [logitCollapsed, setLogitCollapsed] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
   const {
     prompt,
     setPrompt,
@@ -56,6 +59,7 @@ function App() {
     setSelectedLayer,
     activeDetailTab,
     networkControls,
+    lastSubmittedPrompt,
     runtimeCapabilities,
     generatedAnswer,
     selectedAnswerTokenIndex,
@@ -66,6 +70,45 @@ function App() {
     setError,
   } = useAnalysisSession()
   const matchTopRowHeights = predictionCollapsed && activationCollapsed && logitCollapsed
+
+  const handleExportDump = useCallback(async () => {
+    const exportPrompt = (lastSubmittedPrompt ?? '').trim()
+    if (!exportPrompt) {
+      setExportError('Run an analysis before exporting.')
+      return
+    }
+    setExporting(true)
+    setExportError(null)
+    try {
+      const { blob, filename } = await exportAnalysisDump(exportPrompt, {
+        ...networkControls,
+        output_format: 'zip',
+      })
+      const downloadUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const runtimeHint = result?.analysis_runtime ?? health?.analysis_runtime ?? 'runtime'
+      const checkpointHint = (result?.checkpoint.path ?? health?.checkpoint.path ?? 'checkpoint')
+        .split('/')
+        .pop()
+        ?.replace(/\.pt$/, '')
+        ?? 'checkpoint'
+      const fallbackName = `its-export-${new Date().toISOString().replace(/[:.]/g, '-')}-${checkpointHint}-${runtimeHint}.zip`
+      link.href = downloadUrl
+      link.download = filename ?? fallbackName
+      document.body.append(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(downloadUrl)
+    } catch (caughtError: unknown) {
+      if (caughtError instanceof Error) {
+        setExportError(caughtError.message)
+      } else {
+        setExportError('Failed to export bundle.')
+      }
+    } finally {
+      setExporting(false)
+    }
+  }, [health, lastSubmittedPrompt, networkControls, result])
 
   const handleOpenDetailTab = useCallback((tab: DetailTab) => {
     openDetailTab(tab)
@@ -96,7 +139,7 @@ function App() {
       if (event.key === '[' || event.key === ']') {
         event.preventDefault()
         const direction = event.key === '[' ? -1 : 1
-        setSelectedLayer((current) => {
+        setSelectedLayer((current: number) => {
           const maxLayer = result ? Math.max(result.config.n_layers - 1, 0) : 0
           return Math.min(maxLayer, Math.max(0, current + direction))
         })
@@ -163,11 +206,22 @@ function App() {
                 <option value="comfortable">Comfortable</option>
               </select>
             </label>
+            {result ? (
+              <button
+                type="button"
+                className="ghost-button export-button"
+                onClick={() => void handleExportDump()}
+                disabled={exporting}
+              >
+                {exporting ? 'Dumping…' : 'Dump data'}
+              </button>
+            ) : null}
             <div className="shortcut-hints" aria-label="Keyboard shortcuts">
               <span><kbd>/</kbd> prompt</span>
               <span><kbd>[</kbd><kbd>]</kbd> layer</span>
               <span><kbd>1</kbd>–<kbd>5</kbd> panels</span>
             </div>
+            {exportError ? <p className="status-card__detail">{exportError}</p> : null}
           </div>
         </ModelStatusCard>
       </header>

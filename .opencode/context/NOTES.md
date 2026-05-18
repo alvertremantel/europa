@@ -31,6 +31,7 @@
 - The canonical specialized embedding experiment is `model.position_encoding = "type_place"`: info/operator/digit token types get learned type vectors, and digits additionally receive learned place vectors inside canonical numbers.
 - Missing or legacy checkpoint `position_encoding` metadata is invalid.
 - Backend runtime capability metadata remains canonical for the dashboard; frontend behavior should branch from structured capability metadata, not error strings or manual mode toggles.
+- ITS export bundles now live under `eur_is/export/`; exports always include backend-generated PNG assets, use placeholder PNGs plus manifest notes for unavailable sections, and keep config-file loading isolated for future JSON/TOML compatibility.
 - Backend command: `uv run uvicorn eur_is.backend.main:app --reload`.
 - Frontend app directory: `eur_is/frontend/`.
 - Frontend dashboard is optimized for fullscreen 4K use; density preference is stored under `eur-is-density-mode`, and shortcuts include `/` prompt focus, `[`/`]` layer stepping, and `1`-`5` panel jumps.

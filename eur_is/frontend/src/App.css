@@ -554,6 +554,10 @@ code {
   gap: 12px;
 }
 
+.export-button {
+  justify-self: start;
+}
+
 .network-panel {
   grid-column: 1 / -1;
 }

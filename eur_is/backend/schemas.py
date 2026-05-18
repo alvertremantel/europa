@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -14,6 +14,14 @@ class AnalyzeRequest(BaseModel):
     top_k: int = Field(default=5)
     top_neurons: int = Field(default=8)
     selected_token_index: int | None = None
+
+
+class ExportRequest(AnalyzeRequest):
+    """Export bundle request (zip only). The backend always includes the required
+    bundle content; ``sections`` gates additional optional tables/tensors."""
+
+    sections: list[Literal["raw", "tables", "tensors", "markdown", "png"]] | None = None
+    output_format: Literal["zip"] = "zip"  # only zip is supported
 
 
 class ModelConfigResponse(BaseModel):

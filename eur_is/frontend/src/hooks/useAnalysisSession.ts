@@ -25,6 +25,7 @@ export function useAnalysisSession() {
   const [selectedAnswerTokenIndex, setSelectedAnswerTokenIndex] = useState(0)
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>('attention')
   const [networkControls, setNetworkControls] = useState<NetworkControls>(DEFAULT_NETWORK_CONTROLS)
+  const [lastSubmittedPrompt, setLastSubmittedPrompt] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
   const runtimeCapabilities = useMemo<AnalysisCapabilities | null>(
@@ -114,6 +115,7 @@ export function useAnalysisSession() {
       )
       if (controller.signal.aborted) return
       setPrompt(cleanedPrompt)
+      setLastSubmittedPrompt(cleanedPrompt)
       setResult(analysis)
       setNetworkError(null)
       setSelectedLayer((current: number) =>
@@ -208,6 +210,7 @@ export function useAnalysisSession() {
     activeDetailTab: resolvedActiveDetailTab,
     setActiveDetailTab,
     networkControls,
+    lastSubmittedPrompt,
     generatedAnswer,
     selectedAnswerTokenIndex,
     setSelectedAnswerTokenIndex,

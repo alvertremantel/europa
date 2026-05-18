@@ -1,10 +1,10 @@
 import type { NetworkControls } from './types/api'
 
 export const EXAMPLE_PROMPTS = [
-  { label: 'Binary', value: '02000000 + 01000000 =' },
-  { label: 'Three input', value: '03000000 + 02000000 + 01000000 =' },
-  { label: 'Parentheses', value: '( 03000000 + 02000000 ) - 01000000 =' },
-  { label: 'Negative input', value: '(-30000000) + 01000000 =' },
+  { label: 'Binary', value: '<do> <calc> 02000000 + 01000000 =' },
+  { label: 'Three input', value: '<do> <calc> 03000000 + 02000000 + 01000000 =' },
+  { label: 'Parentheses', value: '<do> <calc> ( 03000000 + 02000000 ) - 01000000 =' },
+  { label: 'Negative input', value: '<do> <calc> (-30000000) + 01000000 =' },
 ] as const
 
 export const DEFAULT_PROMPT = EXAMPLE_PROMPTS[0].value

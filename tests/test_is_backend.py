@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import importlib
+from io import BytesIO
 from pathlib import Path
 from typing import Any, cast
+from zipfile import ZipFile
 
 import numpy as np
 import pytest
@@ -402,6 +404,101 @@ def test_analyze_type_place_runtime_reports_limited_capabilities(monkeypatch) ->
     assert payload["attention"] is None
     assert payload["attention_summary"] is None
     assert payload["network"] is None
+
+
+def test_export_runner_returns_analysis_and_health(monkeypatch) -> None:
+    from eur_is.export.runner import run_export_analysis
+
+    tokenizer = ArithmeticTokenizer()
+    runtime = FakeRuntime(
+        tokenizer=tokenizer,
+        position_encoding="type_place",
+        analysis_runtime="native_pytorch",
+        capabilities=RuntimeCapabilities(),
+    )
+
+    monkeypatch.setattr(
+        "eur_is.export.runner.load_checkpoint_runtime", lambda _path, device: runtime
+    )
+
+    result = run_export_analysis(
+        checkpoint_path=Path("runs/test.pt"),
+        device="cpu",
+        prompt="<do> <calc> 30000000 + 40000000 =",
+        include_network=True,
+    )
+
+    assert result.analysis.generated_answer.text == "70000000"
+    assert result.analysis.network is not None
+    assert result.health.status == "ok"
+    assert result.health.checkpoint.path == "runs/test.pt"
+
+
+def test_export_endpoint_returns_zip_bundle(monkeypatch) -> None:
+    tokenizer = ArithmeticTokenizer()
+    runtime = FakeRuntime(
+        tokenizer=tokenizer,
+        position_encoding="type_place",
+        analysis_runtime="native_pytorch",
+        capabilities=RuntimeCapabilities(),
+    )
+
+    monkeypatch.setattr(settings, "load_resources", lambda: None)
+    monkeypatch.setattr(settings, "get_runtime", lambda: runtime)
+    monkeypatch.setattr(settings, "runtime", cast(Any, runtime))
+    monkeypatch.setattr(settings, "CHECKPOINT_PATH", Path("runs/fake-checkpoint.pt"))
+
+    with TestClient(main.app) as client:
+        response = client.post(
+            "/api/export",
+            json={"prompt": "<do> <calc> 30000000 + 40000000 ="},
+        )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/zip")
+    archive = ZipFile(BytesIO(response.content))
+    names = set(archive.namelist())
+    assert "manifest.json" in names
+    assert "summary.md" in names
+    assert "raw/analyze-response.json" in names
+    assert "assets/attention_head_summary.png" in names
+    assert "assets/network_mlp_heatmap.png" in names
+
+
+def test_export_endpoint_native_runtime_uses_placeholder_assets(monkeypatch) -> None:
+    tokenizer = ArithmeticTokenizer()
+    runtime = FakeRuntime(
+        tokenizer=tokenizer,
+        position_encoding="type_place",
+        analysis_runtime="native_pytorch",
+        capabilities=RuntimeCapabilities(
+            attention_view=False,
+            network_analysis=False,
+            circuitsvis_attention=False,
+        ),
+    )
+
+    monkeypatch.setattr(settings, "load_resources", lambda: None)
+    monkeypatch.setattr(settings, "get_runtime", lambda: runtime)
+    monkeypatch.setattr(settings, "runtime", cast(Any, runtime))
+    monkeypatch.setattr(settings, "CHECKPOINT_PATH", Path("runs/fake-native.pt"))
+
+    with TestClient(main.app) as client:
+        response = client.post(
+            "/api/export",
+            json={"prompt": "<do> <calc> 30000000 + 40000000 ="},
+        )
+
+    assert response.status_code == 200
+    archive = ZipFile(BytesIO(response.content))
+    names = set(archive.namelist())
+    assert "assets/attention_unavailable.png" in names
+    assert "assets/attention_maps_unavailable.png" in names
+    assert "assets/network_unavailable.png" in names
+    assert "assets/network_attention_unavailable.png" in names
+    manifest = archive.read("manifest.json").decode("utf-8")
+    assert "attention_summary" in manifest
+    assert "network_mlp" in manifest
 
 
 def test_load_hooked_resources_rejects_type_place_checkpoints(monkeypatch) -> None:

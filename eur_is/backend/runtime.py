@@ -1,4 +1,4 @@
-"""Checkpoint runtime abstraction for dual checkpoint-mode dashboard support."""
+"""Checkpoint runtime abstraction for type/place dashboard support."""
 
 from __future__ import annotations
 
