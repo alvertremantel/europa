@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict
 from pathlib import Path
 
 import torch
 
+from eur_ts.artifacts import write_toml
 from eur_ts.config import ModelConfig, TrainConfig
 from ..data import ArithmeticExample
 from ..model import SmallCausalTransformer
@@ -33,7 +33,7 @@ def scratchpad_fraction(examples: list[ArithmeticExample]) -> float:
 
 
 def write_history(path: Path, history: list[dict[str, object]]) -> None:
-    path.write_text(json.dumps(history, indent=2) + "\n", encoding="utf-8")
+    write_toml(path, {"history": history})
 
 
 def write_run_metadata(
@@ -65,4 +65,4 @@ def write_run_metadata(
         "run_completed_at_unix": run_completed_at,
         "history_length": len(history),
     }
-    path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+    write_toml(path, metadata)

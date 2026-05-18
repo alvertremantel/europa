@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import math
 import shutil
 import tempfile
@@ -11,6 +10,7 @@ from typing import cast
 
 import torch
 
+from eur_ts.artifacts import read_legacy_json, read_toml, write_toml
 from eur_ts.config import ModelConfig, TrainConfig
 from ..data import (
     ArithmeticTokenizer,
@@ -203,18 +203,18 @@ class CheckpointManager:
         self.output_dir = output_dir
         self.config = config
         self.checkpoint_dir = output_dir / config.checkpoint_dir_name
-        self.manifest_path = self.checkpoint_dir / "manifest.json"
+        self.manifest_path = self.checkpoint_dir / "manifest.toml"
+        self.legacy_manifest_path = self.checkpoint_dir / "manifest.json"
         self.last_alias_path = output_dir / "checkpoint-last.pt"
         self.best_alias_path = output_dir / "checkpoint-best.pt"
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     def load_manifest(self) -> dict[str, object]:
-        if not self.manifest_path.exists():
-            return {"schema_version": MANIFEST_SCHEMA_VERSION, "records": []}
-        return cast(
-            dict[str, object],
-            json.loads(self.manifest_path.read_text(encoding="utf-8")),
-        )
+        if self.manifest_path.exists():
+            return read_toml(self.manifest_path)
+        if self.legacy_manifest_path.exists():
+            return cast(dict[str, object], read_legacy_json(self.legacy_manifest_path))
+        return {"schema_version": MANIFEST_SCHEMA_VERSION, "records": []}
 
     def save_epoch(
         self,
@@ -412,10 +412,7 @@ class CheckpointManager:
 
     def _write_manifest(self, manifest: dict[str, object]) -> None:
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        self.manifest_path.write_text(
-            json.dumps(manifest, indent=2) + "\n",
-            encoding="utf-8",
-        )
+        write_toml(self.manifest_path, manifest)
 
 
 def _as_int(value: object, field_name: str) -> int:

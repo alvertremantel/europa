@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -99,7 +99,7 @@ def test_config_guide_prints_variables(capsys: pytest.CaptureFixture[str]) -> No
     assert "total_virtual_neurons" in output
 
 
-def test_config_size_prints_json(
+def test_config_size_prints_toml(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     path = write_config(
@@ -107,7 +107,7 @@ def test_config_size_prints_json(
     )
 
     main(["--size", str(path)])
-    payload = json.loads(capsys.readouterr().out)
+    payload = tomllib.loads(capsys.readouterr().out)["model_size"]
 
     assert payload["total_parameters"] > 0
     assert payload["total_virtual_neurons"] == 1 * 32 * 32

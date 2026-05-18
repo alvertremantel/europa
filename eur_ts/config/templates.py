@@ -75,7 +75,7 @@ The config helper provides:
 Each variable below appears in train-config.toml.
 
 [paths]
-- data_dir (string, required): Directory containing train.txt, val.txt, test.txt, and meta.json.
+- data_dir (string, required): Directory containing train.txt, val.txt, test.txt, and meta.toml.
 - output_dir (string, required): Directory where checkpoints, history, and run metadata are written.
 
 [runtime]

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 import sys
+
+from eur_ts.artifacts import toml_text
 
 from .sizing import model_size_from_config
 from .templates import TEMPLATE_FILENAME, TRAIN_CONFIG_GUIDE, TRAIN_CONFIG_TEMPLATE
@@ -31,7 +32,7 @@ def main(argv: list[str] | None = None) -> None:
         return
     if args.size:
         config = load_train_config(Path(args.size))
-        print(json.dumps(model_size_from_config(config), indent=2, sort_keys=True))
+        print(toml_text({"model_size": model_size_from_config(config)}).rstrip())
         return
     raise SystemExit("one of --new, --guide, or --size is required")
 

@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import csv
-import json
 from pathlib import Path
 from typing import cast
 
+from eur_ts.artifacts import write_toml
 
-def write_summary_json(path: Path, summary: dict[str, object]) -> None:
-    path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+
+def write_summary_toml(path: Path, summary: dict[str, object]) -> None:
+    write_toml(path, summary)
 
 
 def write_kind_csv(path: Path, kind_rows: list[dict[str, object]]) -> None:
@@ -64,7 +65,5 @@ def write_kind_csv(path: Path, kind_rows: list[dict[str, object]]) -> None:
             )
 
 
-def write_errors_jsonl(path: Path, errors: list[dict[str, object]]) -> None:
-    with path.open("w", encoding="utf-8", newline="\n") as handle:
-        for error in errors:
-            handle.write(json.dumps(error, sort_keys=True) + "\n")
+def write_errors_toml(path: Path, errors: list[dict[str, object]]) -> None:
+    write_toml(path, {"errors": errors})

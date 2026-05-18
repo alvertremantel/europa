@@ -22,7 +22,7 @@ from .sampling import (
     ordered_selected_kinds,
     top_or_bottom_kinds,
 )
-from .writers import write_errors_jsonl, write_kind_csv, write_summary_json
+from .writers import write_errors_toml, write_kind_csv, write_summary_toml
 
 
 def run_evaluation(
@@ -171,8 +171,8 @@ def run_evaluation(
     }
 
     output_prefix.parent.mkdir(parents=True, exist_ok=True)
-    write_summary_json(output_prefix.with_suffix(".summary.json"), summary)
+    write_summary_toml(output_prefix.with_suffix(".summary.toml"), summary)
     write_kind_csv(output_prefix.with_suffix(".kinds.csv"), kind_rows)
-    write_errors_jsonl(output_prefix.with_suffix(".errors.jsonl"), errors)
+    write_errors_toml(output_prefix.with_suffix(".errors.toml"), errors)
 
     return summary

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import heapq
-import json
 from collections import defaultdict
 from pathlib import Path
 from typing import cast
 
+from eur_ts.artifacts import toml_text
 from eur_ts.generator.core import (
     format_signed_number,
     parse_signed_number,
@@ -110,17 +110,17 @@ def print_selection_summary(
     selected_total = sum(len(examples) for examples in selected_examples.values())
     available_total = sum(available_counts.values())
     print(
-        json.dumps(
+        toml_text(
             {
-                "pool_splits": splits,
-                "sample_size_per_kind": sample_size_per_kind,
-                "evaluated_kinds": evaluated_kinds,
-                "selected_examples": selected_total,
-                "available_examples_in_pool": available_total,
-            },
-            indent=2,
-            sort_keys=True,
-        )
+                "selection": {
+                    "pool_splits": splits,
+                    "sample_size_per_kind": sample_size_per_kind,
+                    "evaluated_kinds": evaluated_kinds,
+                    "selected_examples": selected_total,
+                    "available_examples_in_pool": available_total,
+                }
+            }
+        ).rstrip()
     )
 
 

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import math
 from pathlib import Path
 from typing import cast
 
 import torch
 
+from eur_ts.artifacts import read_legacy_json, read_toml
 from eur_ts.config import ModelConfig, TrainConfig
 from ..data import (
     ArithmeticTokenizer,
@@ -237,21 +237,34 @@ def history_from_payload(
             for entry in cast(list[object], training_state_dict["history"])
             if isinstance(entry, dict)
         ]
-    history_paths = [resume_path.parent / "history.json"]
+    history_paths = [resume_path.parent / "history.toml"]
     if resume_path.parent.name == "checkpoints":
-        history_paths.append(resume_path.parent.parent / "history.json")
+        history_paths.append(resume_path.parent.parent / "history.toml")
     for history_path in history_paths:
         if history_path.exists():
-            loaded = json.loads(history_path.read_text(encoding="utf-8"))
-            if isinstance(loaded, list):
-                file_history = [
-                    cast(dict[str, object], entry)
-                    for entry in loaded
-                    if isinstance(entry, dict)
-                ]
-                if len(file_history) >= len(payload_history):
-                    return file_history
+            loaded = read_toml(history_path).get("history")
+            file_history = _history_entries_from_loaded(loaded)
+            if len(file_history) >= len(payload_history):
+                return file_history
+
+    legacy_history_paths = [resume_path.parent / "history.json"]
+    if resume_path.parent.name == "checkpoints":
+        legacy_history_paths.append(resume_path.parent.parent / "history.json")
+    for history_path in legacy_history_paths:
+        if history_path.exists():
+            loaded = read_legacy_json(history_path)
+            file_history = _history_entries_from_loaded(loaded)
+            if len(file_history) >= len(payload_history):
+                return file_history
     return payload_history
+
+
+def _history_entries_from_loaded(loaded: object) -> list[dict[str, object]]:
+    if not isinstance(loaded, list):
+        return []
+    return [
+        cast(dict[str, object], entry) for entry in loaded if isinstance(entry, dict)
+    ]
 
 
 def _as_int(value: object, field_name: str) -> int:
