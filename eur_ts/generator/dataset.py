@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import json
 from collections import Counter
 from pathlib import Path
 from typing import Mapping, TextIO, cast
+
+from eur_ts.artifacts import toml_text, write_toml
 
 from .config import (
     BANDS,
@@ -149,9 +150,7 @@ def generate_dataset(config: Config) -> None:
         "test_samples_per_kind": TEST_SAMPLES_PER_KIND,
         "sampled_train_samples_per_kind": SAMPLED_TRAIN_SAMPLES_PER_KIND,
     }
-    (output_dir / "meta.json").write_text(
-        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
-    )
+    write_toml(output_dir / "meta.toml", metadata)
 
     if config.validate:
         validate_output(output_dir=output_dir, metadata=metadata)
@@ -214,4 +213,4 @@ def validate_output(*, output_dir: Path, metadata: Mapping[str, object]) -> None
             if bool(kind_definitions[kind]["wildcard"])
         ),
     }
-    print(json.dumps(summary, indent=2, sort_keys=True))
+    print(toml_text({"validation": summary}).rstrip())

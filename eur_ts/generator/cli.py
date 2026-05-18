@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import argparse
-import json
 from dataclasses import asdict
+
+from eur_ts.artifacts import toml_text
 
 from .core import Config, generate_dataset
 
@@ -25,7 +26,7 @@ def parse_args() -> Config:
 
 def main() -> None:
     config = parse_args()
-    print(json.dumps(asdict(config), indent=2, sort_keys=True))
+    print(toml_text({"generator": asdict(config)}).rstrip())
     generate_dataset(config)
 
 

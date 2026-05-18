@@ -32,7 +32,7 @@ Canonical training code lives under one `eur_ts/` package root:
 |---|---|
 | `eur_ts/generator/` | Stratified arithmetic data generation (binary, three_input, parentheses, negative_input categories) |
 | `eur_ts/trainer/` | Causal transformer training + inference. Uses `transformer-lens` for hooked model access |
-| `eur_ts/evaluator/` | Per-stratum evaluation, writes summary JSON, kinds CSV, and errors JSONL next to the checkpoint |
+| `eur_ts/evaluator/` | Per-stratum evaluation, writes summary TOML, kinds CSV, and errors TOML next to the checkpoint |
 
 Supporting:
 - `eur_is/` — FastAPI backend (`eur_is/backend/main.py`) + React/Vite frontend (`eur_is/frontend/`). Backend hardcodes checkpoint path at `runs/test-extended-plus/checkpoint-best.pt`.
@@ -45,7 +45,7 @@ Each line: `<do> <calc> <expression> = <result>`
 
 Numbers are **8-digit zero-padded decimals, reversed** (e.g. 6 → `60000000`). Negatives: `(-60000000)`. `<do> <calc>` starts calculation prompts; `=` remains followed by a separator in tokenized prompts.
 
-Output files: `train.txt`, `val.txt`, `test.txt`, `meta.json`.
+Output files: `train.txt`, `val.txt`, `test.txt`, `meta.toml`.
 
 ## Key constraints
 

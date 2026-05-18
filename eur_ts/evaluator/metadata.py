@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import argparse
-import json
 from collections import defaultdict
 from pathlib import Path
 from typing import cast
 
 import torch
 
+from eur_ts.artifacts import read_legacy_json, read_toml
 from eur_ts.generator.core import KindSpec, iter_kind_specs
 
 CATEGORY_ORDER = ("binary", "three_input", "parentheses", "negative_input")
@@ -76,12 +76,13 @@ def resolve_output_prefix(args: argparse.Namespace, checkpoint_path: Path) -> Pa
 
 
 def load_metadata(data_dir: Path) -> dict[str, object] | None:
-    metadata_path = data_dir / "meta.json"
-    if not metadata_path.exists():
-        return None
-    return cast(
-        dict[str, object], json.loads(metadata_path.read_text(encoding="utf-8"))
-    )
+    metadata_path = data_dir / "meta.toml"
+    if metadata_path.exists():
+        return read_toml(metadata_path)
+    legacy_metadata_path = data_dir / "meta.json"
+    if legacy_metadata_path.exists():
+        return cast(dict[str, object], read_legacy_json(legacy_metadata_path))
+    return None
 
 
 def kind_definitions_from_metadata(

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import cast
 
+from eur_ts.artifacts import toml_text
 from eur_ts.trainer.utils import configure_runtime, resolve_device
 
 from .args import parse_args
@@ -30,21 +30,21 @@ from .sampling import (
 
 def print_console_summary(summary: dict[str, object]) -> None:
     print(
-        json.dumps(
+        toml_text(
             {
-                "checkpoint": summary["checkpoint"],
-                "data_dir": summary["data_dir"],
-                "pool_splits": summary["pool_splits"],
-                "sample_size_per_kind": summary["sample_size_per_kind"],
-                "sample_seed": summary["sample_seed"],
-                "elapsed_seconds": summary["elapsed_seconds"],
-                "examples_per_second": summary["examples_per_second"],
-                "overall": summary["overall"],
-                "device": summary["device"],
-            },
-            indent=2,
-            sort_keys=True,
-        )
+                "summary": {
+                    "checkpoint": summary["checkpoint"],
+                    "data_dir": summary["data_dir"],
+                    "pool_splits": summary["pool_splits"],
+                    "sample_size_per_kind": summary["sample_size_per_kind"],
+                    "sample_seed": summary["sample_seed"],
+                    "elapsed_seconds": summary["elapsed_seconds"],
+                    "examples_per_second": summary["examples_per_second"],
+                    "overall": summary["overall"],
+                    "device": summary["device"],
+                }
+            }
+        ).rstrip()
     )
     print("category accuracy:")
     for row in cast(list[dict[str, object]], summary["categories"]):

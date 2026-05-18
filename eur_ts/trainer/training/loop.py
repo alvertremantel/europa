@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -9,6 +8,7 @@ from typing import cast
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
+from eur_ts.artifacts import toml_text
 from eur_ts.config import TrainConfig
 from ..curriculum import (
     build_balanced_example_sample,
@@ -81,17 +81,17 @@ def train_model(config: TrainConfig) -> None:
         resume_path=resume_path,
     )
 
-    print(json.dumps(asdict(config), indent=2, sort_keys=True))
+    print(toml_text({"train_config": asdict(config)}).rstrip())
     print(
-        json.dumps(
+        toml_text(
             {
-                "parameters": parameter_count(model),
-                "vocab_size": tokenizer.vocab_size,
-                **device_metadata(device),
-            },
-            indent=2,
-            sort_keys=True,
-        )
+                "runtime": {
+                    "parameters": parameter_count(model),
+                    "vocab_size": tokenizer.vocab_size,
+                    **device_metadata(device),
+                }
+            }
+        ).rstrip()
     )
 
     val_tokens, val_type_ids, val_place_ids = load_token_stream_with_type_place(
@@ -161,8 +161,9 @@ def train_model(config: TrainConfig) -> None:
         )
         if example_dataset.skipped_by_format:
             print(
-                "skipped_overlong_examples="
-                + json.dumps(example_dataset.skipped_by_format, sort_keys=True)
+                toml_text(
+                    {"skipped_overlong_examples": example_dataset.skipped_by_format}
+                ).rstrip()
             )
         static_train_loader = DataLoader(
             example_dataset,
@@ -176,16 +177,16 @@ def train_model(config: TrainConfig) -> None:
                 "example training dataset produced no batches; lower optimization.batch_size"
             )
         print(
-            json.dumps(
+            toml_text(
                 {
-                    "loaded_examples": len(example_dataset),
-                    "curriculum_group_counts": count_curriculum_groups(
-                        example_dataset.examples
-                    ),
-                },
-                indent=2,
-                sort_keys=True,
-            )
+                    "training_data": {
+                        "loaded_examples": len(example_dataset),
+                        "curriculum_group_counts": count_curriculum_groups(
+                            example_dataset.examples
+                        ),
+                    }
+                }
+            ).rstrip()
         )
     else:
         raise ValueError("training_mode must be token_stream or examples")
@@ -219,21 +220,21 @@ def train_model(config: TrainConfig) -> None:
         )
         balanced_val_examples = balanced_val_dataset.examples
         print(
-            json.dumps(
+            toml_text(
                 {
-                    "balanced_val_examples": len(balanced_val_dataset),
-                    "balanced_val_group_by": config.balanced_val_group_by,
-                    "balanced_val_curriculum_group_counts": count_curriculum_groups(
-                        balanced_val_dataset.examples
-                    ),
-                },
-                indent=2,
-                sort_keys=True,
-            )
+                    "balanced_validation": {
+                        "balanced_val_examples": len(balanced_val_dataset),
+                        "balanced_val_group_by": config.balanced_val_group_by,
+                        "balanced_val_curriculum_group_counts": count_curriculum_groups(
+                            balanced_val_dataset.examples
+                        ),
+                    }
+                }
+            ).rstrip()
         )
 
     checkpoint_manager = CheckpointManager(output_dir, config)
-    run_metadata_path = output_dir / "run-metadata.json"
+    run_metadata_path = output_dir / "run-metadata.toml"
     run_started_at = time.time()
     target_epoch = resolve_target_epoch(config, start_epoch - 1)
     if target_epoch < start_epoch - 1:
@@ -302,17 +303,17 @@ def train_model(config: TrainConfig) -> None:
                     "curriculum epoch produced no batches; lower optimization.batch_size"
                 )
             print(
-                json.dumps(
+                toml_text(
                     {
-                        "epoch": epoch,
-                        "curriculum_stage": curriculum_stage,
-                        "curriculum_stage_index": curriculum_stage_index,
-                        "curriculum_sampling_weights": curriculum_sampling_weights,
-                        "curriculum_sample_counts": curriculum_sample_counts,
-                    },
-                    indent=2,
-                    sort_keys=True,
-                )
+                        "curriculum_epoch": {
+                            "epoch": epoch,
+                            "curriculum_stage": curriculum_stage,
+                            "curriculum_stage_index": curriculum_stage_index,
+                            "curriculum_sampling_weights": curriculum_sampling_weights,
+                            "curriculum_sample_counts": curriculum_sample_counts,
+                        }
+                    }
+                ).rstrip()
             )
 
         for step, batch in enumerate(train_loader, start=1):
@@ -457,9 +458,9 @@ def train_model(config: TrainConfig) -> None:
         metrics["checkpoint_path"] = str(checkpoint_path.relative_to(output_dir))
         metrics["checkpoint_roles"] = checkpoint_roles
         history.append(metrics)
-        print(json.dumps(metrics, indent=2, sort_keys=True))
+        print(toml_text({"epoch_metrics": metrics}).rstrip())
 
-        write_history(output_dir / "history.json", history)
+        write_history(output_dir / "history.toml", history)
         write_run_metadata(
             run_metadata_path,
             config=config,
