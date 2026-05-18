@@ -1,0 +1,58 @@
+# Europa ALM-IS training config
+# Fill in every required value before training.
+# Empty strings are placeholders; required empty values are rejected.
+
+[paths]
+data_dir = "output/datasets/eurdeck-0.3/"
+output_dir = "output/models/eur3-mid-p/"
+
+[runtime]
+device = "cuda"
+seed = "42"
+
+[resume]
+resume_from = ""       # optional; blank disables explicit resume path
+auto_resume = "false"
+additional_epochs = "" # optional; blank trains for optimization.epochs total
+
+[model]
+sequence_length = "64"
+d_model = "5"
+n_heads = "2"
+n_layers = "10"
+mlp_hidden = "100"
+dropout = "0.1"
+position_encoding = "type_place"     # type_place
+
+[optimization]
+batch_size = "64"
+epochs = "35"
+learning_rate = "0.0003"
+weight_decay = "0.1"
+grad_clip = "0.1"
+
+[logging]
+log_interval = "500"
+eval_batches = "25"
+exact_match_samples = "128"
+max_new_tokens = "32"
+
+[checkpoint]
+checkpoint_keep_last = "3"
+checkpoint_max_kept = "50"
+checkpoint_keep_best = "10"
+checkpoint_jump_threshold = "0.025"
+checkpoint_dir_name = "ept"
+
+[training]
+training_mode = "examples"          # token_stream | examples
+training_format = "light_scratchpad"        # final_only | light_scratchpad | parentheses_intermediate | multiply_intermediate
+skip_overlong_examples = "false"
+curriculum_name = ""        # optional; blank disables curriculum
+
+[balanced_validation]
+enabled = "true"
+group_by = "kind"               # kind | category | curriculum_group
+sample_size_per_group = "8"
+seed = "42"
+batch_size = ""             # optional; blank uses optimization.batch_size
