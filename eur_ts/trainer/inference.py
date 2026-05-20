@@ -6,7 +6,7 @@ import torch
 from torch import Tensor
 from torch.nn import functional as F
 
-from .data import ArithmeticTokenizer
+from .data import ArithmeticTokenizer, POSITION_ENCODING_FIXED_MEANING
 from .formatting import extract_final_answer
 from .model import SmallCausalTransformer
 from .utils import answer_from_line, prompt_from_line, sample_examples
@@ -55,35 +55,47 @@ def generate_completion(
     device: torch.device,
 ) -> str:
     model.eval()
-    token_ids, type_ids, place_ids = tokenizer.encode_prompt_with_type_place(prompt)
-    generated = torch.tensor(token_ids, dtype=torch.long, device=device).unsqueeze(0)
-    generated_type_ids = torch.tensor(
-        type_ids, dtype=torch.long, device=device
-    ).unsqueeze(0)
-    generated_place_ids = torch.tensor(
-        place_ids, dtype=torch.long, device=device
-    ).unsqueeze(0)
+    if model.config.position_encoding == POSITION_ENCODING_FIXED_MEANING:
+        token_ids = tokenizer.encode_prompt(prompt)
+        generated = torch.tensor(token_ids, dtype=torch.long, device=device).unsqueeze(
+            0
+        )
+    else:
+        token_ids, type_ids, place_ids = tokenizer.encode_prompt_with_type_place(prompt)
+        generated = torch.tensor(token_ids, dtype=torch.long, device=device).unsqueeze(
+            0
+        )
+        generated_type_ids = torch.tensor(
+            type_ids, dtype=torch.long, device=device
+        ).unsqueeze(0)
+        generated_place_ids = torch.tensor(
+            place_ids, dtype=torch.long, device=device
+        ).unsqueeze(0)
 
     for _ in range(max_new_tokens):
         window = generated[:, -model.config.sequence_length :]
-        window_type_ids = generated_type_ids[:, -model.config.sequence_length :]
-        window_place_ids = generated_place_ids[:, -model.config.sequence_length :]
-        logits = _forward_model(
-            model, window, type_ids=window_type_ids, place_ids=window_place_ids
-        )
+        if model.config.position_encoding == POSITION_ENCODING_FIXED_MEANING:
+            logits = _forward_model(model, window)
+        else:
+            window_type_ids = generated_type_ids[:, -model.config.sequence_length :]
+            window_place_ids = generated_place_ids[:, -model.config.sequence_length :]
+            logits = _forward_model(
+                model, window, type_ids=window_type_ids, place_ids=window_place_ids
+            )
         next_token_id = logits[:, -1].argmax(dim=-1, keepdim=True)
         generated = torch.cat((generated, next_token_id), dim=1)
-        next_type_ids, next_place_ids = tokenizer.type_place_ids_for_token_ids(
-            generated.squeeze(0).tolist()
-        )
-        generated_type_ids = torch.tensor(
-            [next_type_ids],
-            dtype=torch.long,
-            device=device,
-        )
-        generated_place_ids = torch.tensor(
-            [next_place_ids], dtype=torch.long, device=device
-        )
+        if model.config.position_encoding != POSITION_ENCODING_FIXED_MEANING:
+            next_type_ids, next_place_ids = tokenizer.type_place_ids_for_token_ids(
+                generated.squeeze(0).tolist()
+            )
+            generated_type_ids = torch.tensor(
+                [next_type_ids],
+                dtype=torch.long,
+                device=device,
+            )
+            generated_place_ids = torch.tensor(
+                [next_place_ids], dtype=torch.long, device=device
+            )
         if next_token_id.item() == tokenizer.eos_id:
             break
 
@@ -132,6 +144,8 @@ def _forward_model(
     type_ids: Tensor | None = None,
     place_ids: Tensor | None = None,
 ) -> Tensor:
+    if model.config.position_encoding == POSITION_ENCODING_FIXED_MEANING:
+        return model(input_ids)
     if type_ids is None or place_ids is None:
         raise ValueError(
             "type_place models require type_ids and place_ids for forward passes"

@@ -25,7 +25,7 @@ n_heads = ""
 n_layers = ""
 mlp_hidden = ""
 dropout = ""
-position_encoding = ""     # type_place
+position_encoding = ""     # type_place | fixed_meaning
 
 [optimization]
 batch_size = ""
@@ -76,7 +76,7 @@ Each variable below appears in train-config.toml.
 - n_layers (integer, required): Number of transformer blocks.
 - mlp_hidden (integer, required): Hidden width of each block MLP.
 - dropout (float, required): Dropout probability in [0.0, 1.0].
-- position_encoding (string, required): "type_place" for token type plus digit-place embeddings.
+- position_encoding (string, required): "type_place" for token type plus digit-place embeddings, or "fixed_meaning" for frozen token-meaning vectors plus fixed positional encoding.
 
 [optimization]
 - batch_size (integer, required): Training batch size.

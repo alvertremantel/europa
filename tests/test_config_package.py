@@ -68,6 +68,21 @@ def test_load_train_config_parses_valid_toml(tmp_path: Path) -> None:
     assert config.curriculum_name is None
 
 
+def test_load_train_config_accepts_fixed_meaning_position_encoding(
+    tmp_path: Path,
+) -> None:
+    path = write_config(
+        tmp_path,
+        VALID_TOML.replace(
+            'position_encoding = "type_place"', 'position_encoding = "fixed_meaning"'
+        ),
+    )
+
+    config = load_train_config(path)
+
+    assert config.position_encoding == "fixed_meaning"
+
+
 def test_load_train_config_rejects_blank_required_value(tmp_path: Path) -> None:
     path = write_config(
         tmp_path, VALID_TOML.replace('data_dir = "data/my-dataset"', 'data_dir = ""')
@@ -179,3 +194,5 @@ def test_template_and_guide_cover_key_variables() -> None:
     ):
         assert key in TRAIN_CONFIG_TEMPLATE
         assert key in TRAIN_CONFIG_GUIDE
+    assert "fixed_meaning" in TRAIN_CONFIG_TEMPLATE
+    assert "fixed_meaning" in TRAIN_CONFIG_GUIDE

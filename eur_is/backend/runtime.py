@@ -27,6 +27,7 @@ from eur_is.backend.model_utils import (
 from eur_is.backend.network_analysis import extract_network_analysis
 from eur_ts.trainer.data import (
     ArithmeticTokenizer,
+    POSITION_ENCODING_FIXED_MEANING,
     POSITION_ENCODING_TYPE_PLACE,
 )
 from eur_ts.trainer.hooks import HookRegistry
@@ -351,14 +352,21 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
             dtype=torch.long,
             device=self.device,
         ).unsqueeze(0)
-        type_ids, place_ids = self.tokenizer.type_place_ids_for_token_ids(
-            prompt_token_ids
-        )
-        type_tensor = torch.tensor([type_ids], dtype=torch.long, device=self.device)
-        place_tensor = torch.tensor([place_ids], dtype=torch.long, device=self.device)
         with HookRegistry(self.model) as hooks:
             with torch.no_grad():
-                logits = self.model(input_tensor, type_tensor, place_tensor)
+                if self.position_encoding == POSITION_ENCODING_FIXED_MEANING:
+                    logits = self.model(input_tensor)
+                else:
+                    type_ids, place_ids = self.tokenizer.type_place_ids_for_token_ids(
+                        prompt_token_ids
+                    )
+                    type_tensor = torch.tensor(
+                        [type_ids], dtype=torch.long, device=self.device
+                    )
+                    place_tensor = torch.tensor(
+                        [place_ids], dtype=torch.long, device=self.device
+                    )
+                    logits = self.model(input_tensor, type_tensor, place_tensor)
         if len(hooks.capture.layer_outputs) != self.n_layers:
             raise RuntimeError("native runtime did not capture all transformer layers")
         stacked_activations = np.stack(
@@ -376,24 +384,24 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
         )
 
     def _next_token_logits(self, generated_token_ids: list[int]) -> torch.Tensor:
-        type_ids, place_ids = self.tokenizer.type_place_ids_for_token_ids(
-            generated_token_ids
-        )
         window_token_ids = generated_token_ids[-self.context_window :]
-        window_type_ids = type_ids[-self.context_window :]
-        window_place_ids = place_ids[-self.context_window :]
         window = torch.tensor(
             window_token_ids,
             dtype=torch.long,
             device=self.device,
         ).unsqueeze(0)
+        if self.position_encoding == POSITION_ENCODING_FIXED_MEANING:
+            return self.model(window)[0, -1].detach().cpu()
+        type_ids, place_ids = self.tokenizer.type_place_ids_for_token_ids(
+            generated_token_ids
+        )
         window_types = torch.tensor(
-            window_type_ids,
+            type_ids[-self.context_window :],
             dtype=torch.long,
             device=self.device,
         ).unsqueeze(0)
         window_places = torch.tensor(
-            window_place_ids, dtype=torch.long, device=self.device
+            place_ids[-self.context_window :], dtype=torch.long, device=self.device
         ).unsqueeze(0)
         return self.model(window, window_types, window_places)[0, -1].detach().cpu()
 
@@ -404,7 +412,10 @@ def load_checkpoint_runtime(
     device: str,
 ) -> BaseCheckpointRuntime:
     artifacts = load_checkpoint_artifacts(checkpoint_path, device=device)
-    if artifacts.position_encoding == POSITION_ENCODING_TYPE_PLACE:
+    if artifacts.position_encoding in {
+        POSITION_ENCODING_TYPE_PLACE,
+        POSITION_ENCODING_FIXED_MEANING,
+    }:
         model, tokenizer, metadata = load_native_resources(
             checkpoint_path, device=device
         )

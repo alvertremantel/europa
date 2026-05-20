@@ -12,7 +12,13 @@ from eur_ts.generator.core import (
 )
 from eur_ts.config import ModelConfig
 from eur_ts.trainer.curriculum import select_curriculum_stage
-from eur_ts.trainer.data import ArithmeticTokenizer, vocab_for_training_format
+from eur_ts.trainer.data import (
+    ArithmeticTokenizer,
+    POSITION_ENCODING_FIXED_MEANING,
+    vocab_for_training_format,
+)
+from eur_ts.trainer.datasets import ExampleSequenceDataset, TokenBlockDataset
+from eur_ts.trainer.examples import ArithmeticExample
 from eur_ts.trainer.formatting import final_answer_from_line, format_training_line
 from eur_ts.trainer.inference import _forward_model, sample_exact_match_probe
 from eur_ts.trainer.model import SmallCausalTransformer
@@ -104,6 +110,57 @@ def test_small_transformer_type_place_forward_shape() -> None:
     assert torch.allclose(helper_logits, logits)
     with pytest.raises(ValueError, match="type_place"):
         model(input_ids)
+
+
+def test_small_transformer_fixed_meaning_forward_shape() -> None:
+    tokenizer = ArithmeticTokenizer()
+    config = ModelConfig(
+        vocab_size=tokenizer.vocab_size,
+        sequence_length=32,
+        d_model=16,
+        n_heads=4,
+        n_layers=1,
+        mlp_hidden=32,
+        dropout=0.0,
+        position_encoding=POSITION_ENCODING_FIXED_MEANING,
+    )
+    model = SmallCausalTransformer(config, tokenizer=tokenizer).eval()
+    input_token_ids = tokenizer.encode_prompt("<do> <calc> 30000000 + 40000000 =")
+    input_ids = torch.tensor([input_token_ids], dtype=torch.long)
+
+    with torch.no_grad():
+        logits = model(input_ids)
+        helper_logits = _forward_model(model, input_ids)
+
+    assert logits.shape == (1, input_ids.shape[1], tokenizer.vocab_size)
+    assert torch.allclose(helper_logits, logits)
+    assert model.token_embedding.weight.requires_grad is False
+    assert model.position_embedding is not None
+    assert model.position_embedding.weight.requires_grad is False
+    assert model.lm_head.weight.requires_grad is True
+
+
+def test_fixed_meaning_datasets_emit_token_only_batches() -> None:
+    tokenizer = ArithmeticTokenizer()
+    line = "<do> <calc> 30000000 + 40000000 = 70000000"
+    token_ids = tokenizer.encode_line(line)
+    block_dataset = TokenBlockDataset(token_ids * 2, sequence_length=8)
+    block_item = block_dataset[0]
+    assert len(block_item) == 2
+
+    example = ArithmeticExample(
+        line=line,
+        prompt="<do> <calc> 30000000 + 40000000 =",
+        answer="70000000",
+    )
+    example_dataset = ExampleSequenceDataset(
+        [example],
+        tokenizer,
+        sequence_length=32,
+        position_encoding=POSITION_ENCODING_FIXED_MEANING,
+    )
+    example_item = example_dataset[0]
+    assert len(example_item) == 3
 
 
 def test_legacy_checkpoint_model_config_is_rejected() -> None:

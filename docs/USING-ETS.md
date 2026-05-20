@@ -151,3 +151,4 @@ uv run pytest
 
 - Project overview: [`../README.md`](../README.md)
 - Interpretability app usage: [`USING-ITS.md`](./USING-ITS.md)
+- Fixed structured input design: [`FIXED-MEANING-INPUTS.md`](./FIXED-MEANING-INPUTS.md)

@@ -13,7 +13,7 @@ from eur_ts.config import ModelConfig, TrainConfig
 from ..data import (
     ArithmeticTokenizer,
     PLACE_VOCAB_SIZE,
-    POSITION_ENCODING_TYPE_PLACE,
+    SUPPORTED_POSITION_ENCODINGS,
     TOKEN_TYPE_VOCAB_SIZE,
     vocab_for_training_format,
 )
@@ -64,9 +64,9 @@ def initialize_training_state(
             token_type_vocab_size=TOKEN_TYPE_VOCAB_SIZE,
             place_vocab_size=PLACE_VOCAB_SIZE,
         )
-        model = SmallCausalTransformer(model_config).to(device)
+        model = SmallCausalTransformer(model_config, tokenizer=tokenizer).to(device)
         optimizer = torch.optim.AdamW(
-            model.parameters(),
+            _trainable_parameters(model),
             lr=config.learning_rate,
             weight_decay=config.weight_decay,
         )
@@ -138,7 +138,7 @@ def initialize_training_state(
                 f"Warning: ignoring config value {field_name}={requested!r} and using checkpoint value {actual!r}."
             )
 
-    model = SmallCausalTransformer(model_config)
+    model = SmallCausalTransformer(model_config, tokenizer=tokenizer)
     model_state = payload.get("model_state")
     if not isinstance(model_state, dict):
         raise ValueError("resume checkpoint is missing model_state")
@@ -146,7 +146,9 @@ def initialize_training_state(
     model.to(device)
 
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
+        _trainable_parameters(model),
+        lr=config.learning_rate,
+        weight_decay=config.weight_decay,
     )
     optimizer_state = payload.get("optimizer_state")
     if not isinstance(optimizer_state, dict):
@@ -302,9 +304,13 @@ def _required_position_encoding(state: dict[str, object]) -> str:
     value = state.get("position_encoding")
     if not isinstance(value, str):
         raise ValueError("model_config.position_encoding is required")
-    if value != POSITION_ENCODING_TYPE_PLACE:
+    if value not in SUPPORTED_POSITION_ENCODINGS:
         raise ValueError(f"unsupported checkpoint position encoding: {value!r}")
     return value
+
+
+def _trainable_parameters(model: SmallCausalTransformer) -> list[torch.nn.Parameter]:
+    return [parameter for parameter in model.parameters() if parameter.requires_grad]
 
 
 def _as_optional_int(value: object, field_name: str, *, default: int) -> int:

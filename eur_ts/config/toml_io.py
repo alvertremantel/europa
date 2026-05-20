@@ -6,11 +6,12 @@ import tomllib
 from typing import cast
 
 from eur_ts.trainer.curriculum import PRESETS
+from eur_ts.trainer.data import SUPPORTED_POSITION_ENCODINGS
 
 from .schema import TrainConfig
 
 ALLOWED_TRAINING_MODES = {"token_stream", "examples"}
-ALLOWED_POSITION_ENCODINGS = {"type_place"}
+ALLOWED_POSITION_ENCODINGS = set(SUPPORTED_POSITION_ENCODINGS)
 ALLOWED_TRAINING_FORMATS = {
     "final_only",
     "light_scratchpad",

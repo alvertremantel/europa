@@ -15,7 +15,7 @@ from eur_ts.config import ModelConfig, TrainConfig
 from ..data import (
     ArithmeticTokenizer,
     PLACE_VOCAB_SIZE,
-    POSITION_ENCODING_TYPE_PLACE,
+    SUPPORTED_POSITION_ENCODINGS,
     TOKEN_TYPE_VOCAB_SIZE,
 )
 from ..model import SmallCausalTransformer
@@ -116,7 +116,7 @@ def load_model_checkpoint(
     )
 
     model_config = _model_config_from_payload(payload)
-    model = SmallCausalTransformer(model_config)
+    model = SmallCausalTransformer(model_config, tokenizer=tokenizer)
     model_state = payload.get("model_state")
     if not isinstance(model_state, dict):
         legacy_model = payload.get("model")
@@ -321,7 +321,7 @@ def _required_position_encoding(state: dict[str, object]) -> str:
     value = state.get("position_encoding")
     if not isinstance(value, str):
         raise ValueError("model_config.position_encoding is required")
-    if value != POSITION_ENCODING_TYPE_PLACE:
+    if value not in SUPPORTED_POSITION_ENCODINGS:
         raise ValueError(f"unsupported checkpoint position encoding: {value!r}")
     return value
 

@@ -10,7 +10,7 @@ from eur_ts.config import ModelConfig
 from eur_ts.trainer.data import (
     ArithmeticTokenizer,
     PLACE_VOCAB_SIZE,
-    POSITION_ENCODING_TYPE_PLACE,
+    SUPPORTED_POSITION_ENCODINGS,
     TOKEN_TYPE_VOCAB_SIZE,
 )
 from eur_ts.trainer.model import SmallCausalTransformer
@@ -88,7 +88,7 @@ def load_hooked_resources(
 ) -> None:
     del checkpoint_path, device
     raise ValueError(
-        "TransformerLens backend support is unavailable for type_place checkpoints"
+        "TransformerLens backend support is unavailable for native checkpoints"
     )
 
 
@@ -97,7 +97,10 @@ def load_native_resources(
     device: str = "cpu",
 ) -> tuple[SmallCausalTransformer, ArithmeticTokenizer, dict[str, Any]]:
     artifacts = load_checkpoint_artifacts(checkpoint_path, device=device)
-    model = SmallCausalTransformer(_build_model_config(artifacts.model_config))
+    model = SmallCausalTransformer(
+        _build_model_config(artifacts.model_config),
+        tokenizer=artifacts.tokenizer,
+    )
     model.load_state_dict(artifacts.model_state)
     model.to(device)
     model.eval()
@@ -144,6 +147,6 @@ def _normalize_model_config(
 
 def _required_position_encoding(config_dict: dict[str, Any]) -> str:
     value = config_dict.get("position_encoding")
-    if value != POSITION_ENCODING_TYPE_PLACE:
+    if value not in SUPPORTED_POSITION_ENCODINGS:
         raise ValueError(f"unsupported checkpoint position encoding: {value!r}")
     return cast(str, value)
