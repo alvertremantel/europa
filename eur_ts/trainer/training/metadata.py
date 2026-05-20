@@ -47,6 +47,7 @@ def write_run_metadata(
     run_started_at: float,
     run_completed_at: float | None,
     history: list[dict[str, object]],
+    exact_match_probe_size: int,
 ) -> None:
     metadata = {
         "train_config": asdict(config),
@@ -54,12 +55,13 @@ def write_run_metadata(
         "parameter_count": parameter_count(model),
         "device": device_metadata(device),
         "resume_source": resume_source,
-        "checkpoint_policy": {
-            "checkpoint_dir_name": config.checkpoint_dir_name,
-            "checkpoint_keep_last": config.checkpoint_keep_last,
-            "checkpoint_max_kept": config.checkpoint_max_kept,
-            "checkpoint_keep_best": config.checkpoint_keep_best,
-            "checkpoint_jump_threshold": config.checkpoint_jump_threshold,
+        "training_selection": {
+            "best_metric": "exact_match",
+            "exact_match_probe_size": exact_match_probe_size,
+        },
+        "checkpoints": {
+            "checkpoint_dir": "checkpoints",
+            "keep_all": True,
         },
         "run_started_at_unix": run_started_at,
         "run_completed_at_unix": run_completed_at,

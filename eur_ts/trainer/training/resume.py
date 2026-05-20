@@ -24,10 +24,9 @@ from .state import restore_rng_state
 
 
 def resolve_resume_path(config: TrainConfig, output_dir: Path) -> Path | None:
+    del output_dir
     if config.resume_from:
         return Path(config.resume_from)
-    if config.auto_resume:
-        return output_dir / "checkpoint-last.pt"
     return None
 
 
@@ -47,6 +46,7 @@ def initialize_training_state(
     int,
     str | None,
     int | None,
+    list[str] | None,
 ]:
     if resume_path is None:
         tokenizer = ArithmeticTokenizer(
@@ -79,6 +79,7 @@ def initialize_training_state(
             1,
             -math.inf,
             0,
+            None,
             None,
             None,
         )
@@ -211,7 +212,22 @@ def initialize_training_state(
         global_step_value,
         resume_source,
         checkpoint_epoch,
+        exact_match_probe_from_payload(payload),
     )
+
+
+def exact_match_probe_from_payload(payload: dict[str, object]) -> list[str] | None:
+    probe = payload.get("exact_match_probe")
+    if isinstance(probe, list) and all(isinstance(entry, str) for entry in probe):
+        return cast(list[str], probe)
+    training_state = payload.get("training_state")
+    if isinstance(training_state, dict):
+        nested_probe = cast(dict[str, object], training_state).get("exact_match_probe")
+        if isinstance(nested_probe, list) and all(
+            isinstance(entry, str) for entry in nested_probe
+        ):
+            return cast(list[str], nested_probe)
+    return None
 
 
 def history_from_payload(
@@ -280,14 +296,6 @@ def _as_float(value: object, field_name: str) -> float:
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise ValueError(f"{field_name} must be numeric")
     return float(value)
-
-
-def _as_optional_str(value: object, field_name: str, *, default: str) -> str:
-    if value is None:
-        return default
-    if not isinstance(value, str):
-        raise ValueError(f"{field_name} must be a string")
-    return value
 
 
 def _required_position_encoding(state: dict[str, object]) -> str:

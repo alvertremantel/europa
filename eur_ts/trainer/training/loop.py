@@ -11,7 +11,6 @@ from torch.utils.data import DataLoader
 from eur_ts.artifacts import toml_text
 from eur_ts.config import TrainConfig
 from ..curriculum import (
-    build_balanced_example_sample,
     count_curriculum_groups,
     resample_for_curriculum,
 )
@@ -24,12 +23,10 @@ from ..data import (
     transform_examples,
 )
 from ..inference import (
-    evaluate_balanced_loss,
-    evaluate_exact_match,
-    evaluate_exact_match_examples,
-    evaluate_loss,
+    evaluate_exact_match_lines,
     loss_for_batch,
     loss_for_example_batch,
+    sample_exact_match_probe,
 )
 from ..utils import (
     configure_runtime,
@@ -75,11 +72,20 @@ def train_model(config: TrainConfig) -> None:
         global_step,
         resume_source,
         resumed_from_epoch,
+        exact_match_probe,
     ) = initialize_training_state(
         config=config,
         device=device,
         resume_path=resume_path,
     )
+
+    if exact_match_probe is None:
+        exact_match_probe = sample_exact_match_probe(
+            data_dir / "val.txt",
+            seed=config.seed,
+        )
+    if not exact_match_probe:
+        raise ValueError(f"no evaluation examples found in {data_dir / 'val.txt'}")
 
     print(toml_text({"train_config": asdict(config)}).rstrip())
     print(
@@ -94,19 +100,16 @@ def train_model(config: TrainConfig) -> None:
         ).rstrip()
     )
 
-    val_tokens, val_type_ids, val_place_ids = load_token_stream_with_type_place(
-        data_dir / "val.txt", tokenizer
+    print(
+        toml_text(
+            {
+                "training_selection": {
+                    "best_metric": "exact_match",
+                    "exact_match_probe_size": len(exact_match_probe),
+                }
+            }
+        ).rstrip()
     )
-    val_dataset = TokenBlockDataset(
-        val_tokens,
-        val_type_ids,
-        val_place_ids,
-        effective_model_config.sequence_length,
-    )
-    if len(val_dataset) == 0:
-        raise ValueError(
-            "validation dataset is too small for the configured sequence length"
-        )
 
     train_examples: list[ArithmeticExample] | None = None
     static_train_loader: (
@@ -191,49 +194,7 @@ def train_model(config: TrainConfig) -> None:
     else:
         raise ValueError("training_mode must be token_stream or examples")
 
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=config.batch_size,
-        shuffle=False,
-        drop_last=False,
-        pin_memory=device.type == "cuda",
-    )
-
-    balanced_val_dataset: ExampleSequenceDataset | None = None
-    balanced_val_examples: list[ArithmeticExample] | None = None
-    if config.balanced_val_enabled:
-        val_examples = transform_examples(
-            load_examples(data_dir / "val.txt", include_metadata=True),
-            training_format=config.training_format,
-        )
-        balanced_val_examples = build_balanced_example_sample(
-            val_examples,
-            group_by=config.balanced_val_group_by,
-            sample_size_per_group=config.balanced_val_sample_size_per_group,
-            seed=config.balanced_val_seed,
-        )
-        balanced_val_dataset = ExampleSequenceDataset(
-            balanced_val_examples,
-            tokenizer,
-            effective_model_config.sequence_length,
-            skip_overlong=config.skip_overlong_examples,
-        )
-        balanced_val_examples = balanced_val_dataset.examples
-        print(
-            toml_text(
-                {
-                    "balanced_validation": {
-                        "balanced_val_examples": len(balanced_val_dataset),
-                        "balanced_val_group_by": config.balanced_val_group_by,
-                        "balanced_val_curriculum_group_counts": count_curriculum_groups(
-                            balanced_val_dataset.examples
-                        ),
-                    }
-                }
-            ).rstrip()
-        )
-
-    checkpoint_manager = CheckpointManager(output_dir, config)
+    checkpoint_manager = CheckpointManager(output_dir)
     run_metadata_path = output_dir / "run-metadata.toml"
     run_started_at = time.time()
     target_epoch = resolve_target_epoch(config, start_epoch - 1)
@@ -255,6 +216,7 @@ def train_model(config: TrainConfig) -> None:
             run_started_at=run_started_at,
             run_completed_at=time.time(),
             history=history,
+            exact_match_probe_size=len(exact_match_probe),
         )
         return
 
@@ -269,6 +231,7 @@ def train_model(config: TrainConfig) -> None:
         curriculum_stage_index: int | None = None
         curriculum_sample_counts: dict[str, int] | None = None
         curriculum_sampling_weights: dict[str, float] | None = None
+        epoch_examples_for_metrics: list[ArithmeticExample] | None = None
 
         train_loader = static_train_loader
         if config.training_mode == "examples" and config.curriculum_name is not None:
@@ -278,9 +241,11 @@ def train_model(config: TrainConfig) -> None:
                     train_examples,
                     curriculum_name=config.curriculum_name,
                     epoch=epoch,
+                    target_epoch=target_epoch,
                     seed=config.seed,
                 )
             )
+            epoch_examples_for_metrics = sampled_examples
             curriculum_stage = stage_name
             curriculum_stage_index = stage_index
             curriculum_sample_counts = counts
@@ -315,6 +280,8 @@ def train_model(config: TrainConfig) -> None:
                     }
                 ).rstrip()
             )
+        elif config.training_mode == "examples":
+            epoch_examples_for_metrics = train_examples
 
         for step, batch in enumerate(train_loader, start=1):
             if config.training_mode == "examples":
@@ -372,28 +339,10 @@ def train_model(config: TrainConfig) -> None:
                 log_batches = 0
 
         train_loss = epoch_loss_total / max(epoch_batches, 1)
-        val_loss = evaluate_loss(model, val_loader, device, config.eval_batches)
-        balanced_val_loss = None
-        balanced_exact_match = None
-        if balanced_val_dataset is not None and balanced_val_examples is not None:
-            balanced_val_loss = evaluate_balanced_loss(
-                model,
-                balanced_val_dataset,
-                batch_size=config.balanced_val_batch_size or config.batch_size,
-                device=device,
-            )
-            balanced_exact_match = evaluate_exact_match_examples(
-                model=model,
-                tokenizer=tokenizer,
-                examples=balanced_val_examples,
-                max_new_tokens=config.max_new_tokens,
-                device=device,
-            )
-        exact_match = evaluate_exact_match(
+        exact_match = evaluate_exact_match_lines(
             model=model,
             tokenizer=tokenizer,
-            file_path=data_dir / "val.txt",
-            sample_count=config.exact_match_samples,
+            examples=exact_match_probe,
             max_new_tokens=config.max_new_tokens,
             device=device,
         )
@@ -405,17 +354,12 @@ def train_model(config: TrainConfig) -> None:
             "epoch": epoch,
             "global_step": global_step,
             "train_loss": train_loss,
-            "val_loss": val_loss,
             "exact_match": exact_match,
             "epoch_duration_seconds": epoch_duration_seconds,
             "learning_rate": lr,
             "checkpoint_path": None,
             "checkpoint_roles": [],
         }
-        if balanced_val_loss is not None:
-            metrics["balanced_val_loss"] = balanced_val_loss
-        if balanced_exact_match is not None:
-            metrics["balanced_exact_match"] = balanced_exact_match
         if curriculum_stage is not None:
             metrics["curriculum_stage"] = curriculum_stage
             metrics["curriculum_stage_index"] = curriculum_stage_index
@@ -423,9 +367,7 @@ def train_model(config: TrainConfig) -> None:
             metrics["curriculum_sampling_weights"] = curriculum_sampling_weights
         if config.training_mode == "examples":
             metrics["scratchpad_fraction"] = scratchpad_fraction(
-                balanced_val_examples
-                if balanced_val_examples is not None
-                else train_examples or []
+                epoch_examples_for_metrics or []
             )
         if resumed_from_epoch is not None:
             metrics["resumed_from"] = resumed_from_epoch
@@ -435,7 +377,7 @@ def train_model(config: TrainConfig) -> None:
             tokenizer=tokenizer,
             train_config=config,
             epoch=epoch,
-            val_loss=val_loss,
+            val_loss=None,
             exact_match=exact_match,
             optimizer_state=cast(dict[str, object], optimizer.state_dict()),
             rng_state=capture_rng_state(),
@@ -445,12 +387,12 @@ def train_model(config: TrainConfig) -> None:
             checkpoint_roles=[],
             resume_source=resume_source,
             train_loss=train_loss,
+            exact_match_probe=exact_match_probe,
         )
         checkpoint_path, checkpoint_roles = checkpoint_manager.save_epoch(
             payload=payload,
             epoch=epoch,
             train_loss=train_loss,
-            val_loss=val_loss,
             exact_match=exact_match,
             global_step=global_step,
         )
@@ -471,6 +413,7 @@ def train_model(config: TrainConfig) -> None:
             run_started_at=run_started_at,
             run_completed_at=None,
             history=history,
+            exact_match_probe_size=len(exact_match_probe),
         )
 
     write_run_metadata(
@@ -483,4 +426,5 @@ def train_model(config: TrainConfig) -> None:
         run_started_at=run_started_at,
         run_completed_at=time.time(),
         history=history,
+        exact_match_probe_size=len(exact_match_probe),
     )

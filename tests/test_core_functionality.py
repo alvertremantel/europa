@@ -11,9 +11,10 @@ from eur_ts.generator.core import (
     validate_line,
 )
 from eur_ts.config import ModelConfig
+from eur_ts.trainer.curriculum import select_curriculum_stage
 from eur_ts.trainer.data import ArithmeticTokenizer, vocab_for_training_format
 from eur_ts.trainer.formatting import final_answer_from_line, format_training_line
-from eur_ts.trainer.inference import _forward_model
+from eur_ts.trainer.inference import _forward_model, sample_exact_match_probe
 from eur_ts.trainer.model import SmallCausalTransformer
 from eur_ts.trainer.training.checkpointing import _model_config_from_payload
 
@@ -120,6 +121,62 @@ def test_legacy_checkpoint_model_config_is_rejected() -> None:
                 }
             }
         )
+
+
+def test_sample_exact_match_probe_is_deterministic_and_unique(tmp_path) -> None:
+    path = tmp_path / "val.txt"
+    lines = [
+        f"<do> <calc> {index:08d} + 00000000 = {index:08d}" for index in range(100)
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    sample_a = sample_exact_match_probe(path, seed=7)
+    sample_b = sample_exact_match_probe(path, seed=7)
+
+    assert len(sample_a) == 50
+    assert sample_a == sample_b
+    assert len(set(sample_a)) == 50
+    assert set(sample_a).issubset(set(lines))
+
+
+def test_sample_exact_match_probe_uses_all_examples_when_split_is_small(
+    tmp_path,
+) -> None:
+    path = tmp_path / "val.txt"
+    lines = [f"<do> <calc> {index:08d} + 00000000 = {index:08d}" for index in range(12)]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    sample = sample_exact_match_probe(path, seed=11)
+
+    assert sample == lines
+
+
+def test_curriculum_stage_selection_scales_across_total_epochs() -> None:
+    assert (
+        select_curriculum_stage("baseline_mixed_v1", 1, target_epoch=6)[1].name
+        == "foundations"
+    )
+    assert (
+        select_curriculum_stage("baseline_mixed_v1", 3, target_epoch=6)[1].name
+        == "mul_div_focus"
+    )
+    assert (
+        select_curriculum_stage("baseline_mixed_v1", 5, target_epoch=6)[1].name
+        == "compositional_mix"
+    )
+
+    assert (
+        select_curriculum_stage("baseline_mixed_v1", 1, target_epoch=100)[1].name
+        == "foundations"
+    )
+    assert (
+        select_curriculum_stage("baseline_mixed_v1", 35, target_epoch=100)[1].name
+        == "mul_div_focus"
+    )
+    assert (
+        select_curriculum_stage("baseline_mixed_v1", 68, target_epoch=100)[1].name
+        == "compositional_mix"
+    )
 
 
 def test_evaluator_bucket_row_keeps_summary_math() -> None:

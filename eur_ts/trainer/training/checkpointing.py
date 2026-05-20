@@ -20,8 +20,6 @@ from ..data import (
 )
 from ..model import SmallCausalTransformer
 
-from .state import capture_rng_state
-
 
 CHECKPOINT_SCHEMA_VERSION = 1
 MANIFEST_SCHEMA_VERSION = 1
@@ -33,7 +31,7 @@ def build_checkpoint_payload(
     tokenizer: ArithmeticTokenizer,
     train_config: TrainConfig,
     epoch: int,
-    val_loss: float,
+    val_loss: float | None,
     exact_match: float,
     optimizer_state: dict[str, object] | None = None,
     scheduler_state: dict[str, object] | None = None,
@@ -44,6 +42,7 @@ def build_checkpoint_payload(
     checkpoint_roles: list[str] | None = None,
     resume_source: str | None = None,
     train_loss: float | None = None,
+    exact_match_probe: list[str] | None = None,
 ) -> dict[str, object]:
     payload: dict[str, object] = {
         "checkpoint_schema_version": CHECKPOINT_SCHEMA_VERSION,
@@ -76,10 +75,13 @@ def build_checkpoint_payload(
             "checkpoint_roles": checkpoint_roles or [],
             "resume_source": resume_source,
             "train_loss": train_loss,
+            "exact_match_probe": exact_match_probe or [],
         },
     }
     if train_loss is not None:
         payload["train_loss"] = train_loss
+    if exact_match_probe is not None:
+        payload["exact_match_probe"] = exact_match_probe
     return payload
 
 
@@ -161,50 +163,17 @@ def _model_config_from_payload(payload: dict[str, object]) -> ModelConfig:
     raise ValueError("checkpoint is missing model_config")
 
 
-def save_checkpoint_payload_for_compat(
-    *,
-    output_dir: Path,
-    file_name: str,
-    model: SmallCausalTransformer,
-    tokenizer: ArithmeticTokenizer,
-    train_config: TrainConfig,
-    epoch: int,
-    val_loss: float,
-    exact_match: float,
-) -> None:
-    payload = build_checkpoint_payload(
-        model=model,
-        tokenizer=tokenizer,
-        train_config=train_config,
-        epoch=epoch,
-        val_loss=val_loss,
-        exact_match=exact_match,
-        rng_state=capture_rng_state(),
-    )
-    save_checkpoint_payload(output_dir / file_name, payload)
-
-
 class CheckpointManager:
-    """Manage physical epoch checkpoints, root aliases, and retention.
+    """Manage physical epoch checkpoints and root aliases.
 
     Physical epoch checkpoints live under ``output_dir/checkpoints/epoch-XXXX.pt``.
     Root aliases ``checkpoint-last.pt`` and ``checkpoint-best.pt`` remain complete,
     backward-compatible checkpoint files for downstream tools.
-
-    Retention semantics:
-    - keep at most ``checkpoint_max_kept`` physical epoch files unless that value is
-      non-positive, in which case all physical snapshots are retained.
-    - always retain the latest ``checkpoint_keep_last`` epochs.
-    - use remaining budget for best checkpoints, jump before/after pairs, then the
-      next-best exact-match checkpoints.
-    - manifest records are never deleted; pruned entries remain with
-      ``available=false``.
     """
 
-    def __init__(self, output_dir: Path, config: TrainConfig) -> None:
+    def __init__(self, output_dir: Path) -> None:
         self.output_dir = output_dir
-        self.config = config
-        self.checkpoint_dir = output_dir / config.checkpoint_dir_name
+        self.checkpoint_dir = output_dir / "checkpoints"
         self.manifest_path = self.checkpoint_dir / "manifest.toml"
         self.legacy_manifest_path = self.checkpoint_dir / "manifest.json"
         self.last_alias_path = output_dir / "checkpoint-last.pt"
@@ -224,7 +193,6 @@ class CheckpointManager:
         payload: dict[str, object],
         epoch: int,
         train_loss: float,
-        val_loss: float,
         exact_match: float,
         global_step: int,
     ) -> tuple[Path, list[str]]:
@@ -238,22 +206,20 @@ class CheckpointManager:
             epoch=epoch,
             path=path.name,
             train_loss=train_loss,
-            val_loss=val_loss,
+            val_loss=_optional_float(payload.get("val_loss")),
             exact_match=exact_match,
             global_step=global_step,
         )
         self._refresh_roles(records)
-        self._set_availability(records)
         self._write_alias(self.last_alias_path, path)
 
-        best_record = self._best_available_record(records)
+        best_record = self._best_record(records)
         if best_record is not None:
             self._write_alias(
                 self.best_alias_path,
                 self.checkpoint_dir / str(best_record["path"]),
             )
 
-        self._prune_unselected(records)
         self._write_manifest(manifest)
         return path, cast(list[str], record["roles"])
 
@@ -264,7 +230,7 @@ class CheckpointManager:
         epoch: int,
         path: str,
         train_loss: float,
-        val_loss: float,
+        val_loss: float | None,
         exact_match: float,
         global_step: int,
     ) -> dict[str, object]:
@@ -283,118 +249,40 @@ class CheckpointManager:
                 "epoch": epoch,
                 "path": path,
                 "available": True,
-                "val_loss": val_loss,
                 "exact_match": exact_match,
                 "train_loss": train_loss,
                 "roles": [],
                 "global_step": global_step,
             }
         )
+        if val_loss is not None:
+            target["val_loss"] = val_loss
+        else:
+            target.pop("val_loss", None)
         return target
 
     def _refresh_roles(self, records: list[dict[str, object]]) -> None:
         records.sort(key=lambda record: _as_int(record["epoch"], "manifest epoch"))
         for record in records:
             record["roles"] = []
+            record["available"] = True
 
         if not records:
             return
 
-        keep_last = max(self.config.checkpoint_keep_last, 0)
-        latest_records = records[-keep_last:] if keep_last > 0 else []
-        last_epochs = {
-            _as_int(record["epoch"], "manifest epoch") for record in latest_records
-        }
-        for record in records:
-            roles = cast(list[str], record["roles"])
-            epoch = _as_int(record["epoch"], "manifest epoch")
-            if epoch in last_epochs:
-                roles.append("last")
+        cast(list[str], records[-1]["roles"]).append("last")
 
-        best_records = sorted(
-            records,
-            key=lambda record: (
-                -float(cast(float, record["exact_match"])),
-                _as_int(record["epoch"], "manifest epoch"),
-            ),
-        )
-        for record in best_records[: max(self.config.checkpoint_keep_best, 0)]:
-            cast(list[str], record["roles"]).append("best")
+        best_record = self._best_record(records)
+        if best_record is not None:
+            cast(list[str], best_record["roles"]).append("best")
 
-        for previous, current in zip(records, records[1:], strict=False):
-            delta = float(cast(float, current["exact_match"])) - float(
-                cast(float, previous["exact_match"])
-            )
-            if delta >= self.config.checkpoint_jump_threshold:
-                cast(list[str], previous["roles"]).append("jump_before")
-                cast(list[str], current["roles"]).append("jump_after")
-
-    def _selected_epochs(self, records: list[dict[str, object]]) -> set[int]:
-        if self.config.checkpoint_max_kept <= 0:
-            return {_as_int(record["epoch"], "manifest epoch") for record in records}
-
-        budget = self.config.checkpoint_max_kept
-        selected: set[int] = set()
-        keep_last = max(self.config.checkpoint_keep_last, 0)
-        latest_records = records[-keep_last:] if keep_last > 0 else []
-        for record in latest_records:
-            selected.add(_as_int(record["epoch"], "manifest epoch"))
-        if len(selected) >= budget:
-            return set(sorted(selected)[-budget:])
-
-        priority_groups = (
-            [
-                record
-                for record in records
-                if "best" in cast(list[str], record["roles"])
-            ],
-            [
-                record
-                for record in records
-                if any(
-                    role in {"jump_before", "jump_after"}
-                    for role in cast(list[str], record["roles"])
-                )
-            ],
-            sorted(
-                records,
-                key=lambda record: (
-                    -float(cast(float, record["exact_match"])),
-                    _as_int(record["epoch"], "manifest epoch"),
-                ),
-            ),
-        )
-        for group in priority_groups:
-            for record in group:
-                if len(selected) >= budget:
-                    return selected
-                selected.add(_as_int(record["epoch"], "manifest epoch"))
-        return selected
-
-    def _set_availability(self, records: list[dict[str, object]]) -> None:
-        selected = self._selected_epochs(records)
-        for record in records:
-            record["available"] = _as_int(record["epoch"], "manifest epoch") in selected
-
-    def _prune_unselected(self, records: list[dict[str, object]]) -> None:
-        if self.config.checkpoint_max_kept <= 0:
-            return
-        for record in records:
-            if bool(record.get("available", False)):
-                continue
-            path = self.checkpoint_dir / str(record["path"])
-            path.unlink(missing_ok=True)
-
-    def _best_available_record(
+    def _best_record(
         self, records: list[dict[str, object]]
     ) -> dict[str, object] | None:
-        available_records = [
-            record for record in records if bool(record.get("available", False))
-        ]
-        if not available_records:
+        if not records:
             return None
         return max(
-            available_records,
+            records,
             key=lambda record: (
                 float(cast(float, record["exact_match"])),
                 _as_int(record["epoch"], "manifest epoch"),
@@ -429,14 +317,6 @@ def _as_float(value: object, field_name: str) -> float:
     return float(value)
 
 
-def _as_optional_str(value: object, field_name: str, *, default: str) -> str:
-    if value is None:
-        return default
-    if not isinstance(value, str):
-        raise ValueError(f"{field_name} must be a string")
-    return value
-
-
 def _required_position_encoding(state: dict[str, object]) -> str:
     value = state.get("position_encoding")
     if not isinstance(value, str):
@@ -450,6 +330,14 @@ def _as_optional_int(value: object, field_name: str, *, default: int) -> int:
     if value is None:
         return default
     return _as_int(value, field_name)
+
+
+def _optional_float(value: object) -> float | None:
+    if value is None:
+        return None
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise ValueError("checkpoint val_loss must be numeric when present")
+    return float(value)
 
 
 def best_exact_match_from_history(history: list[dict[str, object]]) -> float:

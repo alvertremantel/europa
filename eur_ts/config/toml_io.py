@@ -17,7 +17,6 @@ ALLOWED_TRAINING_FORMATS = {
     "parentheses_intermediate",
     "multiply_intermediate",
 }
-ALLOWED_BALANCED_GROUP_BY = {"kind", "category", "curriculum_group"}
 
 SECTION_SPECS: dict[str, dict[str, tuple[str, type, bool]]] = {
     "paths": {
@@ -30,7 +29,6 @@ SECTION_SPECS: dict[str, dict[str, tuple[str, type, bool]]] = {
     },
     "resume": {
         "resume_from": ("resume_from", str, False),
-        "auto_resume": ("auto_resume", bool, True),
         "additional_epochs": ("additional_epochs", int, False),
     },
     "model": {
@@ -51,16 +49,7 @@ SECTION_SPECS: dict[str, dict[str, tuple[str, type, bool]]] = {
     },
     "logging": {
         "log_interval": ("log_interval", int, True),
-        "eval_batches": ("eval_batches", int, True),
-        "exact_match_samples": ("exact_match_samples", int, True),
         "max_new_tokens": ("max_new_tokens", int, True),
-    },
-    "checkpoint": {
-        "checkpoint_keep_last": ("checkpoint_keep_last", int, True),
-        "checkpoint_max_kept": ("checkpoint_max_kept", int, True),
-        "checkpoint_keep_best": ("checkpoint_keep_best", int, True),
-        "checkpoint_jump_threshold": ("checkpoint_jump_threshold", float, True),
-        "checkpoint_dir_name": ("checkpoint_dir_name", str, True),
     },
     "training": {
         "training_mode": ("training_mode", str, True),
@@ -68,13 +57,33 @@ SECTION_SPECS: dict[str, dict[str, tuple[str, type, bool]]] = {
         "skip_overlong_examples": ("skip_overlong_examples", bool, True),
         "curriculum_name": ("curriculum_name", str, False),
     },
-    "balanced_validation": {
-        "enabled": ("balanced_val_enabled", bool, True),
-        "group_by": ("balanced_val_group_by", str, True),
-        "sample_size_per_group": ("balanced_val_sample_size_per_group", int, True),
-        "seed": ("balanced_val_seed", int, True),
-        "batch_size": ("balanced_val_batch_size", int, False),
-    },
+}
+
+REMOVED_SECTION_ERRORS = {
+    "checkpoint": (
+        "[checkpoint] has been removed; training now always keeps every epoch "
+        "checkpoint under output_dir/checkpoints/ and still updates checkpoint-best.pt "
+        "and checkpoint-last.pt"
+    ),
+    "balanced_validation": (
+        "[balanced_validation] has been removed; training no longer computes "
+        "balanced validation metrics during training"
+    ),
+}
+
+REMOVED_KEY_ERRORS = {
+    ("resume", "auto_resume"): (
+        "[resume].auto_resume has been removed; set [resume].resume_from to an "
+        "explicit checkpoint path when resuming"
+    ),
+    ("logging", "eval_batches"): (
+        "[logging].eval_batches has been removed; training no longer runs "
+        "validation-loss evaluation each epoch"
+    ),
+    ("logging", "exact_match_samples"): (
+        "[logging].exact_match_samples has been removed; training now uses a fixed "
+        "50-problem exact-match probe each epoch"
+    ),
 }
 
 
@@ -89,7 +98,6 @@ def load_train_config(path: Path) -> TrainConfig:
         data_dir=_required_str(values, "data_dir"),
         output_dir=_required_str(values, "output_dir"),
         resume_from=_optional_str(values, "resume_from"),
-        auto_resume=_required_bool(values, "auto_resume"),
         additional_epochs=_optional_int(values, "additional_epochs"),
         sequence_length=_required_int(values, "sequence_length"),
         batch_size=_required_int(values, "batch_size"),
@@ -98,8 +106,6 @@ def load_train_config(path: Path) -> TrainConfig:
         weight_decay=_required_float(values, "weight_decay"),
         grad_clip=_required_float(values, "grad_clip"),
         log_interval=_required_int(values, "log_interval"),
-        eval_batches=_required_int(values, "eval_batches"),
-        exact_match_samples=_required_int(values, "exact_match_samples"),
         max_new_tokens=_required_int(values, "max_new_tokens"),
         seed=_required_int(values, "seed"),
         device=_required_str(values, "device"),
@@ -109,22 +115,10 @@ def load_train_config(path: Path) -> TrainConfig:
         mlp_hidden=_required_int(values, "mlp_hidden"),
         dropout=_required_float(values, "dropout"),
         position_encoding=_required_str(values, "position_encoding"),
-        checkpoint_keep_last=_required_int(values, "checkpoint_keep_last"),
-        checkpoint_max_kept=_required_int(values, "checkpoint_max_kept"),
-        checkpoint_keep_best=_required_int(values, "checkpoint_keep_best"),
-        checkpoint_jump_threshold=_required_float(values, "checkpoint_jump_threshold"),
-        checkpoint_dir_name=_required_str(values, "checkpoint_dir_name"),
         training_mode=_required_str(values, "training_mode"),
         training_format=_required_str(values, "training_format"),
         skip_overlong_examples=_required_bool(values, "skip_overlong_examples"),
         curriculum_name=_optional_str(values, "curriculum_name"),
-        balanced_val_enabled=_required_bool(values, "balanced_val_enabled"),
-        balanced_val_group_by=_required_str(values, "balanced_val_group_by"),
-        balanced_val_sample_size_per_group=_required_int(
-            values, "balanced_val_sample_size_per_group"
-        ),
-        balanced_val_seed=_required_int(values, "balanced_val_seed"),
-        balanced_val_batch_size=_optional_int(values, "balanced_val_batch_size"),
     )
 
 
@@ -133,6 +127,9 @@ def _collect_values(loaded: Mapping[str, object]) -> dict[str, object]:
     values: dict[str, object] = {}
 
     for section_name in loaded:
+        if section_name in REMOVED_SECTION_ERRORS:
+            errors.append(REMOVED_SECTION_ERRORS[section_name])
+            continue
         if section_name not in SECTION_SPECS:
             errors.append(f"unknown section [{section_name}]")
 
@@ -146,6 +143,10 @@ def _collect_values(loaded: Mapping[str, object]) -> dict[str, object]:
             continue
         section_map = cast(dict[str, object], raw_section)
         for key in section_map:
+            removed_key_error = REMOVED_KEY_ERRORS.get((section_name, key))
+            if removed_key_error is not None:
+                errors.append(removed_key_error)
+                continue
             if key not in key_specs:
                 errors.append(f"unknown key [{section_name}].{key}")
         for key, (field_name, target_type, required) in key_specs.items():
@@ -232,10 +233,7 @@ def _validate_semantics(values: Mapping[str, object]) -> None:
         "batch_size",
         "epochs",
         "log_interval",
-        "eval_batches",
-        "exact_match_samples",
         "max_new_tokens",
-        "balanced_val_sample_size_per_group",
         "seed",
         "d_model",
         "n_heads",
@@ -244,33 +242,13 @@ def _validate_semantics(values: Mapping[str, object]) -> None:
     ):
         require_positive(name)
 
-    for name in ("checkpoint_keep_last", "checkpoint_keep_best"):
-        value = values[name]
-        if not isinstance(value, int) or value < 0:
-            errors.append(f"{name} must be a non-negative integer")
-
-    checkpoint_max_kept = values["checkpoint_max_kept"]
-    if not isinstance(checkpoint_max_kept, int):
-        errors.append("checkpoint_max_kept must be an integer")
     additional_epochs = values["additional_epochs"]
     if additional_epochs is not None and (
         not isinstance(additional_epochs, int) or additional_epochs <= 0
     ):
         errors.append("additional_epochs must be a positive integer when provided")
-    balanced_val_batch_size = values["balanced_val_batch_size"]
-    if balanced_val_batch_size is not None and (
-        not isinstance(balanced_val_batch_size, int) or balanced_val_batch_size <= 0
-    ):
-        errors.append(
-            "balanced_val_batch_size must be a positive integer when provided"
-        )
 
-    for name in (
-        "learning_rate",
-        "weight_decay",
-        "grad_clip",
-        "checkpoint_jump_threshold",
-    ):
+    for name in ("learning_rate", "weight_decay", "grad_clip"):
         value = values[name]
         if not isinstance(value, (int, float)):
             errors.append(f"{name} must be numeric")
@@ -296,19 +274,9 @@ def _validate_semantics(values: Mapping[str, object]) -> None:
         errors.append(
             f"training_format must be one of {sorted(ALLOWED_TRAINING_FORMATS)}"
         )
-    balanced_group = values["balanced_val_group_by"]
-    if balanced_group not in ALLOWED_BALANCED_GROUP_BY:
-        errors.append(
-            f"balanced_val_group_by must be one of {sorted(ALLOWED_BALANCED_GROUP_BY)}"
-        )
     curriculum_name = values["curriculum_name"]
     if curriculum_name is not None and curriculum_name not in PRESETS:
         errors.append(f"curriculum_name must be one of {sorted(PRESETS)} or empty")
-
-    auto_resume = values["auto_resume"]
-    resume_from = values["resume_from"]
-    if auto_resume is True and resume_from is not None:
-        errors.append("resume.auto_resume and resume.resume_from cannot both be set")
 
     if errors:
         raise ValueError("Invalid training config:\n- " + "\n- ".join(errors))

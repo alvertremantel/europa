@@ -3,8 +3,9 @@ from __future__ import annotations
 import tomllib
 from typing import cast
 
+import torch
+
 from eur_ts.artifacts import read_toml, toml_text, write_toml
-from eur_ts.config import TrainConfig
 from eur_ts.evaluator.metadata import load_metadata
 from eur_ts.trainer.training.checkpointing import CheckpointManager
 from eur_ts.trainer.training.resume import history_from_payload
@@ -79,10 +80,7 @@ def test_resume_history_prefers_toml_and_falls_back_to_legacy_json(tmp_path):
 
 
 def test_checkpoint_manifest_reads_legacy_json_and_writes_toml(tmp_path):
-    manager = CheckpointManager(
-        tmp_path,
-        TrainConfig(output_dir=str(tmp_path), checkpoint_dir_name="checkpoints"),
-    )
+    manager = CheckpointManager(tmp_path)
     legacy_manifest = tmp_path / "checkpoints" / "manifest.json"
     legacy_manifest.parent.mkdir(parents=True, exist_ok=True)
     legacy_manifest.write_text(
@@ -98,3 +96,37 @@ def test_checkpoint_manifest_reads_legacy_json_and_writes_toml(tmp_path):
 
     assert (tmp_path / "checkpoints" / "manifest.toml").exists()
     assert read_toml(tmp_path / "checkpoints" / "manifest.toml")["schema_version"] == 1
+
+
+def test_checkpoint_manager_keeps_all_epochs_and_updates_best_last_aliases(tmp_path):
+    manager = CheckpointManager(tmp_path)
+
+    first_path, first_roles = manager.save_epoch(
+        payload={"epoch": 1, "exact_match": 0.25},
+        epoch=1,
+        train_loss=1.2,
+        exact_match=0.25,
+        global_step=10,
+    )
+    second_path, second_roles = manager.save_epoch(
+        payload={"epoch": 2, "exact_match": 0.75},
+        epoch=2,
+        train_loss=0.8,
+        exact_match=0.75,
+        global_step=20,
+    )
+
+    assert first_path.exists()
+    assert second_path.exists()
+    assert set(first_roles) == {"best", "last"}
+    assert set(second_roles) == {"best", "last"}
+
+    manifest = read_toml(tmp_path / "checkpoints" / "manifest.toml")
+    records = cast(list[dict[str, object]], manifest["records"])
+    assert [record["epoch"] for record in records] == [1, 2]
+    assert all(record["available"] is True for record in records)
+    assert records[0]["roles"] == []
+    assert set(cast(list[str], records[1]["roles"])) == {"best", "last"}
+
+    assert torch.load(tmp_path / "checkpoint-last.pt")["epoch"] == 2
+    assert torch.load(tmp_path / "checkpoint-best.pt")["epoch"] == 2

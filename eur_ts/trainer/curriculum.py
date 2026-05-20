@@ -11,7 +11,7 @@ from .data import ArithmeticExample
 @dataclass(frozen=True)
 class CurriculumStage:
     name: str
-    epochs: int
+    end_progress: float
     weights: dict[str, float]
 
 
@@ -19,17 +19,17 @@ PRESETS: dict[str, tuple[CurriculumStage, ...]] = {
     "baseline_mixed_v1": (
         CurriculumStage(
             name="foundations",
-            epochs=1,
+            end_progress=1 / 3,
             weights={"easy_binary_add_sub": 0.75, "binary_mul_div": 0.25},
         ),
         CurriculumStage(
             name="mul_div_focus",
-            epochs=1,
+            end_progress=2 / 3,
             weights={"easy_binary_add_sub": 0.35, "binary_mul_div": 0.65},
         ),
         CurriculumStage(
             name="compositional_mix",
-            epochs=10**9,
+            end_progress=1.0,
             weights={
                 "easy_binary_add_sub": 0.20,
                 "binary_mul_div": 0.35,
@@ -41,12 +41,12 @@ PRESETS: dict[str, tuple[CurriculumStage, ...]] = {
     "mul_focus_v1": (
         CurriculumStage(
             name="mul_warmup",
-            epochs=1,
+            end_progress=0.5,
             weights={"easy_binary_add_sub": 0.40, "binary_mul_div": 0.60},
         ),
         CurriculumStage(
             name="mul_composition",
-            epochs=10**9,
+            end_progress=1.0,
             weights={
                 "easy_binary_add_sub": 0.15,
                 "binary_mul_div": 0.55,
@@ -73,15 +73,20 @@ def curriculum_group(example: ArithmeticExample) -> str:
     return "other"
 
 
-def select_curriculum_stage(name: str, epoch: int) -> tuple[int, CurriculumStage]:
+def select_curriculum_stage(
+    name: str,
+    epoch: int,
+    *,
+    target_epoch: int,
+) -> tuple[int, CurriculumStage]:
     stages = PRESETS.get(name)
     if stages is None:
-        raise ValueError(f"unknown curriculum preset {name!r}; choose from {sorted(PRESETS)}")
-    remaining_epoch = epoch
+        raise ValueError(
+            f"unknown curriculum preset {name!r}; choose from {sorted(PRESETS)}"
+        )
     for index, stage in enumerate(stages):
-        if remaining_epoch <= stage.epochs:
+        if _epoch_progress(epoch, target_epoch) <= stage.end_progress:
             return index + 1, stage
-        remaining_epoch -= stage.epochs
     return len(stages), stages[-1]
 
 
@@ -90,10 +95,15 @@ def resample_for_curriculum(
     *,
     curriculum_name: str,
     epoch: int,
+    target_epoch: int,
     seed: int,
     sample_count: int | None = None,
 ) -> tuple[list[ArithmeticExample], dict[str, int], dict[str, float], str, int]:
-    stage_index, stage = select_curriculum_stage(curriculum_name, epoch)
+    stage_index, stage = select_curriculum_stage(
+        curriculum_name,
+        epoch,
+        target_epoch=target_epoch,
+    )
     by_group: dict[str, list[ArithmeticExample]] = defaultdict(list)
     for example in examples:
         by_group[curriculum_group(example)].append(example)
@@ -104,9 +114,13 @@ def resample_for_curriculum(
         if weight > 0 and by_group.get(group)
     }
     if not available_weights:
-        raise ValueError(f"no examples are available for curriculum stage {stage.name!r}")
+        raise ValueError(
+            f"no examples are available for curriculum stage {stage.name!r}"
+        )
     total_weight = sum(available_weights.values())
-    normalized = {group: weight / total_weight for group, weight in available_weights.items()}
+    normalized = {
+        group: weight / total_weight for group, weight in available_weights.items()
+    }
 
     rng = random.Random(seed + epoch * 1_000_003)
     groups = list(normalized)
@@ -159,7 +173,9 @@ def _group_key(example: ArithmeticExample, group_by: str) -> str:
         return example.category or "unknown"
     if group_by == "curriculum_group":
         return curriculum_group(example)
-    raise ValueError("balanced validation group_by must be kind, category, or curriculum_group")
+    raise ValueError(
+        "balanced validation group_by must be kind, category, or curriculum_group"
+    )
 
 
 def _kind_operator(kind: str) -> str | None:
@@ -171,3 +187,11 @@ def _kind_operator(kind: str) -> str | None:
     if parts[0] == "negative_input" and len(parts) >= 3:
         return parts[2]
     return None
+
+
+def _epoch_progress(epoch: int, target_epoch: int) -> float:
+    if epoch <= 0:
+        raise ValueError("epoch must be positive")
+    if target_epoch <= 0:
+        raise ValueError("target_epoch must be positive")
+    return (epoch - 1) / max(target_epoch - 1, 1)

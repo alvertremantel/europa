@@ -102,6 +102,7 @@ info/     Research notes and supporting documentation
 
 ## Important constraints
 
-- Resume support is available at epoch boundaries, not mid-epoch.
+- Resume support is available at epoch boundaries through explicit `resume_from`, not mid-epoch.
+- Training-time checkpoint selection uses a fixed 50-problem exact-match probe, and full epoch checkpoints are kept under `checkpoints/`.
 - Checkpoints are not guaranteed to stay compatible across architecture changes.
 - The project expects `uv run ...` entrypoints rather than ad hoc top-level scripts.

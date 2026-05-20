@@ -67,7 +67,7 @@ def parameter_count(model: nn.Module) -> int:
     return sum(parameter.numel() for parameter in model.parameters())
 
 
-def read_examples(file_path: Path, limit: int) -> list[str]:
+def read_examples(file_path: Path, limit: int | None = None) -> list[str]:
     examples: list[str] = []
     with file_path.open("r", encoding="utf-8") as handle:
         for raw_line in handle:
@@ -75,9 +75,19 @@ def read_examples(file_path: Path, limit: int) -> list[str]:
             if not line:
                 continue
             examples.append(line)
-            if len(examples) >= limit:
+            if limit is not None and len(examples) >= limit:
                 break
     return examples
+
+
+def sample_examples(file_path: Path, sample_count: int, *, seed: int) -> list[str]:
+    if sample_count <= 0:
+        return []
+    examples = read_examples(file_path)
+    if len(examples) <= sample_count:
+        return examples
+    rng = random.Random(seed)
+    return rng.sample(examples, k=sample_count)
 
 
 def answer_from_line(line: str) -> str:

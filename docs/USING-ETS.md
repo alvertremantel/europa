@@ -91,7 +91,9 @@ Typical run outputs include:
 Notes:
 
 - checkpoint payloads include tokenizer and architecture state
-- resume support is available at epoch boundaries through TOML resume settings
+- training chooses `checkpoint-best.pt` from a fixed 50-problem exact-match probe on `val.txt`
+- all physical epoch checkpoints are retained under `checkpoints/`
+- resume support is available at epoch boundaries through `resume_from` / `additional_epochs`
 - GPU is strongly recommended
 
 ## 4. Run prediction against a checkpoint

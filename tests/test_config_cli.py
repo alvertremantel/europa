@@ -19,7 +19,6 @@ seed = 42
 
 [resume]
 resume_from = ""
-auto_resume = false
 additional_epochs = ""
 
 [model]
@@ -40,29 +39,13 @@ grad_clip = 1.0
 
 [logging]
 log_interval = 5
-eval_batches = 1
-exact_match_samples = 2
 max_new_tokens = 24
-
-[checkpoint]
-checkpoint_keep_last = 2
-checkpoint_max_kept = 3
-checkpoint_keep_best = 1
-checkpoint_jump_threshold = 0.05
-checkpoint_dir_name = "checkpoints"
 
 [training]
 training_mode = "token_stream"
 training_format = "final_only"
 skip_overlong_examples = false
 curriculum_name = ""
-
-[balanced_validation]
-enabled = false
-group_by = "kind"
-sample_size_per_group = 2
-seed = 42
-batch_size = ""
 """
 
 
@@ -96,7 +79,7 @@ def test_config_guide_prints_variables(capsys: pytest.CaptureFixture[str]) -> No
     output = capsys.readouterr().out
 
     assert "training_mode" in output
-    assert "total_virtual_neurons" in output
+    assert "50 validation problems" in output
 
 
 def test_config_size_prints_toml(

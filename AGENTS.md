@@ -31,7 +31,7 @@ Canonical training code lives under one `eur_ts/` package root:
 | Package | Purpose |
 |---|---|
 | `eur_ts/generator/` | Stratified arithmetic data generation (binary, three_input, parentheses, negative_input categories) |
-| `eur_ts/trainer/` | Causal transformer training + inference. Uses `transformer-lens` for hooked model access |
+| `eur_ts/trainer/` | Causal transformer training + inference. Checkpoints stay self-contained for downstream native/runtime analysis |
 | `eur_ts/evaluator/` | Per-stratum evaluation, writes summary TOML, kinds CSV, and errors TOML next to the checkpoint |
 
 Supporting:
@@ -49,9 +49,9 @@ Output files: `train.txt`, `val.txt`, `test.txt`, `meta.toml`.
 
 ## Key constraints
 
-- Resume support is available at epoch boundaries via TOML fields `resume.auto_resume`, `resume.resume_from`, and `resume.additional_epochs`; optimizer and RNG state are checkpointed.
+- Resume support is available at epoch boundaries via TOML fields `resume.resume_from` and `resume.additional_epochs`; optimizer and RNG state are checkpointed.
 - Checkpoints embed tokenizer + model architecture; incompatible across changes.
-- Root aliases `checkpoint-last.pt` and `checkpoint-best.pt` remain compatibility paths, while physical epoch checkpoints live under `checkpoints/` with a retention manifest.
+- Root aliases `checkpoint-last.pt` and `checkpoint-best.pt` remain compatibility paths, while physical epoch checkpoints live under `checkpoints/` and are all retained.
 - The project venv is `.venv/` (gitignored). Use uv for all work. 
 - `data/old/`, `runs/old/`, `.agents/*/old` are gitignored scratch directories.
 
