@@ -1,31 +1,19 @@
 from __future__ import annotations
 
-import math
-
 import torch
 from torch import Tensor, nn
 
 from eur_ts.config import ModelConfig
+from .fixed_meaning import (
+    build_fixed_meaning_position_table,
+    build_fixed_meaning_token_table,
+)
 from .tokenizer import (
     ArithmeticTokenizer,
     PLACE_NONE,
     POSITION_ENCODING_FIXED_MEANING,
     POSITION_ENCODING_TYPE_PLACE,
 )
-
-_CONTROL_TOKENS = [
-    "<pad>",
-    "<do>",
-    "<eos>",
-    "<sep>",
-    "<calc>",
-    "<work>",
-    "<step>",
-    "<final>",
-    "undefined",
-    "remainder",
-]
-_OPERATOR_TOKENS = ["+", "-", "*", "/", "=", "(", ")"]
 
 
 class TransformerBlock(nn.Module):
@@ -106,11 +94,10 @@ class SmallCausalTransformer(nn.Module):
                 raise ValueError(
                     "tokenizer vocabulary size must match model_config.vocab_size"
                 )
-            token_table = _build_fixed_token_embedding(
-                tokenizer.id_to_token,
-                config.d_model,
+            token_table = build_fixed_meaning_token_table(
+                tokenizer.id_to_token, config.d_model
             )
-            position_table = _build_sinusoidal_position_embedding(
+            position_table = build_fixed_meaning_position_table(
                 config.sequence_length,
                 config.d_model,
             )
@@ -171,52 +158,3 @@ class SmallCausalTransformer(nn.Module):
         if logits.shape[:2] != (batch_size, sequence_length):
             raise RuntimeError("unexpected logits shape")
         return logits
-
-
-def _build_fixed_token_embedding(tokens: list[str], d_model: int) -> Tensor:
-    table = torch.zeros((len(tokens), d_model), dtype=torch.float32)
-    control_count = max(len(_CONTROL_TOKENS) - 1, 1)
-    operator_count = max(len(_OPERATOR_TOKENS) - 1, 1)
-
-    for token_id, token in enumerate(tokens):
-        values: list[float] = []
-        if token.isdigit():
-            values = [int(token) / 9.0, 1.0, 0.0, 0.0, 0.0]
-        elif token in _OPERATOR_TOKENS:
-            values = [
-                0.0,
-                0.0,
-                1.0,
-                0.0,
-                _OPERATOR_TOKENS.index(token) / operator_count,
-            ]
-        elif token in _CONTROL_TOKENS:
-            values = [
-                0.0,
-                0.0,
-                0.0,
-                1.0,
-                _CONTROL_TOKENS.index(token) / control_count,
-            ]
-        _write_prefix(table[token_id], values)
-    return table
-
-
-def _write_prefix(target: Tensor, values: list[float]) -> None:
-    for index, value in enumerate(values[: target.numel()]):
-        target[index] = value
-
-
-def _build_sinusoidal_position_embedding(sequence_length: int, d_model: int) -> Tensor:
-    table = torch.zeros((sequence_length, d_model), dtype=torch.float32)
-    if d_model == 0 or sequence_length == 0:
-        return table
-    positions = torch.arange(sequence_length, dtype=torch.float32).unsqueeze(1)
-    div_term = torch.exp(
-        torch.arange(0, d_model, 2, dtype=torch.float32)
-        * (-math.log(10000.0) / max(d_model, 1))
-    )
-    table[:, 0::2] = torch.sin(positions * div_term)
-    if d_model > 1:
-        table[:, 1::2] = torch.cos(positions * div_term[: table[:, 1::2].shape[1]])
-    return table

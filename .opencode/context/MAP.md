@@ -3,7 +3,7 @@
 ## Canonical code
 - `eur_ts/generator/` — arithmetic dataset config, kind specs, sampling, parsing/validation, writers, CLI
 - `eur_ts/config/` — canonical training/model config schema, TOML loader, template/guide text, sizing, and `uv run config`
-- `eur_ts/trainer/` — model, tokenizer/data loading, formatting/curriculum, inference, training/checkpointing, interp tooling
+- `eur_ts/trainer/` — model, tokenizer/data loading, fixed-meaning token tables, formatting/curriculum, inference, training/checkpointing, interp tooling
 - `eur_ts/evaluator/` — stratified evaluator CLI, sampling, metadata resolution, runner, report writers
 - `eur_is/backend/` — FastAPI API, schemas/settings, dual-runtime checkpoint loading, prompt analysis, and optional network analysis (`runtime.py` is the dashboard runtime switch)
 - `eur_is/frontend/` — React/Vite dashboard, API types/client, capability-aware session state, and network/attention/logit panels

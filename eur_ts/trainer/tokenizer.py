@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from .fixed_meaning import OPERATOR_TOKENS, SPECIAL_FIELD_TOKENS
+
 BASE_VOCAB_TOKENS = [
     "<pad>",
     "<do>",
@@ -32,16 +34,6 @@ LEGACY_BASE_VOCAB = BASE_VOCAB_TOKENS
 SCRATCHPAD_TOKENS = ["<work>", "<step>", "<final>"]
 BASE_VOCAB = list(BASE_VOCAB_TOKENS)
 
-SPECIAL_FIELD_TOKENS = {
-    "<do>",
-    "<calc>",
-    "<work>",
-    "<step>",
-    "<final>",
-    "undefined",
-    "remainder",
-}
-
 POSITION_ENCODING_TYPE_PLACE = "type_place"
 POSITION_ENCODING_FIXED_MEANING = "fixed_meaning"
 SUPPORTED_POSITION_ENCODINGS = {
@@ -55,9 +47,6 @@ TOKEN_TYPE_VOCAB_SIZE = 3
 PLACE_NONE = 0
 NUMBER_DIGIT_COUNT = 8
 PLACE_VOCAB_SIZE = NUMBER_DIGIT_COUNT + 1
-OPERATOR_TOKENS = {"+", "-", "*", "/", "=", "(", ")"}
-INFO_TOKENS = {"<pad>", "<do>", "<eos>", "<sep>", *SPECIAL_FIELD_TOKENS}
-SEPARATOR_TOKENS = {"<pad>", "<do>", "<eos>", "<sep>", "<calc>"}
 
 
 def vocab_for_training_format(training_format: str) -> list[str]:

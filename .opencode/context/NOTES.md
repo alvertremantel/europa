@@ -31,6 +31,7 @@
 - Training-time model selection now uses a fixed 50-problem exact-match probe from `val.txt`; balanced validation and per-epoch validation loss are not part of canonical training.
 - Auto-resume is intentionally unsupported; resumed runs must set `resume.resume_from` explicitly.
 - The canonical specialized embedding experiment is `model.position_encoding = "type_place"`: info/operator/digit token types get learned type vectors, and digits additionally receive learned place vectors inside canonical numbers.
+- `fixed_meaning` token semantics now live in exactly one authored source file, `eur_ts/trainer/fixed_meaning.py`; fixed-meaning `d_model` must match that file's vector width.
 - Missing or legacy checkpoint `position_encoding` metadata is invalid.
 - Backend runtime capability metadata remains canonical for the dashboard; frontend behavior should branch from structured capability metadata, not error strings or manual mode toggles.
 - ITS export bundles now live under `eur_is/export/`; exports always include backend-generated PNG assets, use placeholder PNGs plus manifest notes for unavailable sections, and keep config-file loading isolated for future JSON/TOML compatibility.

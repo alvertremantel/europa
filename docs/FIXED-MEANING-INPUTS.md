@@ -47,15 +47,21 @@ For this project, the desired bias is stronger:
 
 ### Token meanings
 
-The input token table is built once from the tokenizer vocabulary and then frozen.
+The input token table is built once from a single authored source file:
 
-Current hand-built structure is intentionally small:
+- `eur_ts/trainer/fixed_meaning.py`
 
-- **digits** get a scalar value channel (`0/9` through `9/9`) plus a digit flag
-- **operators** get an operator flag plus a compact operator code
-- **control/special tokens** get a control flag plus a compact control code
+That file now contains the complete per-token vector table for the canonical vocabulary. There is no model-side auto-generation of operator/control scalar codes anymore.
 
-This is not meant to be exhaustive symbolic knowledge. It is just enough structure to stop wasting capacity on trivial distinctions.
+If you want different meanings, edit the token rows in that file directly.
+
+Current intended structure:
+
+- **digits** can keep the simple scalar-value-plus-digit-flag scheme
+- **operators** use explicit manually authored vectors
+- **control/special tokens** use explicit manually authored vectors
+
+The model just loads that table, validates the width, and freezes it.
 
 ### Position
 
@@ -108,8 +114,11 @@ Use this in the TOML config:
 
 ```toml
 [model]
+d_model = 16
 position_encoding = "fixed_meaning"
 ```
+
+`d_model` must exactly match the vector width defined in `eur_ts/trainer/fixed_meaning.py`.
 
 `type_place` is still supported, but `fixed_meaning` is now the direct demonstration path for structured input semantics.
 

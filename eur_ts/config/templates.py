@@ -20,7 +20,7 @@ additional_epochs = "" # optional; blank trains for optimization.epochs total
 
 [model]
 sequence_length = ""
-d_model = ""
+d_model = ""               # required; fixed_meaning must match eur_ts/trainer/fixed_meaning.py
 n_heads = ""
 n_layers = ""
 mlp_hidden = ""
@@ -71,12 +71,12 @@ Each variable below appears in train-config.toml.
 
 [model]
 - sequence_length (integer, required): Maximum context length the model can process.
-- d_model (integer, required): Embedding width and residual stream width.
+- d_model (integer, required): Embedding width and residual stream width. In `fixed_meaning` mode, this must exactly match the authored token-vector width in `eur_ts/trainer/fixed_meaning.py`.
 - n_heads (integer, required): Number of attention heads. d_model must be divisible by n_heads.
 - n_layers (integer, required): Number of transformer blocks.
 - mlp_hidden (integer, required): Hidden width of each block MLP.
 - dropout (float, required): Dropout probability in [0.0, 1.0].
-- position_encoding (string, required): "type_place" for token type plus digit-place embeddings, or "fixed_meaning" for frozen token-meaning vectors plus fixed positional encoding.
+- position_encoding (string, required): "type_place" for token type plus digit-place embeddings, or "fixed_meaning" for frozen token-meaning vectors from `eur_ts/trainer/fixed_meaning.py` plus fixed positional encoding.
 
 [optimization]
 - batch_size (integer, required): Training batch size.

@@ -57,4 +57,4 @@ Output files: `train.txt`, `val.txt`, `test.txt`, `meta.toml`.
 
 ## Training defaults (TrainConfig)
 
-`d_model=256, n_heads=4, n_layers=6, mlp_hidden=1024, seq_len=64, batch=128, lr=3e-4, epochs=5, dropout=0.1` — ~4.76M params.
+There is no canonical default `d_model`; set it explicitly in TOML. Other TrainConfig defaults remain `n_heads=4, n_layers=6, mlp_hidden=1024, seq_len=64, batch=128, lr=3e-4, epochs=5, dropout=0.1`.

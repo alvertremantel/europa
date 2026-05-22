@@ -19,6 +19,10 @@ from eur_ts.trainer.data import (
 )
 from eur_ts.trainer.datasets import ExampleSequenceDataset, TokenBlockDataset
 from eur_ts.trainer.examples import ArithmeticExample
+from eur_ts.trainer.fixed_meaning import (
+    build_fixed_meaning_token_table,
+    fixed_meaning_width,
+)
 from eur_ts.trainer.formatting import final_answer_from_line, format_training_line
 from eur_ts.trainer.inference import _forward_model, sample_exact_match_probe
 from eur_ts.trainer.model import SmallCausalTransformer
@@ -114,11 +118,12 @@ def test_small_transformer_type_place_forward_shape() -> None:
 
 def test_small_transformer_fixed_meaning_forward_shape() -> None:
     tokenizer = ArithmeticTokenizer()
+    d_model = fixed_meaning_width()
     config = ModelConfig(
         vocab_size=tokenizer.vocab_size,
         sequence_length=32,
-        d_model=16,
-        n_heads=4,
+        d_model=d_model,
+        n_heads=1,
         n_layers=1,
         mlp_hidden=32,
         dropout=0.0,
@@ -135,6 +140,8 @@ def test_small_transformer_fixed_meaning_forward_shape() -> None:
     assert logits.shape == (1, input_ids.shape[1], tokenizer.vocab_size)
     assert torch.allclose(helper_logits, logits)
     assert model.token_embedding.weight.requires_grad is False
+    expected_table = build_fixed_meaning_token_table(tokenizer.id_to_token, d_model)
+    assert torch.allclose(model.token_embedding.weight, expected_table)
     assert model.position_embedding is not None
     assert model.position_embedding.weight.requires_grad is False
     assert model.lm_head.weight.requires_grad is True
@@ -161,6 +168,23 @@ def test_fixed_meaning_datasets_emit_token_only_batches() -> None:
     )
     example_item = example_dataset[0]
     assert len(example_item) == 3
+
+
+def test_fixed_meaning_rejects_d_model_mismatch() -> None:
+    tokenizer = ArithmeticTokenizer()
+    config = ModelConfig(
+        vocab_size=tokenizer.vocab_size,
+        sequence_length=32,
+        d_model=fixed_meaning_width() + 1,
+        n_heads=1,
+        n_layers=1,
+        mlp_hidden=32,
+        dropout=0.0,
+        position_encoding=POSITION_ENCODING_FIXED_MEANING,
+    )
+
+    with pytest.raises(ValueError, match="fixed_meaning d_model"):
+        SmallCausalTransformer(config, tokenizer=tokenizer)
 
 
 def test_legacy_checkpoint_model_config_is_rejected() -> None:
