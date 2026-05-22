@@ -1,4 +1,4 @@
-"""Checkpoint runtime abstraction for type/place dashboard support."""
+"""Checkpoint runtime abstraction for fixed-meaning dashboard support."""
 
 from __future__ import annotations
 
@@ -20,20 +20,11 @@ from eur_is.backend.analysis import (
     build_top_prediction_summaries,
     evaluate_generated_answer,
 )
-from eur_is.backend.model_utils import (
-    load_checkpoint_artifacts,
-    load_native_resources,
-)
-from eur_is.backend.network_analysis import extract_network_analysis
-from eur_ts.trainer.data import (
-    ArithmeticTokenizer,
-    POSITION_ENCODING_FIXED_MEANING,
-    POSITION_ENCODING_TYPE_PLACE,
-)
+from eur_is.backend.model_utils import load_checkpoint_artifacts, load_native_resources
+from eur_ts.trainer.data import ArithmeticTokenizer, POSITION_ENCODING_FIXED_MEANING
 from eur_ts.trainer.hooks import HookRegistry
 from eur_ts.trainer.model import SmallCausalTransformer
 
-ANALYSIS_RUNTIME_TRANSFORMERLENS = "transformerlens"
 ANALYSIS_RUNTIME_NATIVE_PYTORCH = "native_pytorch"
 
 
@@ -55,7 +46,6 @@ class RuntimeCapabilities:
         }
 
 
-TRANSFORMERLENS_CAPABILITIES = RuntimeCapabilities()
 NATIVE_PYTORCH_CAPABILITIES = RuntimeCapabilities(
     attention_view=False,
     network_analysis=False,
@@ -248,81 +238,6 @@ class BaseCheckpointRuntime(ABC):
         return generated_answer, answer_top_k
 
 
-class TransformerLensRuntime(BaseCheckpointRuntime):
-    @property
-    def analysis_runtime(self) -> str:
-        return ANALYSIS_RUNTIME_TRANSFORMERLENS
-
-    @property
-    def context_window(self) -> int:
-        return int(self.model.cfg.n_ctx)
-
-    @property
-    def n_layers(self) -> int:
-        return int(self.model.cfg.n_layers)
-
-    @property
-    def n_heads(self) -> int:
-        return int(self.model.cfg.n_heads)
-
-    @property
-    def d_model(self) -> int:
-        return int(self.model.cfg.d_model)
-
-    def _forward_prompt(self, prompt_token_ids: list[int]) -> PromptForwardResult:
-        input_tensor = torch.tensor(
-            prompt_token_ids,
-            dtype=torch.long,
-            device=self.device,
-        ).unsqueeze(0)
-        with torch.no_grad():
-            logits, cache = self.model.run_with_cache(input_tensor)
-
-        attention_by_layer: list[np.ndarray] = []
-        residual_layers: list[np.ndarray] = []
-        for layer_idx in range(self.n_layers):
-            attention_by_layer.append(
-                cache[f"blocks.{layer_idx}.attn.hook_pattern"][0].detach().cpu().numpy()
-            )
-            residual_layers.append(
-                cache[f"blocks.{layer_idx}.hook_resid_post"][0].detach().cpu().numpy()
-            )
-
-        return PromptForwardResult(
-            logits=logits,
-            stacked_activations=np.stack(residual_layers, axis=1),
-            attention_by_layer=attention_by_layer,
-            network_source=cache,
-        )
-
-    def _next_token_logits(self, generated_token_ids: list[int]) -> torch.Tensor:
-        window = torch.tensor(
-            generated_token_ids[-self.context_window :],
-            dtype=torch.long,
-            device=self.device,
-        ).unsqueeze(0)
-        return self.model(window)[0, -1].detach().cpu()
-
-    def build_network_analysis(
-        self,
-        *,
-        analysis: PromptAnalysisResult,
-        network_options: Mapping[str, Any],
-    ) -> dict[str, Any] | None:
-        if analysis.network_source is None:
-            return None
-        return extract_network_analysis(
-            model=self.model,
-            tokenizer=self.tokenizer,
-            tokens=analysis.tokens,
-            cache=analysis.network_source,
-            mlp_threshold=float(network_options["mlp_threshold"]),
-            top_k=int(network_options["top_k"]),
-            top_neurons=int(network_options["top_neurons"]),
-            selected_token_index=network_options["selected_token_index"],
-        )
-
-
 class NativeTransformerRuntime(BaseCheckpointRuntime):
     model: SmallCausalTransformer
 
@@ -344,6 +259,8 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
 
     @property
     def d_model(self) -> int:
+        if self.model.config.d_model is None:
+            raise ValueError("checkpoint model config is missing d_model")
         return int(self.model.config.d_model)
 
     def _forward_prompt(self, prompt_token_ids: list[int]) -> PromptForwardResult:
@@ -354,19 +271,7 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
         ).unsqueeze(0)
         with HookRegistry(self.model) as hooks:
             with torch.no_grad():
-                if self.position_encoding == POSITION_ENCODING_FIXED_MEANING:
-                    logits = self.model(input_tensor)
-                else:
-                    type_ids, place_ids = self.tokenizer.type_place_ids_for_token_ids(
-                        prompt_token_ids
-                    )
-                    type_tensor = torch.tensor(
-                        [type_ids], dtype=torch.long, device=self.device
-                    )
-                    place_tensor = torch.tensor(
-                        [place_ids], dtype=torch.long, device=self.device
-                    )
-                    logits = self.model(input_tensor, type_tensor, place_tensor)
+                logits = self.model(input_tensor)
         if len(hooks.capture.layer_outputs) != self.n_layers:
             raise RuntimeError("native runtime did not capture all transformer layers")
         stacked_activations = np.stack(
@@ -390,20 +295,7 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
             dtype=torch.long,
             device=self.device,
         ).unsqueeze(0)
-        if self.position_encoding == POSITION_ENCODING_FIXED_MEANING:
-            return self.model(window)[0, -1].detach().cpu()
-        type_ids, place_ids = self.tokenizer.type_place_ids_for_token_ids(
-            generated_token_ids
-        )
-        window_types = torch.tensor(
-            type_ids[-self.context_window :],
-            dtype=torch.long,
-            device=self.device,
-        ).unsqueeze(0)
-        window_places = torch.tensor(
-            place_ids[-self.context_window :], dtype=torch.long, device=self.device
-        ).unsqueeze(0)
-        return self.model(window, window_types, window_places)[0, -1].detach().cpu()
+        return self.model(window)[0, -1].detach().cpu()
 
 
 def load_checkpoint_runtime(
@@ -412,10 +304,7 @@ def load_checkpoint_runtime(
     device: str,
 ) -> BaseCheckpointRuntime:
     artifacts = load_checkpoint_artifacts(checkpoint_path, device=device)
-    if artifacts.position_encoding in {
-        POSITION_ENCODING_TYPE_PLACE,
-        POSITION_ENCODING_FIXED_MEANING,
-    }:
+    if artifacts.position_encoding == POSITION_ENCODING_FIXED_MEANING:
         model, tokenizer, metadata = load_native_resources(
             checkpoint_path, device=device
         )

@@ -1,36 +1,73 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+from typing import cast
+
 import torch
 from torch import Tensor, nn
+from torch.nn import functional as F
 
 from eur_ts.config import ModelConfig
 from .fixed_meaning import (
-    build_fixed_meaning_position_table,
+    DIGIT_TOKENS,
+    FIXED_MEANING_DIGIT_PLACE_DIMENSION,
+    FIXED_MEANING_MAX_DIGIT_PLACE,
     build_fixed_meaning_token_table,
 )
-from .tokenizer import (
-    ArithmeticTokenizer,
-    PLACE_NONE,
-    POSITION_ENCODING_FIXED_MEANING,
-    POSITION_ENCODING_TYPE_PLACE,
-)
+from .tokenizer import ArithmeticTokenizer, POSITION_ENCODING_FIXED_MEANING
+
+
+class FixedMeaningEmbedding(nn.Module):
+    def __init__(self, tokens: Sequence[str], d_model: int) -> None:
+        super().__init__()
+        table = build_fixed_meaning_token_table(tokens, d_model)
+        self.register_buffer("_weight", table)
+        digit_token_mask = torch.zeros(len(tokens), dtype=torch.bool)
+        for token_id, token in enumerate(tokens):
+            if token in DIGIT_TOKENS:
+                digit_token_mask[token_id] = True
+        self.register_buffer("_digit_token_mask", digit_token_mask)
+
+    @property
+    def weight(self) -> Tensor:
+        return cast(Tensor, self._weight)
+
+    @property
+    def digit_token_mask(self) -> Tensor:
+        return cast(Tensor, self._digit_token_mask)
+
+    def forward(self, input_ids: Tensor) -> Tensor:
+        embeddings = F.embedding(input_ids, self.weight)
+        is_digit = self.digit_token_mask[input_ids]
+        if not torch.any(is_digit):
+            return embeddings
+
+        place_values = _digit_place_values(is_digit, dtype=embeddings.dtype)
+        embeddings = embeddings.clone()
+        embeddings[..., FIXED_MEANING_DIGIT_PLACE_DIMENSION] = torch.where(
+            is_digit,
+            place_values,
+            embeddings[..., FIXED_MEANING_DIGIT_PLACE_DIMENSION],
+        )
+        return embeddings
 
 
 class TransformerBlock(nn.Module):
     def __init__(self, config: ModelConfig) -> None:
         super().__init__()
-        self.norm_1 = nn.LayerNorm(config.d_model)
+        d_model = _required_d_model(config)
+        self.norm_1 = nn.LayerNorm(d_model)
         self.attention = nn.MultiheadAttention(
-            embed_dim=config.d_model,
+            embed_dim=d_model,
             num_heads=config.n_heads,
             dropout=config.dropout,
             batch_first=True,
         )
-        self.norm_2 = nn.LayerNorm(config.d_model)
+        self.norm_2 = nn.LayerNorm(d_model)
         self.mlp = nn.Sequential(
-            nn.Linear(config.d_model, config.mlp_hidden),
+            nn.Linear(d_model, config.mlp_hidden),
             nn.GELU(),
-            nn.Linear(config.mlp_hidden, config.d_model),
+            nn.Linear(config.mlp_hidden, d_model),
             nn.Dropout(config.dropout),
         )
 
@@ -62,94 +99,38 @@ class SmallCausalTransformer(nn.Module):
     def __init__(
         self,
         config: ModelConfig,
-        tokenizer: ArithmeticTokenizer | None = None,
+        tokenizer: ArithmeticTokenizer,
     ) -> None:
         super().__init__()
-        if config.position_encoding not in {
-            POSITION_ENCODING_TYPE_PLACE,
-            POSITION_ENCODING_FIXED_MEANING,
-        }:
+        if config.position_encoding != POSITION_ENCODING_FIXED_MEANING:
             raise ValueError(
                 f"unsupported position encoding: {config.position_encoding!r}"
             )
+        d_model = _required_d_model(config)
         self.config = config
-        if config.position_encoding == POSITION_ENCODING_TYPE_PLACE:
-            self.token_embedding = nn.Embedding(config.vocab_size, config.d_model)
-            self.type_embedding: nn.Embedding | None = nn.Embedding(
-                config.token_type_vocab_size,
-                config.d_model,
+        if tokenizer.vocab_size != config.vocab_size:
+            raise ValueError(
+                "tokenizer vocabulary size must match model_config.vocab_size"
             )
-            self.place_embedding: nn.Embedding | None = nn.Embedding(
-                config.place_vocab_size,
-                config.d_model,
-                padding_idx=PLACE_NONE,
-            )
-            self.position_embedding: nn.Embedding | None = None
-        else:
-            if tokenizer is None:
-                raise ValueError(
-                    "fixed_meaning models require a tokenizer to build frozen input embeddings"
-                )
-            if tokenizer.vocab_size != config.vocab_size:
-                raise ValueError(
-                    "tokenizer vocabulary size must match model_config.vocab_size"
-                )
-            token_table = build_fixed_meaning_token_table(
-                tokenizer.id_to_token, config.d_model
-            )
-            position_table = build_fixed_meaning_position_table(
-                config.sequence_length,
-                config.d_model,
-            )
-            self.token_embedding = nn.Embedding.from_pretrained(
-                token_table, freeze=True
-            )
-            self.type_embedding = None
-            self.place_embedding = None
-            self.position_embedding = nn.Embedding.from_pretrained(
-                position_table,
-                freeze=True,
-            )
+        self.token_embedding = FixedMeaningEmbedding(tokenizer.id_to_token, d_model)
+        self.position_embedding = None
         self.dropout = nn.Dropout(config.dropout)
         self.blocks = nn.ModuleList(
             [TransformerBlock(config) for _ in range(config.n_layers)]
         )
-        self.final_norm = nn.LayerNorm(config.d_model)
-        self.lm_head = nn.Linear(config.d_model, config.vocab_size, bias=False)
-        if config.position_encoding == POSITION_ENCODING_TYPE_PLACE:
-            self.lm_head.weight = self.token_embedding.weight
+        self.final_norm = nn.LayerNorm(d_model)
+        self.lm_head = nn.Linear(d_model, config.vocab_size, bias=False)
 
     def forward(
         self,
         input_ids: Tensor,
-        type_ids: Tensor | None = None,
-        place_ids: Tensor | None = None,
     ) -> Tensor:
         batch_size, sequence_length = input_ids.shape
         if sequence_length > self.config.sequence_length:
             raise ValueError(
                 f"sequence length {sequence_length} exceeds model limit {self.config.sequence_length}"
             )
-        if self.config.position_encoding == POSITION_ENCODING_FIXED_MEANING:
-            positions = torch.arange(sequence_length, device=input_ids.device)
-            positions = positions.unsqueeze(0).expand(batch_size, sequence_length)
-            assert self.position_embedding is not None
-            hidden_states = self.token_embedding(input_ids) + self.position_embedding(
-                positions
-            )
-        else:
-            if type_ids is None or place_ids is None:
-                raise ValueError(
-                    "type_place encoding requires explicit type_ids and place_ids"
-                )
-            if type_ids.shape != input_ids.shape or place_ids.shape != input_ids.shape:
-                raise ValueError("type_ids and place_ids shapes must match input_ids")
-            assert self.type_embedding is not None and self.place_embedding is not None
-            hidden_states = (
-                self.token_embedding(input_ids)
-                + self.type_embedding(type_ids)
-                + self.place_embedding(place_ids)
-            )
+        hidden_states = self.token_embedding(input_ids)
         hidden_states = self.dropout(hidden_states)
         for block in self.blocks:
             hidden_states = block(hidden_states)
@@ -158,3 +139,33 @@ class SmallCausalTransformer(nn.Module):
         if logits.shape[:2] != (batch_size, sequence_length):
             raise RuntimeError("unexpected logits shape")
         return logits
+
+
+def _digit_place_values(is_digit: Tensor, *, dtype: torch.dtype) -> Tensor:
+    if is_digit.ndim != 2:
+        raise ValueError(
+            f"fixed_meaning digit-place encoding expects rank-2 input, got {tuple(is_digit.shape)}"
+        )
+    batch_size, sequence_length = is_digit.shape
+    current_places = torch.zeros(batch_size, device=is_digit.device, dtype=torch.long)
+    place_indices = torch.zeros(
+        (batch_size, sequence_length),
+        device=is_digit.device,
+        dtype=torch.long,
+    )
+    for position in range(sequence_length):
+        current_places = torch.where(
+            is_digit[:, position],
+            current_places + 1,
+            torch.zeros_like(current_places),
+        )
+        place_indices[:, position] = current_places.clamp_max(
+            FIXED_MEANING_MAX_DIGIT_PLACE
+        )
+    return place_indices.to(dtype=dtype) / 10.0
+
+
+def _required_d_model(config: ModelConfig) -> int:
+    if config.d_model is None:
+        raise ValueError("model_config.d_model is required")
+    return config.d_model

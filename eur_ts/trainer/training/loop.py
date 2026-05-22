@@ -17,11 +17,9 @@ from ..curriculum import (
 from ..data import (
     ArithmeticExample,
     ExampleSequenceDataset,
-    POSITION_ENCODING_FIXED_MEANING,
     TokenBlockDataset,
     load_token_stream,
     load_examples,
-    load_token_stream_with_type_place,
     transform_examples,
 )
 from ..inference import (
@@ -124,22 +122,11 @@ def train_model(config: TrainConfig) -> None:
             raise ValueError(
                 'curriculum presets require training.training_mode = "examples"'
             )
-        if effective_model_config.position_encoding == POSITION_ENCODING_FIXED_MEANING:
-            train_tokens = load_token_stream(data_dir / "train.txt", tokenizer)
-            train_dataset = TokenBlockDataset(
-                train_tokens,
-                effective_model_config.sequence_length,
-            )
-        else:
-            train_tokens, train_type_ids, train_place_ids = (
-                load_token_stream_with_type_place(data_dir / "train.txt", tokenizer)
-            )
-            train_dataset = TokenBlockDataset(
-                train_tokens,
-                effective_model_config.sequence_length,
-                type_ids=train_type_ids,
-                place_ids=train_place_ids,
-            )
+        train_tokens = load_token_stream(data_dir / "train.txt", tokenizer)
+        train_dataset = TokenBlockDataset(
+            train_tokens,
+            effective_model_config.sequence_length,
+        )
         if len(train_dataset) == 0:
             raise ValueError(
                 "training dataset is too small for the configured sequence length"
@@ -293,35 +280,11 @@ def train_model(config: TrainConfig) -> None:
 
         for step, batch in enumerate(train_loader, start=1):
             if config.training_mode == "examples":
-                if (
-                    effective_model_config.position_encoding
-                    == POSITION_ENCODING_FIXED_MEANING
-                ):
-                    inputs, targets, loss_mask = batch
-                    input_type_ids = None
-                    input_place_ids = None
-                else:
-                    inputs, input_type_ids, input_place_ids, targets, loss_mask = batch
+                inputs, targets, loss_mask = batch
             else:
-                if (
-                    effective_model_config.position_encoding
-                    == POSITION_ENCODING_FIXED_MEANING
-                ):
-                    inputs, targets = batch
-                    input_type_ids = None
-                    input_place_ids = None
-                else:
-                    inputs, input_type_ids, input_place_ids, targets = batch
+                inputs, targets = batch
                 loss_mask = None
             inputs = inputs.to(device, non_blocking=device.type == "cuda")
-            if input_type_ids is not None:
-                input_type_ids = input_type_ids.to(
-                    device, non_blocking=device.type == "cuda"
-                )
-            if input_place_ids is not None:
-                input_place_ids = input_place_ids.to(
-                    device, non_blocking=device.type == "cuda"
-                )
             targets = targets.to(device, non_blocking=device.type == "cuda")
             if loss_mask is not None:
                 loss_mask = loss_mask.to(device, non_blocking=device.type == "cuda")
@@ -332,8 +295,6 @@ def train_model(config: TrainConfig) -> None:
                     model,
                     inputs,
                     targets,
-                    type_ids=input_type_ids,
-                    place_ids=input_place_ids,
                 )
             else:
                 loss = loss_for_example_batch(
@@ -341,8 +302,6 @@ def train_model(config: TrainConfig) -> None:
                     inputs,
                     targets,
                     loss_mask,
-                    type_ids=input_type_ids,
-                    place_ids=input_place_ids,
                 ).mean()
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=config.grad_clip)

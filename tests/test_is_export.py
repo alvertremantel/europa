@@ -4,6 +4,7 @@ import csv
 import json
 from io import StringIO
 from pathlib import Path
+from typing import cast
 from zipfile import ZipFile
 
 import pytest
@@ -20,6 +21,7 @@ from eur_is.backend.schemas import (
     ModelConfigResponse,
     ProblemMetadataResponse,
     RuntimeCapabilitiesResponse,
+    StrongestAttentionPair,
     TopPrediction,
 )
 from eur_is.export.config_io import export_options_from_mapping
@@ -61,13 +63,16 @@ def build_fake_analysis(
                         entropy=1.0,
                         max_weight=0.75,
                         mean_diagonal=0.5,
-                        strongest_pair={
-                            "query_index": 0,
-                            "key_index": 1,
-                            "query_token": "3",
-                            "key_token": "+",
-                            "weight": 0.75,
-                        },
+                        strongest_pair=cast(
+                            StrongestAttentionPair,
+                            {
+                                "query_index": 0,
+                                "key_index": 1,
+                                "query_token": "3",
+                                "key_token": "+",
+                                "weight": 0.75,
+                            },
+                        ),
                     )
                 ]
             ]
@@ -149,7 +154,7 @@ def build_fake_analysis(
             },
         }
     return AnalyzeResponse(
-        position_encoding="type_place",
+        position_encoding="fixed_meaning",
         analysis_runtime="native_pytorch",
         capabilities=capabilities,
         tokens=["3", "+"],
@@ -218,7 +223,7 @@ def build_fake_analysis(
 
 def build_fake_health() -> HealthResponse:
     return HealthResponse(
-        position_encoding="type_place",
+        position_encoding="fixed_meaning",
         analysis_runtime="native_pytorch",
         capabilities=RuntimeCapabilitiesResponse(
             prompt_analysis=True,

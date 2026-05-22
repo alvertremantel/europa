@@ -91,14 +91,13 @@ function buildCapabilityLimitations(capabilities: AnalysisCapabilities | null): 
 
 function formatPositionEncoding(value: string | null | undefined): string {
   if (!value) return '—'
-  if (value === 'type_place') return 'type/place'
+  if (value === 'fixed_meaning') return 'fixed meaning'
   return value
 }
 
 function formatRuntime(value: string | null | undefined): string {
   if (!value) return '—'
   if (value === 'native_pytorch') return 'native PyTorch'
-  if (value === 'transformerlens') return 'TransformerLens'
   return value
 }
 

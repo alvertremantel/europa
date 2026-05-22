@@ -23,12 +23,12 @@ additional_epochs = ""
 
 [model]
 sequence_length = 32
-d_model = 16
+d_model = 12
 n_heads = 4
 n_layers = 1
 mlp_hidden = 64
 dropout = 0.1
-position_encoding = "type_place"
+position_encoding = "fixed_meaning"
 
 [optimization]
 batch_size = 8

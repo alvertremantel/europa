@@ -12,9 +12,7 @@ from eur_ts.artifacts import read_legacy_json, read_toml
 from eur_ts.config import ModelConfig, TrainConfig
 from ..data import (
     ArithmeticTokenizer,
-    PLACE_VOCAB_SIZE,
     SUPPORTED_POSITION_ENCODINGS,
-    TOKEN_TYPE_VOCAB_SIZE,
     vocab_for_training_format,
 )
 from ..model import SmallCausalTransformer
@@ -61,8 +59,6 @@ def initialize_training_state(
             mlp_hidden=config.mlp_hidden,
             dropout=config.dropout,
             position_encoding=config.position_encoding,
-            token_type_vocab_size=TOKEN_TYPE_VOCAB_SIZE,
-            place_vocab_size=PLACE_VOCAB_SIZE,
         )
         model = SmallCausalTransformer(model_config, tokenizer=tokenizer).to(device)
         optimizer = torch.optim.AdamW(
@@ -110,16 +106,6 @@ def initialize_training_state(
         mlp_hidden=_as_int(state["mlp_hidden"], "model_config.mlp_hidden"),
         dropout=_as_float(state["dropout"], "model_config.dropout"),
         position_encoding=_required_position_encoding(state),
-        token_type_vocab_size=_as_optional_int(
-            state.get("token_type_vocab_size"),
-            "model_config.token_type_vocab_size",
-            default=TOKEN_TYPE_VOCAB_SIZE,
-        ),
-        place_vocab_size=_as_optional_int(
-            state.get("place_vocab_size"),
-            "model_config.place_vocab_size",
-            default=PLACE_VOCAB_SIZE,
-        ),
     )
 
     for field_name in (
@@ -311,9 +297,3 @@ def _required_position_encoding(state: dict[str, object]) -> str:
 
 def _trainable_parameters(model: SmallCausalTransformer) -> list[torch.nn.Parameter]:
     return [parameter for parameter in model.parameters() if parameter.requires_grad]
-
-
-def _as_optional_int(value: object, field_name: str, *, default: int) -> int:
-    if value is None:
-        return default
-    return _as_int(value, field_name)

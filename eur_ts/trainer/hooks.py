@@ -6,10 +6,12 @@ Records all intermediate states through the model.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import torch
 from torch import Tensor, nn
+
+from .model import SmallCausalTransformer, TransformerBlock
 
 
 @dataclass
@@ -18,9 +20,6 @@ class ActivationCapture:
 
     # Embeddings
     token_embeds: Tensor | None = None
-    type_embeds: Tensor | None = None
-    place_embeds: Tensor | None = None
-    combined_embeds: Tensor | None = None
 
     # Per-layer activations
     layer_inputs: list[Tensor] = field(default_factory=list)
@@ -44,9 +43,6 @@ class ActivationCapture:
     def clear(self) -> None:
         """Clear all captured activations."""
         self.token_embeds = None
-        self.type_embeds = None
-        self.place_embeds = None
-        self.combined_embeds = None
         self.layer_inputs.clear()
         self.layer_outputs.clear()
         self.attention_outputs.clear()
@@ -65,7 +61,7 @@ class ActivationCapture:
 class HookRegistry:
     """Manages hooks for a model."""
 
-    def __init__(self, model: nn.Module) -> None:
+    def __init__(self, model: SmallCausalTransformer) -> None:
         self.model = model
         self.capture = ActivationCapture()
         self.handles: list[torch.utils.hooks.RemovableHandle] = []
@@ -79,18 +75,9 @@ class HookRegistry:
         )
         self.handles.append(handle)
 
-        handle = self.model.type_embedding.register_forward_hook(
-            self._make_embedding_hook("type_embeds")
-        )
-        self.handles.append(handle)
-
-        handle = self.model.place_embedding.register_forward_hook(
-            self._make_embedding_hook("place_embeds")
-        )
-        self.handles.append(handle)
-
         # Transformer block hooks
-        for layer_idx, block in enumerate(self.model.blocks):
+        for layer_idx, block_module in enumerate(self.model.blocks):
+            block = cast(TransformerBlock, block_module)
             # Layer input
             handle = block.register_forward_pre_hook(
                 self._make_layer_input_hook(layer_idx)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from .fixed_meaning import OPERATOR_TOKENS, SPECIAL_FIELD_TOKENS
+from .fixed_meaning import SPECIAL_FIELD_TOKENS
 
 BASE_VOCAB_TOKENS = [
     "<pad>",
@@ -34,19 +34,8 @@ LEGACY_BASE_VOCAB = BASE_VOCAB_TOKENS
 SCRATCHPAD_TOKENS = ["<work>", "<step>", "<final>"]
 BASE_VOCAB = list(BASE_VOCAB_TOKENS)
 
-POSITION_ENCODING_TYPE_PLACE = "type_place"
 POSITION_ENCODING_FIXED_MEANING = "fixed_meaning"
-SUPPORTED_POSITION_ENCODINGS = {
-    POSITION_ENCODING_TYPE_PLACE,
-    POSITION_ENCODING_FIXED_MEANING,
-}
-TOKEN_TYPE_INFO = 0
-TOKEN_TYPE_OPERATOR = 1
-TOKEN_TYPE_DIGIT = 2
-TOKEN_TYPE_VOCAB_SIZE = 3
-PLACE_NONE = 0
-NUMBER_DIGIT_COUNT = 8
-PLACE_VOCAB_SIZE = NUMBER_DIGIT_COUNT + 1
+SUPPORTED_POSITION_ENCODINGS = {POSITION_ENCODING_FIXED_MEANING}
 
 
 def vocab_for_training_format(training_format: str) -> list[str]:
@@ -96,20 +85,6 @@ class ArithmeticTokenizer:
         include_eos: bool,
         append_trailing_separator: bool,
     ) -> list[int]:
-        token_ids, _, _ = self.encode_fields_with_type_place(
-            fields,
-            include_eos=include_eos,
-            append_trailing_separator=append_trailing_separator,
-        )
-        return token_ids
-
-    def encode_fields_with_type_place(
-        self,
-        fields: Sequence[str],
-        *,
-        include_eos: bool,
-        append_trailing_separator: bool,
-    ) -> tuple[list[int], list[int], list[int]]:
         if not fields:
             raise ValueError("cannot encode an empty field sequence")
 
@@ -120,32 +95,15 @@ class ArithmeticTokenizer:
                 token_ids.append(self.sep_id)
         if include_eos:
             token_ids.append(self.eos_id)
-        type_ids, place_ids = self.type_place_ids_for_token_ids(token_ids)
-        return token_ids, type_ids, place_ids
+        return token_ids
 
     def encode_line(self, line: str) -> list[int]:
-        token_ids, _, _ = self.encode_line_with_type_place(line)
-        return token_ids
-
-    def encode_line_with_type_place(
-        self, line: str
-    ) -> tuple[list[int], list[int], list[int]]:
         fields = _normalize_line_fields(line)
-        token_ids = self._encode_canonical_fields(fields, include_eos=True)
-        type_ids, place_ids = self.type_place_ids_for_token_ids(token_ids)
-        return token_ids, type_ids, place_ids
+        return self._encode_canonical_fields(fields, include_eos=True)
 
     def encode_prompt(self, prompt: str) -> list[int]:
-        token_ids, _, _ = self.encode_prompt_with_type_place(prompt)
-        return token_ids
-
-    def encode_prompt_with_type_place(
-        self, prompt: str
-    ) -> tuple[list[int], list[int], list[int]]:
         fields = _normalize_prompt_fields(prompt)
-        token_ids = self._encode_canonical_fields(fields, include_eos=False)
-        type_ids, place_ids = self.type_place_ids_for_token_ids(token_ids)
-        return token_ids, type_ids, place_ids
+        return self._encode_canonical_fields(fields, include_eos=False)
 
     def _encode_canonical_fields(
         self, fields: Sequence[str], *, include_eos: bool
@@ -160,32 +118,6 @@ class ArithmeticTokenizer:
         if include_eos:
             token_ids.append(self.eos_id)
         return token_ids
-
-    def type_place_ids_for_token_ids(
-        self, token_ids: Sequence[int]
-    ) -> tuple[list[int], list[int]]:
-        type_ids = [_token_type(self.id_to_token[token_id]) for token_id in token_ids]
-        place_ids = [PLACE_NONE] * len(token_ids)
-        run: list[int] = []
-
-        def flush() -> None:
-            if not run:
-                return
-            if len(run) <= NUMBER_DIGIT_COUNT:
-                for place, token_index in enumerate(run, start=1):
-                    place_ids[token_index] = place
-            run.clear()
-
-        for index, token_id in enumerate(token_ids):
-            token = self.id_to_token[token_id]
-            if token.isdigit():
-                run.append(index)
-                if len(run) == NUMBER_DIGIT_COUNT:
-                    flush()
-                continue
-            flush()
-        flush()
-        return type_ids, place_ids
 
     def decode(self, token_ids: Sequence[int]) -> str:
         fields: list[str] = []
@@ -223,14 +155,6 @@ class ArithmeticTokenizer:
     @classmethod
     def from_state(cls, state: dict[str, list[str]]) -> "ArithmeticTokenizer":
         return cls(vocab=state["vocab"])
-
-
-def _token_type(token: str) -> int:
-    if token.isdigit():
-        return TOKEN_TYPE_DIGIT
-    if token in OPERATOR_TOKENS:
-        return TOKEN_TYPE_OPERATOR
-    return TOKEN_TYPE_INFO
 
 
 def _normalize_prompt_fields(prompt: str) -> list[str]:

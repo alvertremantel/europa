@@ -63,8 +63,8 @@ export function NetworkPanel({
           <div>
             <h2>Full-network CircuitVis</h2>
             <p>
-              Fetch compact TransformerLens cache summaries for MLP firing, attention activity,
-              and residual streams.
+              Fetch compact cached summaries for MLP firing, attention activity, and
+              residual streams.
             </p>
           </div>
           <button

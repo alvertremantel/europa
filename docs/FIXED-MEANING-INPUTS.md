@@ -13,15 +13,15 @@ For arithmetic data in this repo, we want the network to start from a small amou
 In `position_encoding = "fixed_meaning"` mode, each input token is represented as:
 
 ```text
-fixed_token_meaning[token] + fixed_position_encoding[position]
+fixed_token_meaning[token, digit_place_in_number]
 ```
 
 That means:
 
 - one frozen input embedding per vocab token
-- one fixed positional encoding per sequence position
+- one runtime-authored digit-place value inside the fixed token vector for digits
 - no learned type embedding
-- no learned digit-place embedding
+- no separate positional embedding table
 - no auxiliary type/place input streams
 
 The transformer stack and output head remain learned.
@@ -41,7 +41,7 @@ For this project, the desired bias is stronger:
 - digits should already carry numeric meaning
 - control tokens should already carry control-like meaning
 - operators should already carry operator-like meaning
-- sequence position should do the work of distinguishing things like `90` vs `900`
+- digit-place meaning should do the work of distinguishing things like `90` vs `900`
 
 ## What is frozen
 
@@ -63,23 +63,18 @@ Current intended structure:
 
 The model just loads that table, validates the width, and freezes it.
 
-### Position
+### Digit place
 
-Position is provided by a fixed sinusoidal table.
+Digit rows reserve one dimension for runtime place assignment inside each full reversed
+8-digit numeral.
 
-This keeps positional information present without introducing another learned semantic pathway for digit-place identity.
-
-## Why position is still necessary
-
-Scalar digit meaning alone is not enough.
-
-If the model only sees that a token means “9”, it still needs position to distinguish:
+If the model only sees that a token means “9”, it still needs place to distinguish:
 
 - `9`
 - `90`
 - `900`
 
-Under `fixed_meaning`, that distinction is expected to emerge from normal sequence position plus the prompt structure (`<do> <calc>`, operators, `=`), not from a separate learned place embedding.
+Under `fixed_meaning`, that distinction now comes from the authored digit-place dimension itself, not from a separate positional embedding.
 
 ## What stays learned
 
@@ -96,7 +91,7 @@ The output head is intentionally **untied** from the frozen input embedding tabl
 
 ## Why no extra arithmetic feature bundles
 
-We explicitly did **not** add large custom side channels, digit-place feature stacks, or a growing family of hand-authored arithmetic vectors.
+We explicitly did **not** add large custom side channels, learned place embeddings, or a growing family of hand-authored arithmetic vectors.
 
 Reason:
 
@@ -114,19 +109,19 @@ Use this in the TOML config:
 
 ```toml
 [model]
-d_model = 16
+d_model = 12
 position_encoding = "fixed_meaning"
 ```
 
 `d_model` must exactly match the vector width defined in `eur_ts/trainer/fixed_meaning.py`.
 
-`type_place` is still supported, but `fixed_meaning` is now the direct demonstration path for structured input semantics.
+`fixed_meaning` is now the only supported canonical embedding mode.
 
 ## Practical consequences
 
 - fresh runs can start from fixed token semantics instead of random token embeddings
-- no type/place tensors are needed in the fixed-meaning training path
-- native runtime analysis can load either `type_place` or `fixed_meaning` checkpoints
+- no auxiliary embedding tensors are needed in the training path
+- native runtime analysis loads `fixed_meaning` checkpoints directly
 - resume/checkpoint flows still work through the normal embedded tokenizer + model config payload
 
 ## Intended research stance

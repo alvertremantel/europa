@@ -20,11 +20,12 @@ from eur_ts.trainer.data import (
 from eur_ts.trainer.datasets import ExampleSequenceDataset, TokenBlockDataset
 from eur_ts.trainer.examples import ArithmeticExample
 from eur_ts.trainer.fixed_meaning import (
+    FIXED_MEANING_DIGIT_PLACE_DIMENSION,
     build_fixed_meaning_token_table,
     fixed_meaning_width,
 )
 from eur_ts.trainer.formatting import final_answer_from_line, format_training_line
-from eur_ts.trainer.inference import _forward_model, sample_exact_match_probe
+from eur_ts.trainer.inference import sample_exact_match_probe
 from eur_ts.trainer.model import SmallCausalTransformer
 from eur_ts.trainer.training.checkpointing import _model_config_from_payload
 
@@ -56,69 +57,19 @@ def test_training_tokenizer_round_trips_and_formats_scratchpads() -> None:
     )
 
 
-def test_training_tokenizer_assigns_type_and_place_ids() -> None:
+def test_training_tokenizer_preserves_negative_digit_structure() -> None:
     tokenizer = ArithmeticTokenizer()
-    token_ids, type_ids, place_ids = tokenizer.encode_prompt_with_type_place(
-        "<do> <calc> (-60000000) + 30000000 ="
-    )
+    token_ids = tokenizer.encode_prompt("<do> <calc> (-60000000) + 30000000 =")
     tokens = [tokenizer.id_to_token[token_id] for token_id in token_ids]
+
     assert tokens[:2] == ["<do>", "<calc>"]
     assert tokens[2:12] == ["(", "-", "6", "0", "0", "0", "0", "0", "0", "0"]
-    assert type_ids[0] == 0
-    assert type_ids[tokens.index("+")] == 1
-    digit_indexes = [index for index, token in enumerate(tokens) if token.isdigit()]
-    assert [type_ids[index] for index in digit_indexes] == [2] * 16
-    assert place_ids[4:12] == [1, 2, 3, 4, 5, 6, 7, 8]
-    assert place_ids[16:24] == [1, 2, 3, 4, 5, 6, 7, 8]
-
-
-def test_training_tokenizer_assigns_places_to_generated_prefixes() -> None:
-    tokenizer = ArithmeticTokenizer()
-    prompt_ids = tokenizer.encode_prompt("<do> <calc> 30000000 + 40000000 =")
-    for prefix, expected_places in [
-        ("7", [1]),
-        ("70", [1, 2]),
-        ("70000000", [1, 2, 3, 4, 5, 6, 7, 8]),
-    ]:
-        token_ids = prompt_ids + [tokenizer.token_to_id[token] for token in prefix]
-        _, place_ids = tokenizer.type_place_ids_for_token_ids(token_ids)
-        assert place_ids[-len(expected_places) :] == expected_places
-
-
-def test_small_transformer_type_place_forward_shape() -> None:
-    tokenizer = ArithmeticTokenizer()
-    config = ModelConfig(
-        vocab_size=tokenizer.vocab_size,
-        sequence_length=32,
-        d_model=16,
-        n_heads=4,
-        n_layers=1,
-        mlp_hidden=32,
-        dropout=0.0,
-    )
-    model = SmallCausalTransformer(config).eval()
-    input_token_ids, input_type_ids, input_place_ids = (
-        tokenizer.encode_prompt_with_type_place("<do> <calc> 30000000 + 40000000 =")
-    )
-    input_ids = torch.tensor([input_token_ids], dtype=torch.long)
-    type_ids = torch.tensor([input_type_ids], dtype=torch.long)
-    place_ids = torch.tensor([input_place_ids], dtype=torch.long)
-
-    with torch.no_grad():
-        logits = model(input_ids, type_ids, place_ids)
-        helper_logits = _forward_model(
-            model, input_ids, type_ids=type_ids, place_ids=place_ids
-        )
-
-    assert logits.shape == (1, input_ids.shape[1], tokenizer.vocab_size)
-    assert torch.allclose(helper_logits, logits)
-    with pytest.raises(ValueError, match="type_place"):
-        model(input_ids)
 
 
 def test_small_transformer_fixed_meaning_forward_shape() -> None:
     tokenizer = ArithmeticTokenizer()
     d_model = fixed_meaning_width()
+    assert d_model == 12
     config = ModelConfig(
         vocab_size=tokenizer.vocab_size,
         sequence_length=32,
@@ -135,16 +86,42 @@ def test_small_transformer_fixed_meaning_forward_shape() -> None:
 
     with torch.no_grad():
         logits = model(input_ids)
-        helper_logits = _forward_model(model, input_ids)
 
     assert logits.shape == (1, input_ids.shape[1], tokenizer.vocab_size)
-    assert torch.allclose(helper_logits, logits)
     assert model.token_embedding.weight.requires_grad is False
     expected_table = build_fixed_meaning_token_table(tokenizer.id_to_token, d_model)
     assert torch.allclose(model.token_embedding.weight, expected_table)
-    assert model.position_embedding is not None
-    assert model.position_embedding.weight.requires_grad is False
+    assert model.position_embedding is None
     assert model.lm_head.weight.requires_grad is True
+
+
+def test_fixed_meaning_digit_place_encoding_restarts_for_each_number() -> None:
+    tokenizer = ArithmeticTokenizer()
+    config = ModelConfig(
+        vocab_size=tokenizer.vocab_size,
+        sequence_length=32,
+        d_model=fixed_meaning_width(),
+        n_heads=1,
+        n_layers=1,
+        mlp_hidden=32,
+        dropout=0.0,
+        position_encoding=POSITION_ENCODING_FIXED_MEANING,
+    )
+    model = SmallCausalTransformer(config, tokenizer=tokenizer).eval()
+    token_ids = tokenizer.encode_prompt("<do> <calc> 30000000 + 40000000 =")
+    input_ids = torch.tensor([token_ids], dtype=torch.long)
+
+    with torch.no_grad():
+        embeddings = model.token_embedding(input_ids)
+
+    digit_place_values = [
+        embeddings[0, index, FIXED_MEANING_DIGIT_PLACE_DIMENSION].item()
+        for index, token_id in enumerate(token_ids)
+        if tokenizer.id_to_token[token_id] in set("0123456789")
+    ]
+    assert digit_place_values == pytest.approx(
+        [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] * 2
+    )
 
 
 def test_fixed_meaning_datasets_emit_token_only_batches() -> None:
@@ -185,6 +162,22 @@ def test_fixed_meaning_rejects_d_model_mismatch() -> None:
 
     with pytest.raises(ValueError, match="fixed_meaning d_model"):
         SmallCausalTransformer(config, tokenizer=tokenizer)
+
+
+def test_type_place_position_encoding_is_rejected() -> None:
+    tokenizer = ArithmeticTokenizer()
+
+    with pytest.raises(ValueError, match="fixed_meaning"):
+        ModelConfig(
+            vocab_size=tokenizer.vocab_size,
+            sequence_length=32,
+            d_model=fixed_meaning_width(),
+            n_heads=1,
+            n_layers=1,
+            mlp_hidden=32,
+            dropout=0.0,
+            position_encoding="type_place",
+        )
 
 
 def test_legacy_checkpoint_model_config_is_rejected() -> None:

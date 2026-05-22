@@ -3,7 +3,7 @@ from __future__ import annotations
 
 def main() -> None:
     raise SystemExit(
-        "TransformerLens parity verification is unavailable: canonical checkpoints use type_place embeddings."
+        "TransformerLens parity verification is unavailable: canonical checkpoints use fixed_meaning embeddings."
     )
 
 

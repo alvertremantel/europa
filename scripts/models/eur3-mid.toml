@@ -21,7 +21,7 @@ n_heads = "8"
 n_layers = "3"
 mlp_hidden = "64"
 dropout = "0.1"
-position_encoding = "type_place"     # type_place
+position_encoding = "fixed_meaning"  # fixed_meaning
 
 [optimization]
 batch_size = "64"

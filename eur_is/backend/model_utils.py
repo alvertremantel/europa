@@ -7,12 +7,7 @@ from typing import Any, cast
 import torch
 
 from eur_ts.config import ModelConfig
-from eur_ts.trainer.data import (
-    ArithmeticTokenizer,
-    PLACE_VOCAB_SIZE,
-    SUPPORTED_POSITION_ENCODINGS,
-    TOKEN_TYPE_VOCAB_SIZE,
-)
+from eur_ts.trainer.data import ArithmeticTokenizer, SUPPORTED_POSITION_ENCODINGS
 from eur_ts.trainer.model import SmallCausalTransformer
 from eur_ts.trainer.training.checkpointing import load_checkpoint_payload
 
@@ -24,11 +19,6 @@ class CheckpointArtifacts:
     model_config: dict[str, Any]
     metadata: dict[str, Any]
     position_encoding: str
-
-
-def get_hooked_model(checkpoint_path: Path, device: str = "cpu") -> None:
-    load_hooked_resources(checkpoint_path, device=device)
-    return None
 
 
 def load_checkpoint_artifacts(
@@ -82,16 +72,6 @@ def load_checkpoint_artifacts(
     )
 
 
-def load_hooked_resources(
-    checkpoint_path: Path,
-    device: str = "cpu",
-) -> None:
-    del checkpoint_path, device
-    raise ValueError(
-        "TransformerLens backend support is unavailable for native checkpoints"
-    )
-
-
 def load_native_resources(
     checkpoint_path: Path,
     device: str = "cpu",
@@ -118,10 +98,6 @@ def _build_model_config(config_dict: dict[str, Any]) -> ModelConfig:
         mlp_hidden=int(config_dict["mlp_hidden"]),
         dropout=float(config_dict["dropout"]),
         position_encoding=cast(str, config_dict.get("position_encoding")),
-        token_type_vocab_size=int(
-            config_dict.get("token_type_vocab_size", TOKEN_TYPE_VOCAB_SIZE)
-        ),
-        place_vocab_size=int(config_dict.get("place_vocab_size", PLACE_VOCAB_SIZE)),
     )
 
 
@@ -138,10 +114,6 @@ def _normalize_model_config(
         "mlp_hidden": int(config_dict["mlp_hidden"]),
         "dropout": float(config_dict["dropout"]),
         "position_encoding": _required_position_encoding(config_dict),
-        "token_type_vocab_size": int(
-            config_dict.get("token_type_vocab_size", TOKEN_TYPE_VOCAB_SIZE)
-        ),
-        "place_vocab_size": int(config_dict.get("place_vocab_size", PLACE_VOCAB_SIZE)),
     }
 
 

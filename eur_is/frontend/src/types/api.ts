@@ -1,6 +1,6 @@
-export type PositionEncoding = 'type_place'
+export type PositionEncoding = 'fixed_meaning'
 
-export type AnalysisRuntime = 'transformerlens' | 'native_pytorch'
+export type AnalysisRuntime = 'native_pytorch'
 
 export interface AnalysisCapabilities {
   prompt_analysis: boolean

@@ -25,7 +25,7 @@ n_heads = ""
 n_layers = ""
 mlp_hidden = ""
 dropout = ""
-position_encoding = ""     # type_place | fixed_meaning
+position_encoding = ""     # fixed_meaning
 
 [optimization]
 batch_size = ""
@@ -76,7 +76,7 @@ Each variable below appears in train-config.toml.
 - n_layers (integer, required): Number of transformer blocks.
 - mlp_hidden (integer, required): Hidden width of each block MLP.
 - dropout (float, required): Dropout probability in [0.0, 1.0].
-- position_encoding (string, required): "type_place" for token type plus digit-place embeddings, or "fixed_meaning" for frozen token-meaning vectors from `eur_ts/trainer/fixed_meaning.py` plus fixed positional encoding.
+- position_encoding (string, required): Must be `"fixed_meaning"` for frozen token-meaning vectors from `eur_ts/trainer/fixed_meaning.py`, with digit-place meaning injected directly into the fixed vectors instead of a separate positional table.
 
 [optimization]
 - batch_size (integer, required): Training batch size.

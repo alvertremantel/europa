@@ -23,12 +23,12 @@ additional_epochs = ""
 
 [model]
 sequence_length = 32
-d_model = 16
+d_model = 12
 n_heads = 4
 n_layers = 1
 mlp_hidden = 64
 dropout = 0.1
-position_encoding = "type_place"
+position_encoding = "fixed_meaning"
 
 [optimization]
 batch_size = 8
@@ -63,24 +63,23 @@ def test_load_train_config_parses_valid_toml(tmp_path: Path) -> None:
     assert config.device == "auto"
     assert config.sequence_length == 32
     assert config.n_heads == 4
-    assert config.position_encoding == "type_place"
+    assert config.position_encoding == "fixed_meaning"
     assert config.additional_epochs is None
     assert config.curriculum_name is None
 
 
-def test_load_train_config_accepts_fixed_meaning_position_encoding(
+def test_load_train_config_rejects_removed_type_place_position_encoding(
     tmp_path: Path,
 ) -> None:
     path = write_config(
         tmp_path,
         VALID_TOML.replace(
-            'position_encoding = "type_place"', 'position_encoding = "fixed_meaning"'
+            'position_encoding = "fixed_meaning"', 'position_encoding = "type_place"'
         ),
     )
 
-    config = load_train_config(path)
-
-    assert config.position_encoding == "fixed_meaning"
+    with pytest.raises(ValueError, match="position_encoding must be one of"):
+        load_train_config(path)
 
 
 def test_load_train_config_rejects_blank_required_value(tmp_path: Path) -> None:
@@ -196,3 +195,4 @@ def test_template_and_guide_cover_key_variables() -> None:
         assert key in TRAIN_CONFIG_GUIDE
     assert "fixed_meaning" in TRAIN_CONFIG_TEMPLATE
     assert "fixed_meaning" in TRAIN_CONFIG_GUIDE
+    assert "type_place" not in TRAIN_CONFIG_GUIDE

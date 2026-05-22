@@ -7,20 +7,20 @@
 - Packaging now includes only `eur_ts` and `eur_is`; pytest is in the dev dependency group.
 - `tests/` now covers config parsing, config CLI behavior, training CLI migration, plus core smoke behavior.
 - Repository utility scripts now live directly under `scripts/` rather than nested `scripts/math/` or `scripts/verify/` paths.
-- Fresh training config now supports only `model.position_encoding = "type_place"`: token identity embeddings are combined with learned token-type vectors (`info`, `operator`, `digit`) and digit place vectors (`place_1` through `place_8`).
-- Legacy `absolute` and `digit_roles` checkpoints are intentionally unsupported and should fail with clear loader errors.
+- Fresh training config now supports only `model.position_encoding = "fixed_meaning"`: token identity embeddings come from the frozen token-meaning table in `eur_ts/trainer/fixed_meaning.py`, with digit place injected directly into the fixed vectors instead of a separate positional table.
+- Legacy `absolute`, `digit_roles`, and `type_place` checkpoints are intentionally unsupported and should fail with clear loader errors.
 - The dataset/prompt protocol is now `<do> <calc> <expression> = <result>` for lines and `<do> <calc> <expression> =` for prompts; `<bos>` and `<ans>` are unsupported legacy tokens.
-- The backend dashboard uses the native PyTorch runtime for `type_place` checkpoints and exposes capability-gated core analysis without TransformerLens parity.
+- The backend dashboard uses the native PyTorch runtime for `fixed_meaning` checkpoints and exposes capability-gated core analysis without TransformerLens parity.
 - Frontend API/session state now carries `position_encoding`, `analysis_runtime`, and `capabilities`, and the UI hides unsupported views instead of relying on backend errors.
 
 ## Active work
-- Type/place dashboard support is implemented but still needs end-to-end validation with a real fresh `type_place` checkpoint.
+- Fixed-meaning dashboard support should be validated end-to-end with a real fresh `fixed_meaning` checkpoint.
 
 ## Immediate next steps
 - Use canonical imports (`eur_ts.*` / `eur_is.*`) in all future code and docs.
 - Keep docs, helper scripts, and tooling aligned with the TOML-only training interface.
 - Checkpoint payload compatibility is intentionally broken for legacy embedding/protocol artifacts; keep loader errors explicit.
-- Run manual backend/UI smoke checks with a real `type_place` checkpoint.
+- Run manual backend/UI smoke checks with a real `fixed_meaning` checkpoint.
 - Decide later whether native-mode attention/network summaries should stay limited or gain deeper parity with the TransformerLens path.
 
 ## Durable notes / decisions
@@ -30,7 +30,7 @@
 - `eur_ts.config` is the canonical home for train/model config schema, TOML loading, guide/template text, and size reporting.
 - Training-time model selection now uses a fixed 50-problem exact-match probe from `val.txt`; balanced validation and per-epoch validation loss are not part of canonical training.
 - Auto-resume is intentionally unsupported; resumed runs must set `resume.resume_from` explicitly.
-- The canonical specialized embedding experiment is `model.position_encoding = "type_place"`: info/operator/digit token types get learned type vectors, and digits additionally receive learned place vectors inside canonical numbers.
+- The canonical embedding experiment is `model.position_encoding = "fixed_meaning"`: frozen token-meaning vectors combine with fixed positional structure.
 - `fixed_meaning` token semantics now live in exactly one authored source file, `eur_ts/trainer/fixed_meaning.py`; fixed-meaning `d_model` must match that file's vector width.
 - Missing or legacy checkpoint `position_encoding` metadata is invalid.
 - Backend runtime capability metadata remains canonical for the dashboard; frontend behavior should branch from structured capability metadata, not error strings or manual mode toggles.

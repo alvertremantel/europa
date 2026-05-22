@@ -250,7 +250,7 @@ def test_analyze_returns_full_generated_answer_and_correctness(monkeypatch) -> N
     tokenizer = ArithmeticTokenizer()
     runtime = FakeRuntime(
         tokenizer=tokenizer,
-        position_encoding="type_place",
+        position_encoding="fixed_meaning",
         analysis_runtime="native_pytorch",
         capabilities=RuntimeCapabilities(),
     )
@@ -271,7 +271,7 @@ def test_analyze_returns_full_generated_answer_and_correctness(monkeypatch) -> N
     assert payload["generated_answer_top_k"][0]["token"] == "7"
     assert payload["top_predictions"][payload["answer_position"]]["token"] == "7"
     assert payload["analysis_runtime"] == "native_pytorch"
-    assert payload["position_encoding"] == "type_place"
+    assert payload["position_encoding"] == "fixed_meaning"
     assert payload["capabilities"]["network_analysis"] is True
     assert payload["network"] is None
 
@@ -326,7 +326,7 @@ def test_analyze_returns_problem_metadata(
     tokenizer = ArithmeticTokenizer()
     runtime = FakeRuntime(
         tokenizer=tokenizer,
-        position_encoding="type_place",
+        position_encoding="fixed_meaning",
         analysis_runtime="native_pytorch",
         capabilities=RuntimeCapabilities(),
     )
@@ -346,7 +346,7 @@ def test_health_reports_runtime_mode_and_capabilities(monkeypatch) -> None:
     tokenizer = ArithmeticTokenizer()
     runtime = FakeRuntime(
         tokenizer=tokenizer,
-        position_encoding="type_place",
+        position_encoding="fixed_meaning",
         analysis_runtime="native_pytorch",
         capabilities=RuntimeCapabilities(),
     )
@@ -365,16 +365,18 @@ def test_health_reports_runtime_mode_and_capabilities(monkeypatch) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "ok"
-    assert payload["position_encoding"] == "type_place"
+    assert payload["position_encoding"] == "fixed_meaning"
     assert payload["analysis_runtime"] == "native_pytorch"
     assert payload["capabilities"]["network_analysis"] is True
 
 
-def test_analyze_type_place_runtime_reports_limited_capabilities(monkeypatch) -> None:
+def test_analyze_fixed_meaning_runtime_reports_limited_capabilities(
+    monkeypatch,
+) -> None:
     tokenizer = ArithmeticTokenizer()
     runtime = FakeRuntime(
         tokenizer=tokenizer,
-        position_encoding="type_place",
+        position_encoding="fixed_meaning",
         analysis_runtime="native_pytorch",
         capabilities=RuntimeCapabilities(
             attention_view=False,
@@ -397,7 +399,7 @@ def test_analyze_type_place_runtime_reports_limited_capabilities(monkeypatch) ->
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["position_encoding"] == "type_place"
+    assert payload["position_encoding"] == "fixed_meaning"
     assert payload["analysis_runtime"] == "native_pytorch"
     assert payload["capabilities"]["attention_view"] is False
     assert payload["capabilities"]["network_analysis"] is False
@@ -412,7 +414,7 @@ def test_export_runner_returns_analysis_and_health(monkeypatch) -> None:
     tokenizer = ArithmeticTokenizer()
     runtime = FakeRuntime(
         tokenizer=tokenizer,
-        position_encoding="type_place",
+        position_encoding="fixed_meaning",
         analysis_runtime="native_pytorch",
         capabilities=RuntimeCapabilities(),
     )
@@ -438,7 +440,7 @@ def test_export_endpoint_returns_zip_bundle(monkeypatch) -> None:
     tokenizer = ArithmeticTokenizer()
     runtime = FakeRuntime(
         tokenizer=tokenizer,
-        position_encoding="type_place",
+        position_encoding="fixed_meaning",
         analysis_runtime="native_pytorch",
         capabilities=RuntimeCapabilities(),
     )
@@ -469,7 +471,7 @@ def test_export_endpoint_native_runtime_uses_placeholder_assets(monkeypatch) -> 
     tokenizer = ArithmeticTokenizer()
     runtime = FakeRuntime(
         tokenizer=tokenizer,
-        position_encoding="type_place",
+        position_encoding="fixed_meaning",
         analysis_runtime="native_pytorch",
         capabilities=RuntimeCapabilities(
             attention_view=False,
@@ -501,7 +503,7 @@ def test_export_endpoint_native_runtime_uses_placeholder_assets(monkeypatch) -> 
     assert "network_mlp" in manifest
 
 
-def test_load_hooked_resources_rejects_type_place_checkpoints(monkeypatch) -> None:
+def test_load_checkpoint_artifacts_rejects_type_place_checkpoints(monkeypatch) -> None:
     tokenizer = ArithmeticTokenizer()
 
     monkeypatch.setattr(
@@ -519,15 +521,9 @@ def test_load_hooked_resources_rejects_type_place_checkpoints(monkeypatch) -> No
                 "mlp_hidden": 32,
                 "dropout": 0.0,
                 "position_encoding": "type_place",
-                "token_type_vocab_size": 3,
-                "place_vocab_size": 9,
             },
         },
     )
 
-    try:
-        model_utils.load_hooked_resources(Path("dummy.pt"))
-    except ValueError as error:
-        assert "TransformerLens backend support is unavailable" in str(error)
-    else:
-        raise AssertionError("expected type_place checkpoints to be rejected")
+    with pytest.raises(ValueError, match="unsupported checkpoint position encoding"):
+        model_utils.load_checkpoint_artifacts(Path("dummy.pt"))
