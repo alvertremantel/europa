@@ -75,8 +75,11 @@ def load_checkpoint_artifacts(
 def load_native_resources(
     checkpoint_path: Path,
     device: str = "cpu",
+    *,
+    artifacts: CheckpointArtifacts | None = None,
 ) -> tuple[SmallCausalTransformer, ArithmeticTokenizer, dict[str, Any]]:
-    artifacts = load_checkpoint_artifacts(checkpoint_path, device=device)
+    if artifacts is None:
+        artifacts = load_checkpoint_artifacts(checkpoint_path, device=device)
     model = SmallCausalTransformer(
         _build_model_config(artifacts.model_config),
         tokenizer=artifacts.tokenizer,

@@ -128,6 +128,24 @@ class ArithmeticTokenizer:
         flush_digit_run()
         return values
 
+    def fixed_meaning_digit_place_value_after_prefix(
+        self,
+        prefix_token_ids: Sequence[int],
+        token_id: int,
+    ) -> float:
+        token = self.id_to_token[token_id]
+        if not token.isdigit():
+            return 0.0
+
+        digit_place = 1
+        for previous_token_id in reversed(prefix_token_ids):
+            if not self.id_to_token[previous_token_id].isdigit():
+                break
+            digit_place += 1
+            if digit_place >= FIXED_MEANING_MAX_DIGIT_PLACE:
+                break
+        return min(digit_place, FIXED_MEANING_MAX_DIGIT_PLACE) / 10.0
+
     def _encode_canonical_fields(
         self, fields: Sequence[str], *, include_eos: bool
     ) -> list[int]:

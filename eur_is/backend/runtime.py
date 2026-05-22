@@ -190,7 +190,11 @@ class BaseCheckpointRuntime(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _next_token_logits(self, generated_token_ids: list[int]) -> torch.Tensor:
+    def _next_token_logits(
+        self,
+        generated_token_ids: list[int],
+        generated_digit_place_values: list[float],
+    ) -> torch.Tensor:
         raise NotImplementedError
 
     def _generate_answer_details(
@@ -202,11 +206,19 @@ class BaseCheckpointRuntime(ABC):
         max_generated_answer_tokens: int,
     ) -> tuple[GeneratedAnswerSummary, list[GeneratedAnswerTokenSummary]]:
         generated_token_ids = list(prompt_token_ids)
+        generated_digit_place_values = (
+            self.tokenizer.fixed_meaning_digit_place_values_for_token_ids(
+                generated_token_ids
+            )
+        )
         answer_token_ids: list[int] = []
         answer_top_k: list[GeneratedAnswerTokenSummary] = []
 
         for _ in range(max_generated_answer_tokens):
-            step_logits = self._next_token_logits(generated_token_ids)
+            step_logits = self._next_token_logits(
+                generated_token_ids,
+                generated_digit_place_values,
+            )
             step_probs = torch.softmax(step_logits, dim=-1)
             ranked = build_ranked_predictions_for_distribution(
                 probs=step_probs.numpy(),
@@ -217,7 +229,14 @@ class BaseCheckpointRuntime(ABC):
             next_token_id = int(step_logits.argmax().item())
             if next_token_id == self.tokenizer.eos_id:
                 break
+            next_digit_place = (
+                self.tokenizer.fixed_meaning_digit_place_value_after_prefix(
+                    generated_token_ids,
+                    next_token_id,
+                )
+            )
             generated_token_ids.append(next_token_id)
+            generated_digit_place_values.append(next_digit_place)
             answer_token_ids.append(next_token_id)
             answer_top_k.append(
                 {
@@ -279,7 +298,7 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
             device=self.device,
         )
         with HookRegistry(self.model) as hooks:
-            with torch.no_grad():
+            with torch.inference_mode():
                 logits = self.model(input_tensor, digit_place_tensor)
         if len(hooks.capture.layer_outputs) != self.n_layers:
             raise RuntimeError("native runtime did not capture all transformer layers")
@@ -297,13 +316,13 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
             network_source=None,
         )
 
-    def _next_token_logits(self, generated_token_ids: list[int]) -> torch.Tensor:
+    def _next_token_logits(
+        self,
+        generated_token_ids: list[int],
+        generated_digit_place_values: list[float],
+    ) -> torch.Tensor:
         window_token_ids = generated_token_ids[-self.context_window :]
-        digit_place_values = (
-            self.tokenizer.fixed_meaning_digit_place_values_for_token_ids(
-                generated_token_ids
-            )[-self.context_window :]
-        )
+        digit_place_values = generated_digit_place_values[-self.context_window :]
         window = torch.tensor(
             window_token_ids,
             dtype=torch.long,
@@ -314,7 +333,8 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
             dtype=torch.float32,
             device=self.device,
         )
-        return self.model(window, digit_place_tensor)[0, -1].detach().cpu()
+        with torch.inference_mode():
+            return self.model(window, digit_place_tensor)[0, -1].detach().cpu()
 
 
 def load_checkpoint_runtime(
@@ -325,7 +345,7 @@ def load_checkpoint_runtime(
     artifacts = load_checkpoint_artifacts(checkpoint_path, device=device)
     if artifacts.position_encoding == POSITION_ENCODING_FIXED_MEANING:
         model, tokenizer, metadata = load_native_resources(
-            checkpoint_path, device=device
+            checkpoint_path, device=device, artifacts=artifacts
         )
         return NativeTransformerRuntime(
             checkpoint_path=checkpoint_path,

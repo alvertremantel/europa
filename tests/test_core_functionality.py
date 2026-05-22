@@ -25,7 +25,11 @@ from eur_ts.trainer.fixed_meaning import (
     fixed_meaning_width,
 )
 from eur_ts.trainer.formatting import final_answer_from_line, format_training_line
-from eur_ts.trainer.inference import sample_exact_match_probe
+from eur_ts.trainer.inference import (
+    generate_completion,
+    generate_completions,
+    sample_exact_match_probe,
+)
 from eur_ts.trainer.model import SmallCausalTransformer
 from eur_ts.trainer.training.checkpointing import _model_config_from_payload
 
@@ -130,6 +134,50 @@ def test_fixed_meaning_digit_place_encoding_restarts_for_each_number() -> None:
     assert digit_place_values == pytest.approx(
         [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] * 2
     )
+
+
+def test_incremental_digit_place_matches_full_recompute() -> None:
+    tokenizer = ArithmeticTokenizer()
+    prefix = [tokenizer.token_to_id[token] for token in "12"]
+    next_ids = [tokenizer.token_to_id[token] for token in "345"]
+
+    token_ids = list(prefix)
+    incremental_values: list[float] = []
+    for next_id in next_ids:
+        incremental_values.append(
+            tokenizer.fixed_meaning_digit_place_value_after_prefix(token_ids, next_id)
+        )
+        token_ids.append(next_id)
+
+    full_values = tokenizer.fixed_meaning_digit_place_values_for_token_ids(token_ids)
+    assert incremental_values == full_values[-len(next_ids) :]
+
+
+def test_batched_generation_matches_single_prompt_generation() -> None:
+    tokenizer = ArithmeticTokenizer()
+    config = ModelConfig(
+        vocab_size=tokenizer.vocab_size,
+        sequence_length=32,
+        d_model=fixed_meaning_width(),
+        n_heads=1,
+        n_layers=1,
+        mlp_hidden=32,
+        dropout=0.0,
+        position_encoding=POSITION_ENCODING_FIXED_MEANING,
+    )
+    model = SmallCausalTransformer(config, tokenizer=tokenizer).eval()
+    prompts = [
+        "<do> <calc> 30000000 + 40000000 =",
+        "<do> <calc> 50000000 - 20000000 =",
+    ]
+
+    single = [
+        generate_completion(model, tokenizer, prompt, 3, torch.device("cpu"))
+        for prompt in prompts
+    ]
+    batched = generate_completions(model, tokenizer, prompts, 3, torch.device("cpu"))
+
+    assert batched == single
 
 
 def test_fixed_meaning_datasets_emit_digit_place_batches() -> None:

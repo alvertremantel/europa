@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import os
 import shutil
 import tempfile
 from dataclasses import asdict
@@ -199,7 +200,9 @@ class CheckpointManager:
         self._write_alias(self.last_alias_path, path)
 
         best_record = self._best_record(records)
-        if best_record is not None:
+        if best_record is not None and (
+            best_record is record or not self.best_alias_path.exists()
+        ):
             self._write_alias(
                 self.best_alias_path,
                 self.checkpoint_dir / str(best_record["path"]),
@@ -276,14 +279,35 @@ class CheckpointManager:
 
     def _write_alias(self, alias_path: Path, target_path: Path) -> None:
         alias_path.parent.mkdir(parents=True, exist_ok=True)
-        with tempfile.NamedTemporaryFile(dir=alias_path.parent, delete=False) as handle:
+        try:
+            if alias_path.exists() and alias_path.samefile(target_path):
+                return
+        except OSError:
+            pass
+
+        with tempfile.NamedTemporaryFile(
+            dir=alias_path.parent, prefix=f".{alias_path.name}.", delete=False
+        ) as handle:
             tmp_path = Path(handle.name)
         try:
-            shutil.copy2(target_path, tmp_path)
+            tmp_path.unlink(missing_ok=True)
+            if not self._try_symlink_alias(tmp_path, target_path):
+                try:
+                    os.link(target_path, tmp_path)
+                except OSError:
+                    shutil.copy2(target_path, tmp_path)
             tmp_path.replace(alias_path)
         finally:
             if tmp_path.exists():
                 tmp_path.unlink(missing_ok=True)
+
+    def _try_symlink_alias(self, tmp_path: Path, target_path: Path) -> bool:
+        try:
+            relative_target = os.path.relpath(target_path, start=tmp_path.parent)
+            tmp_path.symlink_to(relative_target)
+        except OSError:
+            return False
+        return True
 
     def _write_manifest(self, manifest: dict[str, object]) -> None:
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)

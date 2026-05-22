@@ -55,6 +55,7 @@ def generate_completion(
     digit_place_values = tokenizer.fixed_meaning_digit_place_values_for_token_ids(
         token_ids
     )
+    generated_token_ids = list(token_ids)
     generated = torch.tensor(token_ids, dtype=torch.long, device=device).unsqueeze(0)
     generated_digit_places = torch.tensor(
         [digit_place_values], dtype=torch.float32, device=device
@@ -65,18 +66,104 @@ def generate_completion(
         window_digit_places = generated_digit_places[:, -model.config.sequence_length :]
         logits = model(window, window_digit_places)
         next_token_id = logits[:, -1].argmax(dim=-1, keepdim=True)
+        next_token_id_int = int(next_token_id.item())
+        next_digit_place = tokenizer.fixed_meaning_digit_place_value_after_prefix(
+            generated_token_ids,
+            next_token_id_int,
+        )
+        generated_token_ids.append(next_token_id_int)
         generated = torch.cat((generated, next_token_id), dim=1)
-        updated_digit_places = tokenizer.fixed_meaning_digit_place_values_for_token_ids(
-            generated.squeeze(0).tolist()
+        next_digit_place_tensor = torch.tensor(
+            [[next_digit_place]], dtype=torch.float32, device=device
         )
-        generated_digit_places = torch.tensor(
-            [updated_digit_places], dtype=torch.float32, device=device
+        generated_digit_places = torch.cat(
+            (generated_digit_places, next_digit_place_tensor), dim=1
         )
-        if next_token_id.item() == tokenizer.eos_id:
+        if next_token_id_int == tokenizer.eos_id:
             break
 
-    answer_ids = generated.squeeze(0).tolist()[len(token_ids) :]
+    answer_ids = generated_token_ids[len(token_ids) :]
     return extract_final_answer(tokenizer.decode_answer_tokens(answer_ids))
+
+
+@torch.inference_mode()
+def generate_completions(
+    model: SmallCausalTransformer,
+    tokenizer: ArithmeticTokenizer,
+    prompts: list[str],
+    max_new_tokens: int,
+    device: torch.device,
+) -> list[str]:
+    model.eval()
+    if not prompts:
+        return []
+    prompt_token_ids = [tokenizer.encode_prompt(prompt) for prompt in prompts]
+    generated_token_ids = [list(token_ids) for token_ids in prompt_token_ids]
+    generated_digit_places = [
+        tokenizer.fixed_meaning_digit_place_values_for_token_ids(token_ids)
+        for token_ids in generated_token_ids
+    ]
+    done = [False] * len(prompts)
+
+    for _ in range(max_new_tokens):
+        if all(done):
+            break
+
+        active_indices = [index for index, is_done in enumerate(done) if not is_done]
+        windows = [
+            generated_token_ids[index][-model.config.sequence_length :]
+            for index in active_indices
+        ]
+        window_digit_places = [
+            generated_digit_places[index][-model.config.sequence_length :]
+            for index in active_indices
+        ]
+        lengths = [len(window) for window in windows]
+        max_length = max(lengths)
+        padded_windows = [
+            [*window, *([tokenizer.pad_id] * (max_length - len(window)))]
+            for window in windows
+        ]
+        padded_digit_places = [
+            [*digit_places, *([0.0] * (max_length - len(digit_places)))]
+            for digit_places in window_digit_places
+        ]
+        input_tensor = torch.tensor(padded_windows, dtype=torch.long, device=device)
+        digit_place_tensor = torch.tensor(
+            padded_digit_places,
+            dtype=torch.float32,
+            device=device,
+        )
+        logits = model(input_tensor, digit_place_tensor)
+        row_indices = torch.arange(len(active_indices), device=device)
+        position_indices = torch.tensor(
+            [length - 1 for length in lengths],
+            dtype=torch.long,
+            device=device,
+        )
+        next_token_ids = logits[row_indices, position_indices].argmax(dim=-1).tolist()
+
+        for row_index, next_token_id in zip(
+            active_indices, next_token_ids, strict=True
+        ):
+            next_digit_place = tokenizer.fixed_meaning_digit_place_value_after_prefix(
+                generated_token_ids[row_index],
+                next_token_id,
+            )
+            generated_token_ids[row_index].append(next_token_id)
+            generated_digit_places[row_index].append(next_digit_place)
+            if next_token_id == tokenizer.eos_id:
+                done[row_index] = True
+
+    completions: list[str] = []
+    for token_ids, prompt_ids in zip(
+        generated_token_ids, prompt_token_ids, strict=True
+    ):
+        answer_ids = token_ids[len(prompt_ids) :]
+        completions.append(
+            extract_final_answer(tokenizer.decode_answer_tokens(answer_ids))
+        )
+    return completions
 
 
 def sample_exact_match_probe(
@@ -99,15 +186,17 @@ def evaluate_exact_match_lines(
     if not examples:
         return 0.0
 
+    prompts = [prompt_from_line(example) for example in examples]
+    predictions = generate_completions(
+        model=model,
+        tokenizer=tokenizer,
+        prompts=prompts,
+        max_new_tokens=max_new_tokens,
+        device=device,
+    )
+
     correct = 0
-    for example in examples:
-        prediction = generate_completion(
-            model=model,
-            tokenizer=tokenizer,
-            prompt=prompt_from_line(example),
-            max_new_tokens=max_new_tokens,
-            device=device,
-        )
-        if extract_final_answer(prediction) == answer_from_line(example):
+    for example, prediction in zip(examples, predictions, strict=True):
+        if prediction == answer_from_line(example):
             correct += 1
     return correct / len(examples)

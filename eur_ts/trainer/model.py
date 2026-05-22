@@ -43,9 +43,6 @@ class FixedMeaningEmbedding(nn.Module):
     ) -> Tensor:
         embeddings = F.embedding(input_ids, self.weight)
         is_digit = self.digit_token_mask[input_ids]
-        if not torch.any(is_digit):
-            return embeddings
-
         if digit_place_values is None:
             place_values = _local_digit_place_values(is_digit, dtype=embeddings.dtype)
         else:
@@ -83,17 +80,7 @@ class TransformerBlock(nn.Module):
             nn.Dropout(config.dropout),
         )
 
-    def forward(self, hidden_states: Tensor) -> Tensor:
-        sequence_length = hidden_states.size(1)
-        causal_mask = torch.triu(
-            torch.ones(
-                sequence_length,
-                sequence_length,
-                device=hidden_states.device,
-                dtype=torch.bool,
-            ),
-            diagonal=1,
-        )
+    def forward(self, hidden_states: Tensor, causal_mask: Tensor) -> Tensor:
         normalized = self.norm_1(hidden_states)
         attended, _ = self.attention(
             normalized,
@@ -132,6 +119,15 @@ class SmallCausalTransformer(nn.Module):
         )
         self.final_norm = nn.LayerNorm(d_model)
         self.lm_head = nn.Linear(d_model, config.vocab_size, bias=False)
+        causal_mask = torch.triu(
+            torch.ones(
+                config.sequence_length,
+                config.sequence_length,
+                dtype=torch.bool,
+            ),
+            diagonal=1,
+        )
+        self.register_buffer("causal_mask", causal_mask, persistent=False)
 
     def forward(
         self,
@@ -145,8 +141,9 @@ class SmallCausalTransformer(nn.Module):
             )
         hidden_states = self.token_embedding(input_ids, digit_place_values)
         hidden_states = self.dropout(hidden_states)
+        causal_mask = cast(Tensor, self.causal_mask)[:sequence_length, :sequence_length]
         for block in self.blocks:
-            hidden_states = block(hidden_states)
+            hidden_states = block(hidden_states, causal_mask)
         hidden_states = self.final_norm(hidden_states)
         logits = self.lm_head(hidden_states)
         if logits.shape[:2] != (batch_size, sequence_length):
