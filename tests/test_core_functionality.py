@@ -83,9 +83,13 @@ def test_small_transformer_fixed_meaning_forward_shape() -> None:
     model = SmallCausalTransformer(config, tokenizer=tokenizer).eval()
     input_token_ids = tokenizer.encode_prompt("<do> <calc> 30000000 + 40000000 =")
     input_ids = torch.tensor([input_token_ids], dtype=torch.long)
+    input_digit_places = torch.tensor(
+        [tokenizer.fixed_meaning_digit_place_values_for_token_ids(input_token_ids)],
+        dtype=torch.float32,
+    )
 
     with torch.no_grad():
-        logits = model(input_ids)
+        logits = model(input_ids, input_digit_places)
 
     assert logits.shape == (1, input_ids.shape[1], tokenizer.vocab_size)
     assert model.token_embedding.weight.requires_grad is False
@@ -110,9 +114,13 @@ def test_fixed_meaning_digit_place_encoding_restarts_for_each_number() -> None:
     model = SmallCausalTransformer(config, tokenizer=tokenizer).eval()
     token_ids = tokenizer.encode_prompt("<do> <calc> 30000000 + 40000000 =")
     input_ids = torch.tensor([token_ids], dtype=torch.long)
+    input_digit_places = torch.tensor(
+        [tokenizer.fixed_meaning_digit_place_values_for_token_ids(token_ids)],
+        dtype=torch.float32,
+    )
 
     with torch.no_grad():
-        embeddings = model.token_embedding(input_ids)
+        embeddings = model.token_embedding(input_ids, input_digit_places)
 
     digit_place_values = [
         embeddings[0, index, FIXED_MEANING_DIGIT_PLACE_DIMENSION].item()
@@ -124,13 +132,21 @@ def test_fixed_meaning_digit_place_encoding_restarts_for_each_number() -> None:
     )
 
 
-def test_fixed_meaning_datasets_emit_token_only_batches() -> None:
+def test_fixed_meaning_datasets_emit_digit_place_batches() -> None:
     tokenizer = ArithmeticTokenizer()
     line = "<do> <calc> 30000000 + 40000000 = 70000000"
     token_ids = tokenizer.encode_line(line)
-    block_dataset = TokenBlockDataset(token_ids * 2, sequence_length=8)
+    stream_token_ids = token_ids * 2
+    stream_digit_places = tokenizer.fixed_meaning_digit_place_values_for_token_ids(
+        stream_token_ids
+    )
+    block_dataset = TokenBlockDataset(
+        stream_token_ids,
+        stream_digit_places,
+        sequence_length=8,
+    )
     block_item = block_dataset[0]
-    assert len(block_item) == 2
+    assert len(block_item) == 3
 
     example = ArithmeticExample(
         line=line,
@@ -144,24 +160,39 @@ def test_fixed_meaning_datasets_emit_token_only_batches() -> None:
         position_encoding=POSITION_ENCODING_FIXED_MEANING,
     )
     example_item = example_dataset[0]
-    assert len(example_item) == 3
+    assert len(example_item) == 4
+
+
+def test_token_stream_digit_places_are_computed_before_block_slicing() -> None:
+    tokenizer = ArithmeticTokenizer()
+    line = "<do> <calc> 12345678 + 87654321 = 99999999"
+    token_ids = tokenizer.encode_line(line)
+    digit_place_values = tokenizer.fixed_meaning_digit_place_values_for_token_ids(
+        token_ids
+    )
+    dataset = TokenBlockDataset(token_ids, digit_place_values, sequence_length=16)
+
+    input_ids, input_digit_places, _ = dataset[1]
+    input_tokens = [tokenizer.id_to_token[token_id] for token_id in input_ids.tolist()]
+
+    assert input_tokens[:5] == ["5", "4", "3", "2", "1"]
+    assert input_digit_places[:5].tolist() == pytest.approx([0.4, 0.5, 0.6, 0.7, 0.8])
 
 
 def test_fixed_meaning_rejects_d_model_mismatch() -> None:
     tokenizer = ArithmeticTokenizer()
-    config = ModelConfig(
-        vocab_size=tokenizer.vocab_size,
-        sequence_length=32,
-        d_model=fixed_meaning_width() + 1,
-        n_heads=1,
-        n_layers=1,
-        mlp_hidden=32,
-        dropout=0.0,
-        position_encoding=POSITION_ENCODING_FIXED_MEANING,
-    )
 
-    with pytest.raises(ValueError, match="fixed_meaning d_model"):
-        SmallCausalTransformer(config, tokenizer=tokenizer)
+    with pytest.raises(ValueError, match="fixed_meaning position_encoding"):
+        ModelConfig(
+            vocab_size=tokenizer.vocab_size,
+            sequence_length=32,
+            d_model=fixed_meaning_width() + 1,
+            n_heads=1,
+            n_layers=1,
+            mlp_hidden=32,
+            dropout=0.0,
+            position_encoding=POSITION_ENCODING_FIXED_MEANING,
+        )
 
 
 def test_type_place_position_encoding_is_rejected() -> None:

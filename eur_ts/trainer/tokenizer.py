@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from .fixed_meaning import SPECIAL_FIELD_TOKENS
+from .fixed_meaning import FIXED_MEANING_MAX_DIGIT_PLACE, SPECIAL_FIELD_TOKENS
 
 BASE_VOCAB_TOKENS = [
     "<pad>",
@@ -104,6 +104,29 @@ class ArithmeticTokenizer:
     def encode_prompt(self, prompt: str) -> list[int]:
         fields = _normalize_prompt_fields(prompt)
         return self._encode_canonical_fields(fields, include_eos=False)
+
+    def fixed_meaning_digit_place_values_for_token_ids(
+        self,
+        token_ids: Sequence[int],
+    ) -> list[float]:
+        values = [0.0] * len(token_ids)
+        digit_run: list[int] = []
+
+        def flush_digit_run() -> None:
+            if not digit_run:
+                return
+            for place, token_index in enumerate(digit_run, start=1):
+                values[token_index] = min(place, FIXED_MEANING_MAX_DIGIT_PLACE) / 10.0
+            digit_run.clear()
+
+        for index, token_id in enumerate(token_ids):
+            token = self.id_to_token[token_id]
+            if token.isdigit():
+                digit_run.append(index)
+                continue
+            flush_digit_run()
+        flush_digit_run()
+        return values
 
     def _encode_canonical_fields(
         self, fields: Sequence[str], *, include_eos: bool

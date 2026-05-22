@@ -61,9 +61,17 @@ class MechanisticInterpreter:
         self.hook_registry.capture.input_ids = input_ids
         self.hook_registry.capture.batch_size = input_ids.shape[0]
         self.hook_registry.capture.sequence_length = input_ids.shape[1]
+        digit_place_values = torch.tensor(
+            [
+                self.tokenizer.fixed_meaning_digit_place_values_for_token_ids(row)
+                for row in input_ids.detach().cpu().tolist()
+            ],
+            dtype=torch.float32,
+            device=self.device,
+        )
 
         with torch.no_grad():
-            logits = self.model(input_ids)
+            logits = self.model(input_ids, digit_place_values)
 
         return logits, self.hook_registry.capture
 

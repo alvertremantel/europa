@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from eur_ts.config.templates import TRAIN_CONFIG_GUIDE, TRAIN_CONFIG_TEMPLATE
+from eur_ts.config.sizing import model_size_from_config
 from eur_ts.config.toml_io import load_train_config
 
 
@@ -79,6 +80,15 @@ def test_load_train_config_rejects_removed_type_place_position_encoding(
     )
 
     with pytest.raises(ValueError, match="position_encoding must be one of"):
+        load_train_config(path)
+
+
+def test_load_train_config_rejects_fixed_meaning_d_model_mismatch(
+    tmp_path: Path,
+) -> None:
+    path = write_config(tmp_path, VALID_TOML.replace("d_model = 12", "d_model = 16"))
+
+    with pytest.raises(ValueError, match="fixed_meaning position_encoding"):
         load_train_config(path)
 
 
@@ -196,3 +206,8 @@ def test_template_and_guide_cover_key_variables() -> None:
     assert "fixed_meaning" in TRAIN_CONFIG_TEMPLATE
     assert "fixed_meaning" in TRAIN_CONFIG_GUIDE
     assert "type_place" not in TRAIN_CONFIG_GUIDE
+
+
+@pytest.mark.parametrize("path", sorted(Path("scripts/models").glob("*.toml")))
+def test_script_model_configs_are_constructible(path: Path) -> None:
+    model_size_from_config(load_train_config(path))

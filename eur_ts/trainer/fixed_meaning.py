@@ -57,7 +57,7 @@ def _digit_vector(value: float) -> tuple[float, ...]:
     return _vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, value, 0.0, 0.0, 0.0)
 
 
-# Aligned with fixed_meaning_plan.csv. For digit tokens, the authored math6 value is
+# Aligned with docs/fixed_meaning_plan.csv. For digit tokens, the authored math6 value is
 # intentionally dynamic and is filled at runtime from the digit's place within each
 # full reversed 8-digit numeral.
 FIXED_MEANING_TOKEN_VECTORS: dict[str, tuple[float, ...]] = {

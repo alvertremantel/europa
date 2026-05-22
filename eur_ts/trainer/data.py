@@ -15,6 +15,7 @@ from .datasets import (
     ExampleSequenceDataset,
     TokenBlockDataset,
     load_token_stream,
+    load_token_stream_with_digit_places,
 )
 
 __all__ = [
@@ -30,6 +31,7 @@ __all__ = [
     "TokenBlockDataset",
     "load_examples",
     "load_token_stream",
+    "load_token_stream_with_digit_places",
     "transform_examples",
     "vocab_for_training_format",
 ]

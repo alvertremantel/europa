@@ -29,6 +29,7 @@ class ModelConfig:
         _require_position_encoding(
             "ModelConfig.position_encoding", self.position_encoding
         )
+        _require_fixed_meaning_width("ModelConfig.d_model", self.d_model)
 
 
 @dataclass(frozen=True)
@@ -77,6 +78,7 @@ class TrainConfig:
         _require_position_encoding(
             "TrainConfig.position_encoding", self.position_encoding
         )
+        _require_fixed_meaning_width("TrainConfig.d_model", self.d_model)
 
 
 def _require_positive_int(name: str, value: int | None) -> None:
@@ -87,3 +89,13 @@ def _require_positive_int(name: str, value: int | None) -> None:
 def _require_position_encoding(name: str, value: str) -> None:
     if value != "fixed_meaning":
         raise ValueError(f"{name} must be 'fixed_meaning'")
+
+
+def _require_fixed_meaning_width(name: str, value: int) -> None:
+    from eur_ts.trainer.fixed_meaning import fixed_meaning_width
+
+    required_width = fixed_meaning_width()
+    if value != required_width:
+        raise ValueError(
+            f"{name} must be {required_width} for fixed_meaning position_encoding"
+        )

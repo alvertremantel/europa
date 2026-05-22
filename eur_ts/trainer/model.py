@@ -36,13 +36,25 @@ class FixedMeaningEmbedding(nn.Module):
     def digit_token_mask(self) -> Tensor:
         return cast(Tensor, self._digit_token_mask)
 
-    def forward(self, input_ids: Tensor) -> Tensor:
+    def forward(
+        self,
+        input_ids: Tensor,
+        digit_place_values: Tensor | None = None,
+    ) -> Tensor:
         embeddings = F.embedding(input_ids, self.weight)
         is_digit = self.digit_token_mask[input_ids]
         if not torch.any(is_digit):
             return embeddings
 
-        place_values = _digit_place_values(is_digit, dtype=embeddings.dtype)
+        if digit_place_values is None:
+            place_values = _local_digit_place_values(is_digit, dtype=embeddings.dtype)
+        else:
+            if digit_place_values.shape != input_ids.shape:
+                raise ValueError("digit_place_values shape must match input_ids")
+            place_values = digit_place_values.to(
+                device=embeddings.device,
+                dtype=embeddings.dtype,
+            )
         embeddings = embeddings.clone()
         embeddings[..., FIXED_MEANING_DIGIT_PLACE_DIMENSION] = torch.where(
             is_digit,
@@ -124,13 +136,14 @@ class SmallCausalTransformer(nn.Module):
     def forward(
         self,
         input_ids: Tensor,
+        digit_place_values: Tensor | None = None,
     ) -> Tensor:
         batch_size, sequence_length = input_ids.shape
         if sequence_length > self.config.sequence_length:
             raise ValueError(
                 f"sequence length {sequence_length} exceeds model limit {self.config.sequence_length}"
             )
-        hidden_states = self.token_embedding(input_ids)
+        hidden_states = self.token_embedding(input_ids, digit_place_values)
         hidden_states = self.dropout(hidden_states)
         for block in self.blocks:
             hidden_states = block(hidden_states)
@@ -141,7 +154,7 @@ class SmallCausalTransformer(nn.Module):
         return logits
 
 
-def _digit_place_values(is_digit: Tensor, *, dtype: torch.dtype) -> Tensor:
+def _local_digit_place_values(is_digit: Tensor, *, dtype: torch.dtype) -> Tensor:
     if is_digit.ndim != 2:
         raise ValueError(
             f"fixed_meaning digit-place encoding expects rank-2 input, got {tuple(is_digit.shape)}"

@@ -15,9 +15,13 @@ class TokenBlockDataset(Dataset[tuple[Tensor, ...]]):
     def __init__(
         self,
         token_ids: list[int],
+        digit_place_values: list[float],
         sequence_length: int,
     ) -> None:
+        if len(token_ids) != len(digit_place_values):
+            raise ValueError("token IDs and digit-place values must have equal length")
         self.data = torch.tensor(token_ids, dtype=torch.long)
+        self.digit_place_data = torch.tensor(digit_place_values, dtype=torch.float32)
         self.sequence_length = sequence_length
 
     def __len__(self) -> int:
@@ -27,7 +31,8 @@ class TokenBlockDataset(Dataset[tuple[Tensor, ...]]):
         start = index * self.sequence_length
         stop = start + self.sequence_length + 1
         chunk = self.data[start:stop]
-        return chunk[:-1], chunk[1:]
+        digit_place_chunk = self.digit_place_data[start:stop]
+        return chunk[:-1], digit_place_chunk[:-1], chunk[1:]
 
 
 class ExampleSequenceDataset(Dataset[tuple[Tensor, ...]]):
@@ -49,6 +54,9 @@ class ExampleSequenceDataset(Dataset[tuple[Tensor, ...]]):
 
         for example in examples:
             token_ids = tokenizer.encode_line(example.line)
+            digit_place_values = (
+                tokenizer.fixed_meaning_digit_place_values_for_token_ids(token_ids)
+            )
             if len(token_ids) > sequence_length + 1:
                 training_format = example.training_format or "unknown"
                 self.skipped_by_format[training_format] = (
@@ -63,12 +71,18 @@ class ExampleSequenceDataset(Dataset[tuple[Tensor, ...]]):
 
             padded = list(token_ids)
             padded.extend([tokenizer.pad_id] * (sequence_length + 1 - len(padded)))
+            padded_digit_places = list(digit_place_values)
+            padded_digit_places.extend(
+                [0.0] * (sequence_length + 1 - len(padded_digit_places))
+            )
             data = torch.tensor(padded, dtype=torch.long)
+            digit_place_data = torch.tensor(padded_digit_places, dtype=torch.float32)
             inputs = data[:-1]
+            input_digit_places = digit_place_data[:-1]
             targets = data[1:]
             loss_mask = targets.ne(tokenizer.pad_id)
             self.examples.append(example)
-            self.items.append((inputs, targets, loss_mask))
+            self.items.append((inputs, input_digit_places, targets, loss_mask))
 
         if not self.items:
             raise ValueError("no examples remain after sequence-length filtering")
@@ -88,3 +102,14 @@ def load_token_stream(file_path: Path, tokenizer: ArithmeticTokenizer) -> list[i
             if line:
                 token_ids.extend(tokenizer.encode_line(line))
     return token_ids
+
+
+def load_token_stream_with_digit_places(
+    file_path: Path,
+    tokenizer: ArithmeticTokenizer,
+) -> tuple[list[int], list[float]]:
+    token_ids = load_token_stream(file_path, tokenizer)
+    digit_place_values = tokenizer.fixed_meaning_digit_place_values_for_token_ids(
+        token_ids
+    )
+    return token_ids, digit_place_values

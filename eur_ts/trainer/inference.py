@@ -17,19 +17,21 @@ TRAINING_EXACT_MATCH_PROBE_SIZE = 50
 def loss_for_batch(
     model: SmallCausalTransformer,
     inputs: Tensor,
+    digit_place_values: Tensor,
     targets: Tensor,
 ) -> Tensor:
-    logits = model(inputs)
+    logits = model(inputs, digit_place_values)
     return F.cross_entropy(logits.reshape(-1, logits.size(-1)), targets.reshape(-1))
 
 
 def loss_for_example_batch(
     model: SmallCausalTransformer,
     input_ids: Tensor,
+    digit_place_values: Tensor,
     target_ids: Tensor,
     loss_mask: Tensor,
 ) -> Tensor:
-    logits = model(input_ids)
+    logits = model(input_ids, digit_place_values)
     token_loss = F.cross_entropy(
         logits.reshape(-1, logits.size(-1)),
         target_ids.reshape(-1),
@@ -50,13 +52,26 @@ def generate_completion(
 ) -> str:
     model.eval()
     token_ids = tokenizer.encode_prompt(prompt)
+    digit_place_values = tokenizer.fixed_meaning_digit_place_values_for_token_ids(
+        token_ids
+    )
     generated = torch.tensor(token_ids, dtype=torch.long, device=device).unsqueeze(0)
+    generated_digit_places = torch.tensor(
+        [digit_place_values], dtype=torch.float32, device=device
+    )
 
     for _ in range(max_new_tokens):
         window = generated[:, -model.config.sequence_length :]
-        logits = model(window)
+        window_digit_places = generated_digit_places[:, -model.config.sequence_length :]
+        logits = model(window, window_digit_places)
         next_token_id = logits[:, -1].argmax(dim=-1, keepdim=True)
         generated = torch.cat((generated, next_token_id), dim=1)
+        updated_digit_places = tokenizer.fixed_meaning_digit_place_values_for_token_ids(
+            generated.squeeze(0).tolist()
+        )
+        generated_digit_places = torch.tensor(
+            [updated_digit_places], dtype=torch.float32, device=device
+        )
         if next_token_id.item() == tokenizer.eos_id:
             break
 

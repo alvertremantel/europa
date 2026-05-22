@@ -269,9 +269,18 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
             dtype=torch.long,
             device=self.device,
         ).unsqueeze(0)
+        digit_place_tensor = torch.tensor(
+            [
+                self.tokenizer.fixed_meaning_digit_place_values_for_token_ids(
+                    prompt_token_ids
+                )
+            ],
+            dtype=torch.float32,
+            device=self.device,
+        )
         with HookRegistry(self.model) as hooks:
             with torch.no_grad():
-                logits = self.model(input_tensor)
+                logits = self.model(input_tensor, digit_place_tensor)
         if len(hooks.capture.layer_outputs) != self.n_layers:
             raise RuntimeError("native runtime did not capture all transformer layers")
         stacked_activations = np.stack(
@@ -290,12 +299,22 @@ class NativeTransformerRuntime(BaseCheckpointRuntime):
 
     def _next_token_logits(self, generated_token_ids: list[int]) -> torch.Tensor:
         window_token_ids = generated_token_ids[-self.context_window :]
+        digit_place_values = (
+            self.tokenizer.fixed_meaning_digit_place_values_for_token_ids(
+                generated_token_ids
+            )[-self.context_window :]
+        )
         window = torch.tensor(
             window_token_ids,
             dtype=torch.long,
             device=self.device,
         ).unsqueeze(0)
-        return self.model(window)[0, -1].detach().cpu()
+        digit_place_tensor = torch.tensor(
+            [digit_place_values],
+            dtype=torch.float32,
+            device=self.device,
+        )
+        return self.model(window, digit_place_tensor)[0, -1].detach().cpu()
 
 
 def load_checkpoint_runtime(

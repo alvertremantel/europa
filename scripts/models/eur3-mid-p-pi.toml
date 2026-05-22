@@ -16,7 +16,7 @@ additional_epochs = "" # optional; blank trains for optimization.epochs total
 
 [model]
 sequence_length = "64"
-d_model = "6"
+d_model = "12"
 n_heads = "2"
 n_layers = "10"
 mlp_hidden = "100"

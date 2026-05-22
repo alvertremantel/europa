@@ -18,7 +18,7 @@ from ..data import (
     ArithmeticExample,
     ExampleSequenceDataset,
     TokenBlockDataset,
-    load_token_stream,
+    load_token_stream_with_digit_places,
     load_examples,
     transform_examples,
 )
@@ -122,9 +122,12 @@ def train_model(config: TrainConfig) -> None:
             raise ValueError(
                 'curriculum presets require training.training_mode = "examples"'
             )
-        train_tokens = load_token_stream(data_dir / "train.txt", tokenizer)
+        train_tokens, train_digit_places = load_token_stream_with_digit_places(
+            data_dir / "train.txt", tokenizer
+        )
         train_dataset = TokenBlockDataset(
             train_tokens,
+            train_digit_places,
             effective_model_config.sequence_length,
         )
         if len(train_dataset) == 0:
@@ -280,11 +283,14 @@ def train_model(config: TrainConfig) -> None:
 
         for step, batch in enumerate(train_loader, start=1):
             if config.training_mode == "examples":
-                inputs, targets, loss_mask = batch
+                inputs, input_digit_places, targets, loss_mask = batch
             else:
-                inputs, targets = batch
+                inputs, input_digit_places, targets = batch
                 loss_mask = None
             inputs = inputs.to(device, non_blocking=device.type == "cuda")
+            input_digit_places = input_digit_places.to(
+                device, non_blocking=device.type == "cuda"
+            )
             targets = targets.to(device, non_blocking=device.type == "cuda")
             if loss_mask is not None:
                 loss_mask = loss_mask.to(device, non_blocking=device.type == "cuda")
@@ -294,12 +300,14 @@ def train_model(config: TrainConfig) -> None:
                 loss = loss_for_batch(
                     model,
                     inputs,
+                    input_digit_places,
                     targets,
                 )
             else:
                 loss = loss_for_example_batch(
                     model,
                     inputs,
+                    input_digit_places,
                     targets,
                     loss_mask,
                 ).mean()
