@@ -70,7 +70,11 @@ Use them to understand fields and inspect derived model-size metrics before laun
 ```toml
 [model_size]
 total_parameters = 4760000
-total_virtual_neurons = 393216
+trainable_parameters = 4760000
+frozen_parameters = 0
+buffer_values = 4096
+total_mlp_neurons = 6144
+total_mlp_activation_sites_per_sequence = 393216
 ```
 
 ## 3. Train a model

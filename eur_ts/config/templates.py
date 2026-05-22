@@ -101,7 +101,10 @@ Training-time model selection
 - All physical epoch checkpoints are retained under `output_dir/checkpoints/`.
 
 Derived size metrics
-- total_parameters: Sum of all trainable and non-trainable model parameter tensors in SmallCausalTransformer.
-- total_virtual_neurons: n_layers * sequence_length * mlp_hidden.
-  A virtual neuron means one MLP hidden unit at one sequence position in one transformer block.
+- total_parameters: Sum of all model parameter tensors in SmallCausalTransformer.
+- trainable_parameters / frozen_parameters: Parameter tensors split by requires_grad.
+- buffer_values: Non-parameter tensor values stored in model buffers, such as the fixed-meaning embedding table and causal mask.
+- total_mlp_neurons: n_layers * mlp_hidden. These are the reusable MLP hidden units in the architecture.
+- total_mlp_activation_sites_per_sequence: n_layers * sequence_length * mlp_hidden.
+  This is a per-forward-pass activation-site capacity, not a parameter or neuron count.
 """

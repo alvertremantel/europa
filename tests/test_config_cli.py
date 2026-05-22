@@ -93,7 +93,11 @@ def test_config_size_prints_toml(
     payload = tomllib.loads(capsys.readouterr().out)["model_size"]
 
     assert payload["total_parameters"] > 0
-    assert payload["total_virtual_neurons"] == 1 * 32 * 32
+    assert payload["trainable_parameters"] == payload["total_parameters"]
+    assert payload["frozen_parameters"] == 0
+    assert payload["buffer_values"] > 0
+    assert payload["total_mlp_neurons"] == 1 * 32
+    assert payload["total_mlp_activation_sites_per_sequence"] == 1 * 32 * 32
     assert payload["n_layers"] == 1
 
 
