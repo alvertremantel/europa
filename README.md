@@ -28,7 +28,7 @@ The result is a workflow aimed at mechanistic understanding rather than benchmar
 
 ### ETS — Europa Training Suite
 
-`eur_ts/` contains the canonical Python tooling for dataset generation, training, prediction, evaluation, and programmatic interpretability.
+`src/eis/` contains the canonical Python tooling for dataset generation, training, prediction, evaluation, programmatic interpretability, and the unified `eis` CLI.
 
 Core responsibilities:
 
@@ -39,7 +39,7 @@ Core responsibilities:
 
 ### ITS — Europa Interpretability Suite
 
-`eur_is/` contains the interactive analysis app:
+`src/eis/app/` contains the interactive analysis app:
 
 - **FastAPI backend** for checkpoint-backed inference and analysis payloads.
 - **React/Vite frontend** for inspecting tokens, heads, activations, logits, and network summaries.
@@ -60,10 +60,10 @@ Datasets span categories such as binary arithmetic, three-input expressions, par
 
 The codebase is organized so model lifecycle stages stay separate but compatible:
 
-- `eur_ts/generator/` defines the synthetic world,
-- `eur_ts/trainer/` learns that world,
-- `eur_ts/evaluator/` measures what was learned,
-- `eur_is/` helps inspect the learned circuits.
+- `src/eis/data/` defines the synthetic world,
+- `src/eis/train/` learns that world,
+- `src/eis/eval/` measures what was learned,
+- `src/eis/app/` helps inspect the learned circuits.
 
 Checkpoints are self-contained and carry model architecture plus tokenizer state, which makes them the bridge between the training and interpretability sides of the repository.
 
@@ -80,10 +80,24 @@ Minimal setup:
 uv sync
 ```
 
+Recommended CLI surface:
+
+```bash
+uv run eis data generate --output-dir data/my-dataset
+uv run eis config new
+uv run eis train run train-config.toml
+uv run eis train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 ="
+uv run eis eval run --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
+uv run eis app serve --reload
+uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export.zip --zip
+```
+
+Legacy command aliases remain available for compatibility.
+
 Headless ITS export:
 
 ```bash
-uv run its-export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export.zip --zip
+uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export.zip --zip
 ```
 
 ## Where to go next
@@ -94,8 +108,8 @@ uv run its-export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <ca
 ## Repository map
 
 ```text
-eur_ts/   Training, generation, evaluation, interpreter utilities
-eur_is/   FastAPI backend and React frontend for interactive analysis
+src/eis/   Training, generation, evaluation, interpreter utilities
+src/eis/app/   FastAPI backend and React frontend for interactive analysis
 tests/    Smoke tests for canonical behavior
 info/     Research notes and supporting documentation
 ```

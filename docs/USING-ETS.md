@@ -8,7 +8,14 @@ ETS (the **Europa Training Suite**) is the command-line and Python-side workflow
 uv sync
 ```
 
-Use the packaged entrypoints only:
+Preferred entrypoints:
+
+- `uv run eis data generate`
+- `uv run eis config new|guide|size`
+- `uv run eis train run|predict`
+- `uv run eis eval run`
+
+Legacy aliases still exist for compatibility:
 
 - `uv run generate`
 - `uv run config`
@@ -20,7 +27,7 @@ Do not expect legacy top-level scripts such as `python generate.py` to exist.
 ## 1. Generate a dataset
 
 ```bash
-uv run generate --output-dir data/my-dataset --seed 42
+uv run eis data generate --output-dir data/my-dataset --seed 42
 ```
 
 This writes:
@@ -52,7 +59,7 @@ Problem families include:
 ## 2. Create a training config
 
 ```bash
-uv run config --new
+uv run eis config new
 ```
 
 This creates `train-config.toml` in the current directory. The file is the canonical interface for training runs.
@@ -60,12 +67,12 @@ This creates `train-config.toml` in the current directory. The file is the canon
 Helpful companion commands:
 
 ```bash
-uv run config --guide
-uv run config --size train-config.toml
+uv run eis config guide
+uv run eis config size train-config.toml
 ```
 
 Use them to understand fields and inspect derived model-size metrics before launching a run.
-`uv run config --size` emits TOML, for example:
+`uv run eis config size` emits TOML, for example:
 
 ```toml
 [model_size]
@@ -80,7 +87,7 @@ total_mlp_activation_sites_per_sequence = 393216
 ## 3. Train a model
 
 ```bash
-uv run train train train-config.toml
+uv run eis train run train-config.toml
 ```
 
 Typical run outputs include:
@@ -103,7 +110,7 @@ Notes:
 ## 4. Run prediction against a checkpoint
 
 ```bash
-uv run train predict \
+uv run eis train predict \
   --checkpoint runs/my-run/checkpoint-best.pt \
   --prompt "<do> <calc> 03000000 + 03000000 ="
 ```
@@ -116,7 +123,7 @@ Useful options:
 ## 5. Evaluate a trained model
 
 ```bash
-uv run evaluate \
+uv run eis eval run \
   --checkpoint runs/my-run/checkpoint-best.pt \
   --data-dir data/my-dataset
 ```
@@ -131,24 +138,24 @@ This is the main way to inspect performance by category and by fine-grained prob
 
 ## 6. Use ETS programmatically
 
-For code-level interpretability or checkpoint inspection, import from canonical package paths under `eur_ts.*`.
+For code-level interpretability or checkpoint inspection, import from canonical package paths under `eis.*`.
 
 Example:
 
 ```python
-from eur_ts.trainer.interpreter import MechanisticInterpreter
+from eis.train.interpreter import MechanisticInterpreter
 
 with MechanisticInterpreter("runs/my-run/checkpoint-best.pt") as interp:
     logits, capture = interp.forward_with_capture(token_ids)
 ```
 
-Prefer canonical imports from `eur_ts` and `eur_is`; legacy root-level packages are not the supported interface.
+Prefer canonical imports from `eis.*`; `eur_ts.*` and `eur_is.*` remain compatibility aliases only.
 
 ## Validation commands
 
 ```bash
 uv run ruff check .
-uv run pytest
+uv run --group dev python -m pytest
 ```
 
 ## Related docs

@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from eur_ts.config.cli import create_new_template, main
-from eur_ts.config.templates import TEMPLATE_FILENAME
+from eis.config.cli import create_new_template, main
+from eis.config.templates import TEMPLATE_FILENAME
 
 VALID_TOML = """
 [paths]

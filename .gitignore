@@ -17,8 +17,8 @@ __pycache__/
 .opencode/artifacts/*/old/
 
 # europa interp stuff
-eur_is/frontend/node_modules/
-eur_is/frontend/dist/
+src/eis/app/frontend/node_modules/
+src/eis/app/frontend/dist/
 
 # data generation, collection, + models
 output/

@@ -25,7 +25,7 @@ uv sync
 Install frontend dependencies once:
 
 ```bash
-npm install --prefix eur_is/frontend
+npm install --prefix src/eis/app/frontend
 ```
 
 ## Quick start with the helper script
@@ -33,7 +33,7 @@ npm install --prefix eur_is/frontend
 Use the repository helper script and pass a checkpoint path:
 
 ```bash
-./its-start.sh runs/my-run/checkpoint-best.pt
+./scripts/eits.sh runs/my-run/checkpoint-best.pt
 ```
 
 The script:
@@ -54,13 +54,20 @@ If you want to launch components yourself, set the checkpoint path via environme
 
 ```bash
 EUR_IS_CHECKPOINT_PATH="runs/my-run/checkpoint-best.pt" \
-  uv run uvicorn eur_is.backend.main:app --reload
+  uv run eis app serve --reload
+```
+
+Advanced/manual alternative:
+
+```bash
+EUR_IS_CHECKPOINT_PATH="runs/my-run/checkpoint-best.pt" \
+  uv run uvicorn eis.app.backend.main:app --reload
 ```
 
 In a separate shell:
 
 ```bash
-npm run dev --prefix eur_is/frontend
+npm run dev --prefix src/eis/app/frontend
 ```
 
 ## Backend behavior
@@ -82,7 +89,7 @@ If a checkpoint cannot be found or loaded, the backend health endpoint will repo
 
 ## Typical workflow
 
-1. Train or locate a checkpoint with ETS.
+1. Train or locate a checkpoint with the EIS training commands.
 2. Start ITS with that checkpoint.
 3. Submit arithmetic prompts beginning with `<do> <calc>` and ending at `=`.
 4. Inspect predictions, attention, activations, and network summaries.
@@ -96,7 +103,7 @@ Example prompt:
 
 ## Troubleshooting
 
-- **Checkpoint not found**: verify the path passed to `its-start.sh`.
+- **Checkpoint not found**: verify the path passed to `scripts/eits.sh`.
 - **Slow or failing analysis**: prefer a CUDA-capable environment.
 - **Frontend cannot reach backend**: confirm the backend is running on port `8000`.
 
@@ -105,22 +112,22 @@ Example prompt:
 Single prompt zip:
 
 ```bash
-uv run its-export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export.zip --zip
+uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export.zip --zip
 ```
 
 Single prompt directory bundle:
 
 ```bash
-uv run its-export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export --directory
+uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export --directory
 ```
 
 Batch prompt export:
 
 ```bash
-uv run its-export --checkpoint runs/my-run/checkpoint-best.pt --prompts-file prompts.txt --output /tmp/eis-export-batch --directory
+uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompts-file prompts.txt --output /tmp/eis-export-batch --directory
 ```
 
-Config-file support is isolated in `eur_is/export/config_io.py`; today that seam accepts mapping-based options and JSON config files, and future TOML loading should land there without changing the serializers or CLI surface.
+Config-file support is isolated in `src/eis/app/export/config_io.py`; today that seam accepts mapping-based options and JSON config files, and future TOML loading should land there without changing the serializers or CLI surface.
 
 ## Related docs
 

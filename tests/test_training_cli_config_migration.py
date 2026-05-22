@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from eur_ts.trainer.main import parse_args
+from eis.train.cli import parse_args
 
 
 def test_train_subcommand_accepts_config_path() -> None:

@@ -1,0 +1,35 @@
+"""Compatibility facade for fixed-meaning semantics."""
+
+from .semantics.fixed_meaning import (
+    CONTROL_TOKENS,
+    DIGIT_TOKENS,
+    FIXED_MEANING_DIGIT_PLACE_DIMENSION,
+    FIXED_MEANING_DIGIT_VALUE_DIMENSION,
+    FIXED_MEANING_DIMENSIONS,
+    FIXED_MEANING_MAX_DIGIT_PLACE,
+    FIXED_MEANING_TOKEN_VECTORS,
+    FIXED_MEANING_WIDTH,
+    INFO_TOKENS,
+    OPERATOR_TOKENS,
+    SEPARATOR_TOKENS,
+    SPECIAL_FIELD_TOKENS,
+    build_fixed_meaning_token_table,
+    fixed_meaning_width,
+)
+
+__all__ = [
+    "CONTROL_TOKENS",
+    "DIGIT_TOKENS",
+    "FIXED_MEANING_DIGIT_PLACE_DIMENSION",
+    "FIXED_MEANING_DIGIT_VALUE_DIMENSION",
+    "FIXED_MEANING_DIMENSIONS",
+    "FIXED_MEANING_MAX_DIGIT_PLACE",
+    "FIXED_MEANING_TOKEN_VECTORS",
+    "FIXED_MEANING_WIDTH",
+    "INFO_TOKENS",
+    "OPERATOR_TOKENS",
+    "SEPARATOR_TOKENS",
+    "SPECIAL_FIELD_TOKENS",
+    "build_fixed_meaning_token_table",
+    "fixed_meaning_width",
+]

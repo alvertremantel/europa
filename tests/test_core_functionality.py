@@ -3,35 +3,35 @@ from __future__ import annotations
 import pytest
 import torch
 
-from eur_ts.evaluator.core import BucketStats, bucket_row
-from eur_ts.generator.core import (
+from eis.eval.core import BucketStats, bucket_row
+from eis.data.core import (
     format_signed_number,
     format_unsigned_number,
     parse_signed_number,
     validate_line,
 )
-from eur_ts.config import ModelConfig
-from eur_ts.trainer.curriculum import select_curriculum_stage
-from eur_ts.trainer.data import (
+from eis.config import ModelConfig
+from eis.train.curriculum import select_curriculum_stage
+from eis.train.data import (
     ArithmeticTokenizer,
     POSITION_ENCODING_FIXED_MEANING,
     vocab_for_training_format,
 )
-from eur_ts.trainer.datasets import ExampleSequenceDataset, TokenBlockDataset
-from eur_ts.trainer.examples import ArithmeticExample
-from eur_ts.trainer.fixed_meaning import (
+from eis.train.datasets import ExampleSequenceDataset, TokenBlockDataset
+from eis.train.examples import ArithmeticExample
+from eis.train.semantics.fixed_meaning import (
     FIXED_MEANING_DIGIT_PLACE_DIMENSION,
     build_fixed_meaning_token_table,
     fixed_meaning_width,
 )
-from eur_ts.trainer.formatting import final_answer_from_line, format_training_line
-from eur_ts.trainer.inference import (
+from eis.train.formatting import final_answer_from_line, format_training_line
+from eis.train.inference import (
     generate_completion,
     generate_completions,
     sample_exact_match_probe,
 )
-from eur_ts.trainer.model import SmallCausalTransformer
-from eur_ts.trainer.training.checkpointing import _model_config_from_payload
+from eis.train.model import SmallCausalTransformer
+from eis.train.training.checkpointing import _model_config_from_payload
 
 
 def test_generator_validates_canonical_lines() -> None:

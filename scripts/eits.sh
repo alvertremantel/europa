@@ -6,7 +6,7 @@ if [[ $# -eq 0 ]] || [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
   printf 'Usage: %s <checkpoint-path>\n\n' "$0"
   printf 'Start the Europa Interpretability Suite for a checkpoint.\n'
   printf 'Run this from the repository root.\n'
-  printf 'Requires: uv sync, npm install --prefix eur_is/frontend\n'
+  printf 'Requires: uv sync, npm install --prefix src/eis/app/frontend\n'
   exit 0
 fi
 
@@ -22,8 +22,8 @@ if [[ ! -f "$CHECKPOINT_PATH" ]]; then
   exit 1
 fi
 
-if [[ ! -d "eur_is/frontend/node_modules" ]]; then
-  printf 'Frontend dependencies not found. Run: npm install --prefix eur_is/frontend\n' >&2
+if [[ ! -d "src/eis/app/frontend/node_modules" ]]; then
+  printf 'Frontend dependencies not found. Run: npm install --prefix src/eis/app/frontend\n' >&2
   exit 1
 fi
 
@@ -43,9 +43,7 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-export EUR_IS_CHECKPOINT_PATH="$CHECKPOINT_PATH"
-
-uv run uvicorn eur_is.backend.main:app --reload &
+uv run eis app serve --reload --checkpoint "$CHECKPOINT_PATH" &
 BACKEND_PID=$!
 
 for _ in {1..20}; do
@@ -82,8 +80,8 @@ then
   exit 1
 fi
 
-printf 'Started backend with checkpoint: %s\n' "$EUR_IS_CHECKPOINT_PATH"
+printf 'Started backend with checkpoint: %s\n' "$CHECKPOINT_PATH"
 printf 'Frontend: http://localhost:5173\n'
 printf 'Backend health: http://localhost:8000/api/health\n'
 
-npm run dev --prefix eur_is/frontend
+npm run dev --prefix src/eis/app/frontend

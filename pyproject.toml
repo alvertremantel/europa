@@ -19,11 +19,12 @@ dependencies = [
 ]
 
 [project.scripts]
-generate = "eur_ts.generator.cli:main"
-train = "eur_ts.trainer.main:main"
-evaluate = "eur_ts.evaluator.cli:main"
-config = "eur_ts.config.cli:main"
-its-export = "eur_is.export.cli:main"
+eis = "eis.cli:main"
+generate = "eis.data.cli:main"
+train = "eis.train.cli:main"
+evaluate = "eis.eval.cli:main"
+config = "eis.config.cli:main"
+its-export = "eis.app.export.cli:main"
 
 [dependency-groups]
 dev = [
@@ -35,7 +36,7 @@ dev = [
 package = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["eur_ts", "eur_is"]
+packages = ["src/eis", "src/eur_ts", "src/eur_is"]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cu128" }
@@ -44,3 +45,6 @@ torch = { index = "pytorch-cu128" }
 name = "pytorch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
 explicit = true
+
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["E402"]

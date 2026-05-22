@@ -5,10 +5,10 @@ from typing import cast
 
 import torch
 
-from eur_ts.artifacts import read_toml, toml_text, write_toml
-from eur_ts.evaluator.metadata import load_metadata
-from eur_ts.trainer.training.checkpointing import CheckpointManager
-from eur_ts.trainer.training.resume import history_from_payload
+from eis.artifacts import read_toml, toml_text, write_toml
+from eis.eval.metadata import load_metadata
+from eis.train.training.checkpointing import CheckpointManager
+from eis.train.training.resume import history_from_payload
 
 
 def test_toml_artifact_writer_omits_none_and_round_trips(tmp_path):

@@ -10,14 +10,14 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from eur_is.backend.analysis import (
+from eis.app.backend.analysis import (
     GeneratedAnswerSummary,
     GeneratedAnswerTokenSummary,
     PredictionSummary,
 )
-from eur_is.backend import main, model_utils, settings
-from eur_is.backend.runtime import PromptAnalysisResult, RuntimeCapabilities
-from eur_ts.trainer.data import ArithmeticTokenizer
+from eis.app.backend import main, model_utils, settings
+from eis.app.backend.runtime import PromptAnalysisResult, RuntimeCapabilities
+from eis.train.data import ArithmeticTokenizer
 
 
 class FakeRuntime:
@@ -409,7 +409,7 @@ def test_analyze_fixed_meaning_runtime_reports_limited_capabilities(
 
 
 def test_export_runner_returns_analysis_and_health(monkeypatch) -> None:
-    from eur_is.export.runner import run_export_analysis
+    from eis.app.export.runner import run_export_analysis
 
     tokenizer = ArithmeticTokenizer()
     runtime = FakeRuntime(
@@ -420,7 +420,7 @@ def test_export_runner_returns_analysis_and_health(monkeypatch) -> None:
     )
 
     monkeypatch.setattr(
-        "eur_is.export.runner.load_checkpoint_runtime", lambda _path, device: runtime
+        "eis.app.export.runner.load_checkpoint_runtime", lambda _path, device: runtime
     )
 
     result = run_export_analysis(

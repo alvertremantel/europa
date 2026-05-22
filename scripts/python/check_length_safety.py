@@ -53,7 +53,7 @@ def parse_args() -> argparse.Namespace:
 def load_checkpoint_metadata(
     checkpoint_path: Path,
 ) -> tuple[object, int, int]:
-    from eur_ts.trainer.data import ArithmeticTokenizer
+    from eis.train.data import ArithmeticTokenizer
 
     payload = torch.load(checkpoint_path, map_location="cpu")
     if not isinstance(payload, dict):
@@ -77,7 +77,7 @@ def load_checkpoint_metadata(
 
 
 def intermediate_abs_value(sample: object) -> int:
-    from eur_ts.generator.core import (
+    from eis.data.core import (
         apply_operation,
         parse_signed_number,
         parse_unsigned_number,
@@ -143,9 +143,9 @@ def analyze_dataset(
     sequence_length: int,
     max_new_tokens: int,
 ) -> tuple[dict[str, KindLengthStats], dict[str, int]]:
-    from eur_ts.generator.core import validate_line
-    from eur_ts.trainer.data import ArithmeticTokenizer
-    from eur_ts.trainer.utils import answer_from_line, prompt_from_line
+    from eis.data.core import validate_line
+    from eis.train.data import ArithmeticTokenizer
+    from eis.train.runtime.utils import answer_from_line, prompt_from_line
 
     typed_tokenizer = cast(ArithmeticTokenizer, tokenizer)
     kind_stats: dict[str, KindLengthStats] = {}

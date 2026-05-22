@@ -49,7 +49,7 @@ For this project, the desired bias is stronger:
 
 The input token table is built once from a single authored source file:
 
-- `eur_ts/trainer/fixed_meaning.py`
+- `src/eis/train/semantics/fixed_meaning.py`
 
 That file now contains the complete per-token vector table for the canonical vocabulary. There is no model-side auto-generation of operator/control scalar codes anymore.
 
@@ -113,7 +113,7 @@ d_model = 12
 position_encoding = "fixed_meaning"
 ```
 
-`d_model` must exactly match the vector width defined in `eur_ts/trainer/fixed_meaning.py`.
+`d_model` must exactly match the vector width defined in `src/eis/train/semantics/fixed_meaning.py`.
 
 `fixed_meaning` is now the only supported canonical embedding mode.
 

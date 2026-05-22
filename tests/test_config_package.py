@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from eur_ts.config.templates import TRAIN_CONFIG_GUIDE, TRAIN_CONFIG_TEMPLATE
-from eur_ts.config.sizing import model_size_from_config
-from eur_ts.config.toml_io import load_train_config
+from eis.config.templates import TRAIN_CONFIG_GUIDE, TRAIN_CONFIG_TEMPLATE
+from eis.config.sizing import model_size_from_config
+from eis.config.toml_io import load_train_config
 
 
 VALID_TOML = """

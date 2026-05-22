@@ -10,32 +10,34 @@ PyTorch is pulled from the `pytorch-cu128` index (CUDA 12.8). A GPU is expected 
 
 ## Developer commands (via `uv run`)
 
-Four CLI entrypoints are defined in `pyproject.toml` — **do not** run `python generate.py` etc. (those top-level scripts do not exist):
+Use the unified `eis` CLI by default — **do not** run `python generate.py` etc. (those top-level scripts do not exist):
 
 ```bash
-uv run generate --output-dir data/my-dataset          # generate dataset
-uv run config --new                                   # create train-config.toml in CWD
-uv run train train train-config.toml                  # train from TOML config
-uv run train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 ="
-uv run evaluate --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
+uv run eis data generate --output-dir data/my-dataset # generate dataset
+uv run eis config new                                # create train-config.toml in CWD
+uv run eis train run train-config.toml               # train from TOML config
+uv run eis train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 ="
+uv run eis eval run --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
 ```
+
+Legacy aliases (`generate`, `config`, `train`, `evaluate`, `its-export`) still exist for compatibility.
 
 Lint: `uv run ruff check .`
 
-Tests: `uv run pytest`
+Tests: `uv run --group dev python -m pytest`
 
 ## Architecture
 
-Canonical training code lives under one `eur_ts/` package root:
+Canonical training code lives under one `src/eis/` package root:
 
 | Package | Purpose |
 |---|---|
-| `eur_ts/generator/` | Stratified arithmetic data generation (binary, three_input, parentheses, negative_input categories) |
-| `eur_ts/trainer/` | Causal transformer training + inference. Checkpoints stay self-contained for downstream native/runtime analysis |
-| `eur_ts/evaluator/` | Per-stratum evaluation, writes summary TOML, kinds CSV, and errors TOML next to the checkpoint |
+| `src/eis/data/` | Stratified arithmetic data generation (binary, three_input, parentheses, negative_input categories) |
+| `src/eis/train/` | Causal transformer training + inference. Checkpoints stay self-contained for downstream native/runtime analysis |
+| `src/eis/eval/` | Per-stratum evaluation, writes summary TOML, kinds CSV, and errors TOML next to the checkpoint |
 
 Supporting:
-- `eur_is/` — FastAPI backend (`eur_is/backend/main.py`) + React/Vite frontend (`eur_is/frontend/`). Backend hardcodes checkpoint path at `runs/test-extended-plus/checkpoint-best.pt`.
+- `src/eis/app/` — FastAPI backend (`src/eis/app/backend/main.py`) + React/Vite frontend (`src/eis/app/frontend/`). Backend hardcodes checkpoint path at `runs/test-extended-plus/checkpoint-best.pt`.
 - `tests/` — pytest smoke tests for core canonical generator/trainer/evaluator behavior.
 - `info/` — Researcher-facing repository notes and workflow documentation.
 

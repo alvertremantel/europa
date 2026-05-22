@@ -9,7 +9,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from eur_is.backend.schemas import (
+from eis.app.backend.schemas import (
     ActivationSummaryResponse,
     AnalyzeResponse,
     AttentionHeadSummary,
@@ -24,8 +24,8 @@ from eur_is.backend.schemas import (
     StrongestAttentionPair,
     TopPrediction,
 )
-from eur_is.export.config_io import export_options_from_mapping
-from eur_is.export.layout import (
+from eis.app.export.config_io import export_options_from_mapping
+from eis.app.export.layout import (
     ACTIVATION_SUMMARY_TABLE_PATH,
     ATTENTION_HEAD_SUMMARY_ASSET_PATH,
     ATTENTION_MAPS_UNAVAILABLE_ASSET_PATH,
@@ -36,11 +36,11 @@ from eur_is.export.layout import (
     SUMMARY_PATH,
     TOKENS_TABLE_PATH,
 )
-from eur_is.export.models import ExportOptions, canonical_minimal_paths
-from eur_is.export.png import render_png_files
-from eur_is.export.serializers.raw import build_raw_files
-from eur_is.export.serializers.tables import build_table_files
-from eur_is.export.writer import build_bundle_file_map, write_bundle
+from eis.app.export.models import ExportOptions, canonical_minimal_paths
+from eis.app.export.png import render_png_files
+from eis.app.export.serializers.raw import build_raw_files
+from eis.app.export.serializers.tables import build_table_files
+from eis.app.export.writer import build_bundle_file_map, write_bundle
 
 
 def build_fake_analysis(
@@ -368,8 +368,8 @@ def test_writer_supports_directory_and_zip_outputs(tmp_path: Path) -> None:
 def test_cli_single_prompt_and_batch_outputs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from eur_is.export import cli
-    from eur_is.export.runner import ExportRunResult
+    from eis.app.export import cli
+    from eis.app.export.runner import ExportRunResult
 
     def fake_run_export_analysis(**_: object) -> ExportRunResult:
         return ExportRunResult(
@@ -429,7 +429,7 @@ def test_cli_missing_checkpoint_fails_clearly(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
     """--checkpoint must be provided; the CLI should reject empty/missing paths."""
-    from eur_is.export import cli
+    from eis.app.export import cli
 
     output = tmp_path / "out.zip"
     # No --checkpoint at all.
@@ -452,8 +452,8 @@ def test_cli_config_precedence_device_not_overridden_by_default(
     """Config values must not be clobbered by argparse defaults."""
     import json as _json
 
-    from eur_is.export import cli
-    from eur_is.export.runner import ExportRunResult
+    from eis.app.export import cli
+    from eis.app.export.runner import ExportRunResult
 
     def fake_run_export_analysis(**_: object) -> ExportRunResult:
         return ExportRunResult(
@@ -493,8 +493,8 @@ def test_cli_config_precedence_output_mode_not_overridden_by_default(
     """Config output_mode must survive when the user does not pass --zip/--directory."""
     import json as _json
 
-    from eur_is.export import cli
-    from eur_is.export.runner import ExportRunResult
+    from eis.app.export import cli
+    from eis.app.export.runner import ExportRunResult
 
     def fake_run_export_analysis(**_: object) -> ExportRunResult:
         return ExportRunResult(
@@ -539,8 +539,8 @@ def test_cli_explicit_flag_overrides_config_output_mode(
     """Explicit --zip flag must override config output_mode."""
     import json as _json
 
-    from eur_is.export import cli
-    from eur_is.export.runner import ExportRunResult
+    from eis.app.export import cli
+    from eis.app.export.runner import ExportRunResult
 
     def fake_run_export_analysis(**_: object) -> ExportRunResult:
         return ExportRunResult(
