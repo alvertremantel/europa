@@ -15,6 +15,7 @@ from eis.artifacts import read_legacy_json, read_toml, write_toml
 from eis.config import ModelConfig, TrainConfig
 from ..data import ArithmeticTokenizer, SUPPORTED_POSITION_ENCODINGS
 from ..model import SmallCausalTransformer
+from ..semantics.fixed_meaning import fixed_meaning_width
 
 
 CHECKPOINT_SCHEMA_VERSION = 1
@@ -42,6 +43,8 @@ def build_checkpoint_payload(
 ) -> dict[str, object]:
     payload: dict[str, object] = {
         "checkpoint_schema_version": CHECKPOINT_SCHEMA_VERSION,
+        "architecture": "redux_causal_decoder_v2",
+        "semantic_width": fixed_meaning_width(),
         "model_state": model.state_dict(),
         "model_config": asdict(model.config),
         "tokenizer": tokenizer.to_state(),
@@ -104,6 +107,7 @@ def load_model_checkpoint(
     path: Path, device: torch.device
 ) -> tuple[SmallCausalTransformer, ArithmeticTokenizer]:
     payload = load_checkpoint_payload(path, device)
+    _require_projected_checkpoint(payload)
     tokenizer_state = payload.get("tokenizer")
     if not isinstance(tokenizer_state, dict):
         raise ValueError("checkpoint is missing tokenizer state")
@@ -333,6 +337,17 @@ def _required_position_encoding(state: dict[str, object]) -> str:
     if value not in SUPPORTED_POSITION_ENCODINGS:
         raise ValueError(f"unsupported checkpoint position encoding: {value!r}")
     return value
+
+
+def _require_projected_checkpoint(payload: dict[str, object]) -> None:
+    architecture = payload.get("architecture")
+    if not isinstance(architecture, str) or not architecture.startswith(
+        "redux_causal_decoder_v2"
+    ):
+        raise ValueError(
+            "Legacy checkpoint (pre-projection) is not supported. "
+            "Please train a new model with the projected decoder architecture."
+        )
 
 
 def _optional_float(value: object) -> float | None:

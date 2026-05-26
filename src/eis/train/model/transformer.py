@@ -13,14 +13,15 @@ from ..semantics.fixed_meaning import (
     FIXED_MEANING_DIGIT_PLACE_DIMENSION,
     FIXED_MEANING_MAX_DIGIT_PLACE,
     build_fixed_meaning_token_table,
+    fixed_meaning_width,
 )
 from ..data.tokenizer import ArithmeticTokenizer, POSITION_ENCODING_FIXED_MEANING
 
 
 class FixedMeaningEmbedding(nn.Module):
-    def __init__(self, tokens: Sequence[str], d_model: int) -> None:
+    def __init__(self, tokens: Sequence[str]) -> None:
         super().__init__()
-        table = build_fixed_meaning_token_table(tokens, d_model)
+        table = build_fixed_meaning_token_table(tokens)
         self.register_buffer("_weight", table)
         digit_token_mask = torch.zeros(len(tokens), dtype=torch.bool)
         for token_id, token in enumerate(tokens):
@@ -111,7 +112,8 @@ class SmallCausalTransformer(nn.Module):
             raise ValueError(
                 "tokenizer vocabulary size must match model_config.vocab_size"
             )
-        self.token_embedding = FixedMeaningEmbedding(tokenizer.id_to_token, d_model)
+        self.token_embedding = FixedMeaningEmbedding(tokenizer.id_to_token)
+        self.input_projection = nn.Linear(fixed_meaning_width(), d_model, bias=False)
         self.position_embedding = None
         self.dropout = nn.Dropout(config.dropout)
         self.blocks = nn.ModuleList(
@@ -140,6 +142,7 @@ class SmallCausalTransformer(nn.Module):
                 f"sequence length {sequence_length} exceeds model limit {self.config.sequence_length}"
             )
         hidden_states = self.token_embedding(input_ids, digit_place_values)
+        hidden_states = self.input_projection(hidden_states)
         hidden_states = self.dropout(hidden_states)
         causal_mask = cast(Tensor, self.causal_mask)[:sequence_length, :sequence_length]
         for block in self.blocks:
@@ -172,7 +175,7 @@ def _local_digit_place_values(is_digit: Tensor, *, dtype: torch.dtype) -> Tensor
         place_indices[:, position] = current_places.clamp_max(
             FIXED_MEANING_MAX_DIGIT_PLACE
         )
-    return place_indices.to(dtype=dtype) / 10.0
+    return place_indices.to(dtype=dtype) / float(FIXED_MEANING_MAX_DIGIT_PLACE)
 
 
 def _required_d_model(config: ModelConfig) -> int:

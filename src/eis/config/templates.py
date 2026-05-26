@@ -20,7 +20,7 @@ additional_epochs = "" # optional; blank trains for optimization.epochs total
 
 [model]
 sequence_length = ""
-d_model = ""               # required; fixed_meaning must match src/eis/train/semantics/fixed_meaning.py
+d_model = ""               # required; residual stream and hidden dimension width
 n_heads = ""
 n_layers = ""
 mlp_hidden = ""
@@ -71,12 +71,12 @@ Each variable below appears in train-config.toml.
 
 [model]
 - sequence_length (integer, required): Maximum context length the model can process.
-- d_model (integer, required): Embedding width and residual stream width. In `fixed_meaning` mode, this must exactly match the authored token-vector width in `src/eis/train/semantics/fixed_meaning.py`.
+- d_model (integer, required): Embedding width and residual stream width for the transformer. The token-meaning vectors are always at the fixed semantic width (from `src/eis/train/semantics/fixed_meaning.py`), then projected to `d_model` via a trainable linear layer. Must be divisible by `n_heads`.
 - n_heads (integer, required): Number of attention heads. d_model must be divisible by n_heads.
 - n_layers (integer, required): Number of transformer blocks.
 - mlp_hidden (integer, required): Hidden width of each block MLP.
 - dropout (float, required): Dropout probability in [0.0, 1.0].
-- position_encoding (string, required): Must be `"fixed_meaning"` for frozen token-meaning vectors from `src/eis/train/semantics/fixed_meaning.py`, with digit-place meaning injected directly into the fixed vectors instead of a separate positional table.
+- position_encoding (string, required): Must be `"fixed_meaning"` for frozen token-meaning vectors from `src/eis/train/semantics/fixed_meaning.py`, with digit-place meaning injected directly into the fixed vectors and then projected to `d_model` via a trainable linear layer.
 
 [optimization]
 - batch_size (integer, required): Training batch size.
@@ -107,4 +107,6 @@ Derived size metrics
 - total_mlp_neurons: n_layers * mlp_hidden. These are the reusable MLP hidden units in the architecture.
 - total_mlp_activation_sites_per_sequence: n_layers * sequence_length * mlp_hidden.
   This is a per-forward-pass activation-site capacity, not a parameter or neuron count.
+- The fixed-meaning semantic table is always a buffer (frozen); the trainable input projection maps
+  from the semantic width to d_model.
 """

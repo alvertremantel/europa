@@ -34,7 +34,7 @@ FIXED_MEANING_WIDTH = len(FIXED_MEANING_DIMENSIONS)
 _DIM = {name: index for index, name in enumerate(FIXED_MEANING_DIMENSIONS)}
 FIXED_MEANING_DIGIT_VALUE_DIMENSION = _DIM["digit_value"]
 FIXED_MEANING_DIGIT_PLACE_DIMENSION = _DIM["digit_place"]
-FIXED_MEANING_MAX_DIGIT_PLACE = 9
+FIXED_MEANING_MAX_DIGIT_PLACE = 6
 
 
 def _vector(**values: float) -> tuple[float, ...]:
@@ -86,9 +86,9 @@ def fixed_meaning_width() -> int:
     return FIXED_MEANING_WIDTH
 
 
-def build_fixed_meaning_token_table(tokens: Sequence[str], d_model: int) -> Tensor:
-    _validate_fixed_meaning_vectors(d_model)
-    table = torch.zeros((len(tokens), d_model), dtype=torch.float32)
+def build_fixed_meaning_token_table(tokens: Sequence[str]) -> Tensor:
+    _validate_fixed_meaning_vectors()
+    table = torch.zeros((len(tokens), FIXED_MEANING_WIDTH), dtype=torch.float32)
     missing_tokens = [
         token for token in tokens if token not in FIXED_MEANING_TOKEN_VECTORS
     ]
@@ -104,13 +104,7 @@ def build_fixed_meaning_token_table(tokens: Sequence[str], d_model: int) -> Tens
     return table
 
 
-def _validate_fixed_meaning_vectors(d_model: int) -> None:
-    if d_model != FIXED_MEANING_WIDTH:
-        raise ValueError(
-            "fixed_meaning d_model must match the width of "
-            f"eis.train.semantics.fixed_meaning.FIXED_MEANING_TOKEN_VECTORS "
-            f"({FIXED_MEANING_WIDTH}), got {d_model}"
-        )
+def _validate_fixed_meaning_vectors() -> None:
     invalid = [
         token
         for token, vector in FIXED_MEANING_TOKEN_VECTORS.items()

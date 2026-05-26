@@ -120,7 +120,9 @@ class ArithmeticTokenizer:
             if not digit_run:
                 return
             for place, token_index in enumerate(digit_run, start=1):
-                values[token_index] = min(place, FIXED_MEANING_MAX_DIGIT_PLACE) / 10.0
+                values[token_index] = min(place, FIXED_MEANING_MAX_DIGIT_PLACE) / float(
+                    FIXED_MEANING_MAX_DIGIT_PLACE
+                )
             digit_run.clear()
 
         for index, token_id in enumerate(token_ids):
@@ -148,7 +150,9 @@ class ArithmeticTokenizer:
             digit_place += 1
             if digit_place >= FIXED_MEANING_MAX_DIGIT_PLACE:
                 break
-        return min(digit_place, FIXED_MEANING_MAX_DIGIT_PLACE) / 10.0
+        return min(digit_place, FIXED_MEANING_MAX_DIGIT_PLACE) / float(
+            FIXED_MEANING_MAX_DIGIT_PLACE
+        )
 
     def _encode_canonical_fields(
         self, fields: Sequence[str], *, include_eos: bool

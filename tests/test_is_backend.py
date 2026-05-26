@@ -513,6 +513,7 @@ def test_load_checkpoint_artifacts_rejects_type_place_checkpoints(monkeypatch) -
         model_utils,
         "load_checkpoint_payload",
         lambda _path, _device: {
+            "architecture": "redux_causal_decoder_v2",
             "tokenizer": {"vocab": tokenizer.id_to_token},
             "model_state": {},
             "model_config": {

@@ -4,6 +4,7 @@ from eis.train.data import vocab_for_training_format
 from eis.train.model import SmallCausalTransformer
 from eis.train.data.tokenizer import ArithmeticTokenizer
 from eis.train.runtime.utils import parameter_count
+from eis.train.semantics.fixed_meaning import fixed_meaning_width
 
 from .schema import ModelConfig, TrainConfig
 
@@ -47,6 +48,7 @@ def model_size_from_config(config: TrainConfig) -> dict[str, int | str]:
         "vocab_size": len(vocab),
         "sequence_length": config.sequence_length,
         "d_model": d_model,
+        "semantic_width": fixed_meaning_width(),
         "n_heads": config.n_heads,
         "n_layers": config.n_layers,
         "mlp_hidden": config.mlp_hidden,

@@ -83,13 +83,12 @@ def test_load_train_config_rejects_removed_type_place_position_encoding(
         load_train_config(path)
 
 
-def test_load_train_config_rejects_fixed_meaning_d_model_mismatch(
+def test_load_train_config_accepts_d_model_different_from_fixed_meaning_width(
     tmp_path: Path,
 ) -> None:
-    path = write_config(tmp_path, VALID_TOML.replace("d_model = 16", "d_model = 12"))
-
-    with pytest.raises(ValueError, match="fixed_meaning position_encoding"):
-        load_train_config(path)
+    path = write_config(tmp_path, VALID_TOML.replace("d_model = 16", "d_model = 64"))
+    config = load_train_config(path)
+    assert config.d_model == 64
 
 
 def test_load_train_config_rejects_blank_required_value(tmp_path: Path) -> None:

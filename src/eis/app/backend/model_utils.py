@@ -9,7 +9,10 @@ import torch
 from eis.config import ModelConfig
 from eis.train.data import ArithmeticTokenizer, SUPPORTED_POSITION_ENCODINGS
 from eis.train.model import SmallCausalTransformer
-from eis.train.training.checkpointing import load_checkpoint_payload
+from eis.train.training.checkpointing import (
+    _require_projected_checkpoint,
+    load_checkpoint_payload,
+)
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,7 @@ def load_checkpoint_artifacts(
     device: str = "cpu",
 ) -> CheckpointArtifacts:
     payload = load_checkpoint_payload(checkpoint_path, torch.device(device))
+    _require_projected_checkpoint(payload)
     tokenizer_state = payload.get("tokenizer")
     if not isinstance(tokenizer_state, dict):
         raise ValueError("checkpoint is missing tokenizer state")

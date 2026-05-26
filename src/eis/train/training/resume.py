@@ -17,7 +17,11 @@ from ..data import (
 )
 from ..model import SmallCausalTransformer
 
-from .checkpointing import best_exact_match_from_history, load_checkpoint_payload
+from .checkpointing import (
+    _require_projected_checkpoint,
+    best_exact_match_from_history,
+    load_checkpoint_payload,
+)
 from .state import restore_rng_state
 
 
@@ -84,6 +88,7 @@ def initialize_training_state(
         raise FileNotFoundError(f"resume checkpoint does not exist: {resume_path}")
 
     payload = load_checkpoint_payload(resume_path, device)
+    _require_projected_checkpoint(payload)
     tokenizer_state = payload.get("tokenizer")
     if not isinstance(tokenizer_state, dict):
         raise ValueError("resume checkpoint is missing tokenizer")

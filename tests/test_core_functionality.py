@@ -148,8 +148,8 @@ def test_training_tokenizer_preserves_negative_digit_structure() -> None:
 
 def test_small_transformer_fixed_meaning_forward_shape() -> None:
     tokenizer = ArithmeticTokenizer()
-    d_model = fixed_meaning_width()
-    assert d_model == 16
+    d_model = 32
+    assert d_model > fixed_meaning_width()
     config = ModelConfig(
         vocab_size=tokenizer.vocab_size,
         sequence_length=32,
@@ -173,9 +173,12 @@ def test_small_transformer_fixed_meaning_forward_shape() -> None:
 
     assert logits.shape == (1, input_ids.shape[1], tokenizer.vocab_size)
     assert model.token_embedding.weight.requires_grad is False
-    expected_table = build_fixed_meaning_token_table(tokenizer.id_to_token, d_model)
+    assert model.token_embedding.weight.shape[1] == fixed_meaning_width()
+    expected_table = build_fixed_meaning_token_table(tokenizer.id_to_token)
     assert torch.allclose(model.token_embedding.weight, expected_table)
     assert model.position_embedding is None
+    assert model.input_projection.weight.requires_grad is True
+    assert model.input_projection.weight.shape == (d_model, fixed_meaning_width())
     assert model.lm_head.weight.requires_grad is True
 
 
@@ -207,7 +210,9 @@ def test_fixed_meaning_digit_place_encoding_restarts_for_each_number() -> None:
         for index, token_id in enumerate(token_ids)
         if tokenizer.id_to_token[token_id] in set("0123456789")
     ]
-    assert digit_place_values == pytest.approx([0.1, 0.2, 0.3, 0.4, 0.5, 0.6] * 2)
+    assert digit_place_values == pytest.approx(
+        [1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6, 1.0] * 2
+    )
 
 
 def test_incremental_digit_place_matches_full_recompute() -> None:
@@ -298,23 +303,52 @@ def test_token_stream_digit_places_are_computed_before_block_slicing() -> None:
     input_tokens = [tokenizer.id_to_token[token_id] for token_id in input_ids.tolist()]
 
     assert input_tokens[:5] == ["4", "0", "}", "=", "<ans>"]
-    assert input_digit_places[:5].tolist() == pytest.approx([0.5, 0.6, 0.0, 0.0, 0.0])
+    assert input_digit_places[:5].tolist() == pytest.approx([5 / 6, 1.0, 0.0, 0.0, 0.0])
 
 
-def test_fixed_meaning_rejects_d_model_mismatch() -> None:
+def test_fixed_meaning_table_independent_of_d_model() -> None:
     tokenizer = ArithmeticTokenizer()
+    table = build_fixed_meaning_token_table(tokenizer.id_to_token)
+    assert table.shape == (tokenizer.vocab_size, fixed_meaning_width())
 
-    with pytest.raises(ValueError, match="fixed_meaning position_encoding"):
-        ModelConfig(
-            vocab_size=tokenizer.vocab_size,
-            sequence_length=32,
-            d_model=fixed_meaning_width() + 1,
-            n_heads=1,
-            n_layers=1,
-            mlp_hidden=32,
-            dropout=0.0,
-            position_encoding=POSITION_ENCODING_FIXED_MEANING,
-        )
+    # When d_model == semantic width, projection is square
+    config_eq = ModelConfig(
+        vocab_size=tokenizer.vocab_size,
+        sequence_length=32,
+        d_model=fixed_meaning_width(),
+        n_heads=1,
+        n_layers=1,
+        mlp_hidden=32,
+        dropout=0.0,
+        position_encoding=POSITION_ENCODING_FIXED_MEANING,
+    )
+    model_eq = SmallCausalTransformer(config_eq, tokenizer=tokenizer).eval()
+    assert model_eq.token_embedding.weight.shape == (
+        tokenizer.vocab_size,
+        fixed_meaning_width(),
+    )
+    assert model_eq.input_projection.weight.shape == (
+        fixed_meaning_width(),
+        fixed_meaning_width(),
+    )
+
+    # When d_model > semantic width, projection expands
+    config_wide = ModelConfig(
+        vocab_size=tokenizer.vocab_size,
+        sequence_length=32,
+        d_model=64,
+        n_heads=4,
+        n_layers=1,
+        mlp_hidden=32,
+        dropout=0.0,
+        position_encoding=POSITION_ENCODING_FIXED_MEANING,
+    )
+    model_wide = SmallCausalTransformer(config_wide, tokenizer=tokenizer).eval()
+    assert model_wide.token_embedding.weight.shape == (
+        tokenizer.vocab_size,
+        fixed_meaning_width(),
+    )
+    assert model_wide.input_projection.weight.shape == (64, fixed_meaning_width())
 
 
 def test_type_place_position_encoding_is_rejected() -> None:
