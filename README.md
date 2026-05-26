@@ -50,11 +50,12 @@ ITS is meant to make inspection fast and visual once a checkpoint already exists
 
 Europa uses a deliberately nonstandard arithmetic representation to keep the task synthetic and explicit:
 
-- numbers are rendered as **8-digit zero-padded reversed decimals**,
-- negatives are wrapped like `(-60000000)`,
-- prompts begin with `<do> <calc>` and end the expression at `=` before answer generation.
+- numbers are rendered as **6-digit zero-padded reversed decimals** and always wrapped,
+- non-negative numbers use `{600000}` and negative numbers use `(600000)`,
+- prompts begin with `<do> <calc>` and end the expression with `= <ans>` before answer generation,
+- boolean comparison answers are single tokens: `true` or `false`.
 
-Datasets span categories such as binary arithmetic, three-input expressions, parenthesized expressions, and negative-input variants. This gives the project a controlled behavioral landscape for both training and post-hoc analysis.
+Datasets span REDUX categories `arithmetic`, `negative_input`, and `comparison`. This gives the project a controlled behavioral landscape for both training and post-hoc analysis. The REDUX protocol is checkpoint-incompatible with pre-REDUX checkpoints because the tokenizer and fixed-meaning vectors changed.
 
 ## Why the project is structured this way
 
@@ -86,10 +87,10 @@ Recommended CLI surface:
 uv run eis data generate --output-dir data/my-dataset
 uv run eis config new
 uv run eis train run train-config.toml
-uv run eis train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 ="
+uv run eis train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> {300000} + {300000} = <ans>"
 uv run eis eval run --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
 uv run eis app serve --reload
-uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export.zip --zip
+uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> {300000} + {300000} = <ans>" --output /tmp/eis-export.zip --zip
 ```
 
 Legacy command aliases remain available for compatibility.
@@ -97,7 +98,7 @@ Legacy command aliases remain available for compatibility.
 Headless ITS export:
 
 ```bash
-uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export.zip --zip
+uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> {300000} + {300000} = <ans>" --output /tmp/eis-export.zip --zip
 ```
 
 ## Where to go next

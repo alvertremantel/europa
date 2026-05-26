@@ -5,14 +5,11 @@ from typing import Any, TypedDict
 
 import numpy as np
 
+from eis.data.answers import format_answer
 from eis.data.core import parse_line
-from eis.data.numbers import parse_signed_number, parse_unsigned_number
-from eis.data.parsing import (
-    parse_binary_expression,
-    parse_parentheses_expression,
-    parse_three_input_expression,
-)
-from eis.data.sampling import apply_operation
+from eis.data.numbers import parse_signed_number
+from eis.data.parsing import parse_binary_expression
+from eis.data.sampling import apply_comparison, apply_operation
 from eis.train.curriculum import curriculum_group
 from eis.train.data import ArithmeticExample
 from eis.train.formatting import extract_final_answer
@@ -91,7 +88,7 @@ def evaluate_generated_answer(
     *, expression_text: str, generated_text: str
 ) -> GeneratedAnswerSummary:
     final_answer = extract_final_answer(generated_text)
-    line = f"<do> <calc> {expression_text} = {final_answer}".strip()
+    line = f"<do> <calc> {expression_text} = <ans> {final_answer}".strip()
 
     try:
         parse_line(line)
@@ -185,24 +182,22 @@ def summarize_checkpoint(
 
 def summarize_problem(prompt: str) -> dict[str, Any]:
     parts = prompt.strip().split()
+    if parts[-2:] == ["=", "<ans>"]:
+        parts = parts[:-1]
     if not parts or parts[-1] != "=":
-        raise ValueError("prompt must end with '=' for curriculum classification")
+        raise ValueError("prompt must end with '= <ans>' for curriculum classification")
 
     expression_fields = tuple(parts[:-1])
     answer = _evaluate_expression(expression_fields)
     if len(expression_fields) == 3:
         parsed = parse_binary_expression(expression_fields, answer)
-    elif len(expression_fields) == 5:
-        parsed = parse_three_input_expression(expression_fields, answer)
-    elif len(expression_fields) == 7:
-        parsed = parse_parentheses_expression(expression_fields, answer)
     else:
         raise ValueError(f"unsupported expression shape: {expression_fields!r}")
 
     example = ArithmeticExample(
         line="",
         prompt=prompt,
-        answer=str(answer),
+        answer=format_answer(answer),
         kind=parsed.kind,
         category=parsed.category,
     )
@@ -234,31 +229,13 @@ def _optional_float(value: Any) -> float | None:
     return None
 
 
-def _evaluate_expression(expression_fields: tuple[str, ...]) -> int:
+def _evaluate_expression(expression_fields: tuple[str, ...]) -> int | bool:
     if len(expression_fields) == 3:
         left = parse_signed_number(expression_fields[0])
+        op = expression_fields[1]
         right = parse_signed_number(expression_fields[2])
-        return apply_operation(expression_fields[1], left, right)
-
-    if len(expression_fields) == 5:
-        left = parse_unsigned_number(expression_fields[0])
-        middle = parse_unsigned_number(expression_fields[2])
-        right = parse_unsigned_number(expression_fields[4])
-        first = apply_operation(expression_fields[1], left, middle)
-        return apply_operation(expression_fields[3], first, right)
-
-    if len(expression_fields) == 7:
-        if expression_fields[0] == "(" and expression_fields[4] == ")":
-            left = parse_unsigned_number(expression_fields[1])
-            middle = parse_unsigned_number(expression_fields[3])
-            right = parse_unsigned_number(expression_fields[6])
-            first = apply_operation(expression_fields[2], left, middle)
-            return apply_operation(expression_fields[5], first, right)
-        if expression_fields[2] == "(" and expression_fields[6] == ")":
-            left = parse_unsigned_number(expression_fields[0])
-            middle = parse_unsigned_number(expression_fields[3])
-            right = parse_unsigned_number(expression_fields[5])
-            first = apply_operation(expression_fields[4], middle, right)
-            return apply_operation(expression_fields[1], left, first)
+        if op in {"<", ">"}:
+            return apply_comparison(op, left, right)
+        return apply_operation(op, left, right)
 
     raise ValueError(f"unsupported expression shape: {expression_fields!r}")

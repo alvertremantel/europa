@@ -30,17 +30,19 @@ def parse_unsigned_number(text: str) -> int:
 
 def format_signed_number(value: int) -> str:
     if value >= 0:
-        return format_unsigned_number(value)
-    return f"(-{format_unsigned_number(-value)})"
+        return f"{{{format_unsigned_number(value)}}}"
+    return f"({format_unsigned_number(-value)})"
 
 
 def parse_signed_number(text: str) -> int:
-    if text.startswith("(-") and text.endswith(")"):
-        magnitude = parse_unsigned_number(text[2:-1])
+    if text.startswith("{") and text.endswith("}"):
+        return parse_unsigned_number(text[1:-1])
+    if text.startswith("(") and text.endswith(")"):
+        magnitude = parse_unsigned_number(text[1:-1])
         if magnitude == 0:
             raise ValueError("negative zero is not allowed")
         return -magnitude
-    return parse_unsigned_number(text)
+    raise ValueError(f"invalid signed number wrapper: {text!r}")
 
 
 def fits_number_width(value: int) -> bool:

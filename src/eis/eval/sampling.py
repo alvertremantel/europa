@@ -9,11 +9,10 @@ from typing import cast
 
 from eis.artifacts import toml_text
 from eis.data.core import (
-    format_signed_number,
-    parse_signed_number,
     stable_hash,
     validate_line,
 )
+from eis.data.answers import is_canonical_answer
 
 from .core import SelectedExample
 
@@ -125,10 +124,7 @@ def print_selection_summary(
 
 
 def is_canonical_prediction(text: str) -> bool:
-    try:
-        return format_signed_number(parse_signed_number(text)) == text
-    except ValueError:
-        return False
+    return is_canonical_answer(text)
 
 
 def top_or_bottom_kinds(

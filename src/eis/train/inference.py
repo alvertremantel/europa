@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import torch
@@ -12,6 +13,12 @@ from .model import SmallCausalTransformer
 from .utils import answer_from_line, prompt_from_line, sample_examples
 
 TRAINING_EXACT_MATCH_PROBE_SIZE = 50
+
+
+@dataclass(frozen=True)
+class CompletionResult:
+    text: str
+    terminated: bool
 
 
 def loss_for_batch(
@@ -50,6 +57,23 @@ def generate_completion(
     max_new_tokens: int,
     device: torch.device,
 ) -> str:
+    return generate_completion_result(
+        model=model,
+        tokenizer=tokenizer,
+        prompt=prompt,
+        max_new_tokens=max_new_tokens,
+        device=device,
+    ).text
+
+
+@torch.inference_mode()
+def generate_completion_result(
+    model: SmallCausalTransformer,
+    tokenizer: ArithmeticTokenizer,
+    prompt: str,
+    max_new_tokens: int,
+    device: torch.device,
+) -> CompletionResult:
     model.eval()
     token_ids = tokenizer.encode_prompt(prompt)
     digit_place_values = tokenizer.fixed_meaning_digit_place_values_for_token_ids(
@@ -61,6 +85,7 @@ def generate_completion(
         [digit_place_values], dtype=torch.float32, device=device
     )
 
+    terminated = False
     for _ in range(max_new_tokens):
         window = generated[:, -model.config.sequence_length :]
         window_digit_places = generated_digit_places[:, -model.config.sequence_length :]
@@ -80,10 +105,14 @@ def generate_completion(
             (generated_digit_places, next_digit_place_tensor), dim=1
         )
         if next_token_id_int == tokenizer.eos_id:
+            terminated = True
             break
 
     answer_ids = generated_token_ids[len(token_ids) :]
-    return extract_final_answer(tokenizer.decode_answer_tokens(answer_ids))
+    return CompletionResult(
+        text=extract_final_answer(tokenizer.decode_answer_tokens(answer_ids)),
+        terminated=terminated,
+    )
 
 
 @torch.inference_mode()

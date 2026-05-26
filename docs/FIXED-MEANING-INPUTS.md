@@ -66,7 +66,7 @@ The model just loads that table, validates the width, and freezes it.
 ### Digit place
 
 Digit rows reserve one dimension for runtime place assignment inside each full reversed
-8-digit numeral.
+6-digit REDUX numeral.
 
 If the model only sees that a token means “9”, it still needs place to distinguish:
 

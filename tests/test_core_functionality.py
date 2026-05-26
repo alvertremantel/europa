@@ -5,8 +5,11 @@ import torch
 
 from eis.eval.core import BucketStats, bucket_row
 from eis.data.core import (
+    format_answer,
     format_signed_number,
     format_unsigned_number,
+    is_canonical_answer,
+    parse_answer,
     parse_signed_number,
     validate_line,
 )
@@ -35,45 +38,71 @@ from eis.train.training.checkpointing import _model_config_from_payload
 
 
 def test_generator_validates_canonical_lines() -> None:
-    line = "<do> <calc> 30000000 + 40000000 = 70000000"
+    line = "<do> <calc> {300000} + {400000} = <ans> {700000}"
     parsed = validate_line(line)
-    assert parsed.category == "binary"
-    assert parsed.kind == "binary::small-small::+"
+    assert parsed.category == "arithmetic"
+    assert parsed.kind == "arithmetic::small-small::+"
     assert parsed.answer == 7
-    assert format_unsigned_number(6) == "60000000"
-    assert format_signed_number(-6) == "(-60000000)"
-    assert parse_signed_number("(-60000000)") == -6
+    assert format_unsigned_number(6) == "600000"
+    assert format_signed_number(6) == "{600000}"
+    assert format_signed_number(-6) == "(600000)"
+    assert format_signed_number(0) == "{000000}"
+    assert parse_signed_number("{600000}") == 6
+    assert parse_signed_number("(600000)") == -6
+    with pytest.raises(ValueError):
+        parse_signed_number("600000")
+    with pytest.raises(ValueError):
+        parse_signed_number("(000000)")
 
 
-def test_training_tokenizer_round_trips_and_formats_scratchpads() -> None:
-    line = "<do> <calc> ( 30000000 + 40000000 ) * 20000000 = 41000000"
-    transformed, applied_format = format_training_line(line, "light_scratchpad")
-    tokenizer = ArithmeticTokenizer(vocab_for_training_format("light_scratchpad"))
-    assert applied_format == "parentheses_intermediate"
-    assert transformed == (
-        "<do> <calc> ( 30000000 + 40000000 ) * 20000000 = "
-        "<work> <step> 70000000 <final> 41000000"
-    )
-    assert final_answer_from_line(transformed) == "41000000"
+def test_redux_answers_parse_and_validate_canonicality() -> None:
+    assert format_answer(parse_answer("{000000}")) == "{000000}"
+    assert format_answer(parse_answer("(100000)")) == "(100000)"
+    assert format_answer(parse_answer("true")) == "true"
+    assert format_answer(parse_answer("false")) == "false"
+    assert is_canonical_answer("{600000}") is True
+    assert is_canonical_answer("True") is False
+    assert is_canonical_answer("600000") is False
+
+
+def test_redux_parser_rejects_legacy_protocol_forms() -> None:
+    with pytest.raises(ValueError):
+        validate_line("<do> <calc> 30000000 + 40000000 = 70000000")
+    with pytest.raises(ValueError):
+        validate_line("<do> <calc> {300000} + {400000} = {700000}")
+
+
+def test_training_tokenizer_round_trips_redux_lines_and_prompts() -> None:
+    line = "<do> <calc> {300000} + {400000} = <ans> {700000}"
+    transformed, applied_format = format_training_line(line, "final_only")
+    tokenizer = ArithmeticTokenizer(vocab_for_training_format("final_only"))
+    assert applied_format == "final_only"
+    assert transformed == line
+    assert final_answer_from_line(transformed) == "{700000}"
     assert tokenizer.decode(tokenizer.encode_line(transformed)) == transformed
-    assert tokenizer.decode(tokenizer.encode_prompt(line)) == (
-        "<do> <calc> ( 30000000 + 40000000 ) * 20000000 ="
+    assert tokenizer.decode(tokenizer.encode_prompt("{300000} + {400000} =")) == (
+        "<do> <calc> {300000} + {400000} = <ans>"
     )
+    assert "<sep>" not in [
+        tokenizer.id_to_token[token_id] for token_id in tokenizer.encode_line(line)
+    ]
+    with pytest.raises(ValueError, match="final_only"):
+        vocab_for_training_format("light_scratchpad")
 
 
 def test_training_tokenizer_preserves_negative_digit_structure() -> None:
     tokenizer = ArithmeticTokenizer()
-    token_ids = tokenizer.encode_prompt("<do> <calc> (-60000000) + 30000000 =")
+    token_ids = tokenizer.encode_prompt("<do> <calc> (600000) + {300000} =")
     tokens = [tokenizer.id_to_token[token_id] for token_id in token_ids]
 
     assert tokens[:2] == ["<do>", "<calc>"]
-    assert tokens[2:12] == ["(", "-", "6", "0", "0", "0", "0", "0", "0", "0"]
+    assert tokens[2:10] == ["(", "6", "0", "0", "0", "0", "0", ")"]
 
 
 def test_small_transformer_fixed_meaning_forward_shape() -> None:
     tokenizer = ArithmeticTokenizer()
     d_model = fixed_meaning_width()
-    assert d_model == 12
+    assert d_model == 16
     config = ModelConfig(
         vocab_size=tokenizer.vocab_size,
         sequence_length=32,
@@ -85,7 +114,7 @@ def test_small_transformer_fixed_meaning_forward_shape() -> None:
         position_encoding=POSITION_ENCODING_FIXED_MEANING,
     )
     model = SmallCausalTransformer(config, tokenizer=tokenizer).eval()
-    input_token_ids = tokenizer.encode_prompt("<do> <calc> 30000000 + 40000000 =")
+    input_token_ids = tokenizer.encode_prompt("<do> <calc> {300000} + {400000} =")
     input_ids = torch.tensor([input_token_ids], dtype=torch.long)
     input_digit_places = torch.tensor(
         [tokenizer.fixed_meaning_digit_place_values_for_token_ids(input_token_ids)],
@@ -116,7 +145,7 @@ def test_fixed_meaning_digit_place_encoding_restarts_for_each_number() -> None:
         position_encoding=POSITION_ENCODING_FIXED_MEANING,
     )
     model = SmallCausalTransformer(config, tokenizer=tokenizer).eval()
-    token_ids = tokenizer.encode_prompt("<do> <calc> 30000000 + 40000000 =")
+    token_ids = tokenizer.encode_prompt("<do> <calc> {300000} + {400000} =")
     input_ids = torch.tensor([token_ids], dtype=torch.long)
     input_digit_places = torch.tensor(
         [tokenizer.fixed_meaning_digit_place_values_for_token_ids(token_ids)],
@@ -131,9 +160,7 @@ def test_fixed_meaning_digit_place_encoding_restarts_for_each_number() -> None:
         for index, token_id in enumerate(token_ids)
         if tokenizer.id_to_token[token_id] in set("0123456789")
     ]
-    assert digit_place_values == pytest.approx(
-        [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] * 2
-    )
+    assert digit_place_values == pytest.approx([0.1, 0.2, 0.3, 0.4, 0.5, 0.6] * 2)
 
 
 def test_incremental_digit_place_matches_full_recompute() -> None:
@@ -167,8 +194,8 @@ def test_batched_generation_matches_single_prompt_generation() -> None:
     )
     model = SmallCausalTransformer(config, tokenizer=tokenizer).eval()
     prompts = [
-        "<do> <calc> 30000000 + 40000000 =",
-        "<do> <calc> 50000000 - 20000000 =",
+        "<do> <calc> {300000} + {400000} = <ans>",
+        "<do> <calc> {500000} - {200000} = <ans>",
     ]
 
     single = [
@@ -182,7 +209,7 @@ def test_batched_generation_matches_single_prompt_generation() -> None:
 
 def test_fixed_meaning_datasets_emit_digit_place_batches() -> None:
     tokenizer = ArithmeticTokenizer()
-    line = "<do> <calc> 30000000 + 40000000 = 70000000"
+    line = "<do> <calc> {300000} + {400000} = <ans> {700000}"
     token_ids = tokenizer.encode_line(line)
     stream_token_ids = token_ids * 2
     stream_digit_places = tokenizer.fixed_meaning_digit_place_values_for_token_ids(
@@ -198,8 +225,8 @@ def test_fixed_meaning_datasets_emit_digit_place_batches() -> None:
 
     example = ArithmeticExample(
         line=line,
-        prompt="<do> <calc> 30000000 + 40000000 =",
-        answer="70000000",
+        prompt="<do> <calc> {300000} + {400000} = <ans>",
+        answer="{700000}",
     )
     example_dataset = ExampleSequenceDataset(
         [example],
@@ -213,7 +240,7 @@ def test_fixed_meaning_datasets_emit_digit_place_batches() -> None:
 
 def test_token_stream_digit_places_are_computed_before_block_slicing() -> None:
     tokenizer = ArithmeticTokenizer()
-    line = "<do> <calc> 12345678 + 87654321 = 99999999"
+    line = "<do> <calc> {123450} + {876540} = <ans> {999990}"
     token_ids = tokenizer.encode_line(line)
     digit_place_values = tokenizer.fixed_meaning_digit_place_values_for_token_ids(
         token_ids
@@ -223,8 +250,8 @@ def test_token_stream_digit_places_are_computed_before_block_slicing() -> None:
     input_ids, input_digit_places, _ = dataset[1]
     input_tokens = [tokenizer.id_to_token[token_id] for token_id in input_ids.tolist()]
 
-    assert input_tokens[:5] == ["5", "4", "3", "2", "1"]
-    assert input_digit_places[:5].tolist() == pytest.approx([0.4, 0.5, 0.6, 0.7, 0.8])
+    assert input_tokens[:5] == ["4", "0", "}", "=", "<ans>"]
+    assert input_digit_places[:5].tolist() == pytest.approx([0.5, 0.6, 0.0, 0.0, 0.0])
 
 
 def test_fixed_meaning_rejects_d_model_mismatch() -> None:
@@ -279,7 +306,8 @@ def test_legacy_checkpoint_model_config_is_rejected() -> None:
 def test_sample_exact_match_probe_is_deterministic_and_unique(tmp_path) -> None:
     path = tmp_path / "val.txt"
     lines = [
-        f"<do> <calc> {index:08d} + 00000000 = {index:08d}" for index in range(100)
+        f"<do> <calc> {{{index:06d}}} + {{000000}} = <ans> {{{index:06d}}}"
+        for index in range(100)
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -296,7 +324,10 @@ def test_sample_exact_match_probe_uses_all_examples_when_split_is_small(
     tmp_path,
 ) -> None:
     path = tmp_path / "val.txt"
-    lines = [f"<do> <calc> {index:08d} + 00000000 = {index:08d}" for index in range(12)]
+    lines = [
+        f"<do> <calc> {{{index:06d}}} + {{000000}} = <ans> {{{index:06d}}}"
+        for index in range(12)
+    ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     sample = sample_exact_match_probe(path, seed=11)
@@ -336,7 +367,7 @@ def test_evaluator_bucket_row_keeps_summary_math() -> None:
     stats = BucketStats(
         evaluated_count=4, perfect_count=3, canonical_prediction_count=2
     )
-    row = bucket_row(name="binary::small-small::+", stats=stats, available_count=10)
+    row = bucket_row(name="arithmetic::small-small::+", stats=stats, available_count=10)
     assert row["missed_count"] == 1
     assert row["accuracy"] == 0.75
     assert row["canonical_prediction_rate"] == 0.5

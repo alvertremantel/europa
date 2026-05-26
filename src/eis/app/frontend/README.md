@@ -56,9 +56,9 @@ large tables, CircuitsVis embeds, and network maps may scroll inside their panel
 
 ## Notes
 
-- Prompts should use reversed zero-padded arithmetic tokens such as
-  `02000000 + 01000000 =`.
-- The backend normalizes prompts to the `<do> <calc> ... =` calculation protocol before analysis.
+- Prompts should use REDUX wrapped reversed tokens such as
+  `{020000} + {010000} = <ans>` or `{300000} < {400000} = <ans>`.
+- The backend normalizes prompts to the `<do> <calc> ... = <ans>` calculation protocol before analysis.
 - Full-network payload controls are bounded server-side: `mlp_threshold`, `top_k`,
   `top_neurons`, and `selected_token_index`. The frontend requests this payload only
   when the Network panel is opened or refreshed to keep ordinary analysis responses small.

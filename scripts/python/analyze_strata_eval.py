@@ -196,10 +196,7 @@ def operation_family(
     inner_op: str | None,
     outer_op: str | None,
 ) -> str:
-    if category == "parentheses":
-        if inner_op is None or outer_op is None:
-            raise ValueError("parentheses row is missing inner or outer operator")
-        return f"{inner_op}{outer_op}"
+    del inner_op, outer_op
     if op is None:
         raise ValueError(f"{category} row is missing op")
     return op
@@ -438,15 +435,15 @@ def run_tests(
             "contains_subtract",
             ["category", "max_band", "contains_multiply"],
         ),
-        ("binary", subset_rows(rows, "binary"), "op_family", ["log_available_count"]),
-        ("binary", subset_rows(rows, "binary"), "max_band", ["op_family"]),
-        ("three_input", subset_rows(rows, "three_input"), "op_family", ["max_band"]),
         (
-            "three_input",
-            subset_rows(rows, "three_input"),
-            "max_band",
-            ["op_family"],
+            "arithmetic",
+            subset_rows(rows, "arithmetic"),
+            "op_family",
+            ["log_available_count"],
         ),
+        ("arithmetic", subset_rows(rows, "arithmetic"), "max_band", ["op_family"]),
+        ("comparison", subset_rows(rows, "comparison"), "op_family", ["max_band"]),
+        ("comparison", subset_rows(rows, "comparison"), "max_band", ["op_family"]),
         (
             "negative_input",
             subset_rows(rows, "negative_input"),
@@ -464,30 +461,6 @@ def run_tests(
             subset_rows(rows, "negative_input"),
             "max_band",
             ["op_family", "sign_side"],
-        ),
-        (
-            "parentheses",
-            subset_rows(rows, "parentheses"),
-            "shape",
-            ["op_family", "max_band"],
-        ),
-        (
-            "parentheses",
-            subset_rows(rows, "parentheses"),
-            "op_family",
-            ["shape", "max_band"],
-        ),
-        (
-            "parentheses",
-            subset_rows(rows, "parentheses"),
-            "max_band",
-            ["shape", "op_family"],
-        ),
-        (
-            "parentheses",
-            subset_rows(rows, "parentheses"),
-            "wildcard",
-            ["shape", "op_family", "max_band"],
         ),
     ]
 

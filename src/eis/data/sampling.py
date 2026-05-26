@@ -11,11 +11,11 @@ from .config import (
     VAL_SAMPLES_PER_KIND,
     _BANDS_BY_NAME,
 )
+from .answers import format_answer
 from .kinds import KindSpec
 from .numbers import (
     fits_number_width,
     format_signed_number,
-    format_unsigned_number,
     ordered_band_patterns,
     stable_hash,
 )
@@ -26,7 +26,7 @@ class Sample:
     category: str
     kind: str
     expression_fields: tuple[str, ...]
-    answer: int
+    answer: int | bool
 
 
 def apply_operation(op: str, left: int, right: int) -> int:
@@ -43,8 +43,16 @@ def apply_operation(op: str, left: int, right: int) -> int:
     return left // right
 
 
+def apply_comparison(op: str, left: int, right: int) -> bool:
+    if op == "<":
+        return left < right
+    if op == ">":
+        return left > right
+    raise ValueError(f"unsupported comparison operator: {op}")
+
+
 def format_sample(sample: Sample) -> str:
-    return f"<do> <calc> {' '.join(sample.expression_fields)} = {format_signed_number(sample.answer)}"
+    return f"<do> <calc> {' '.join(sample.expression_fields)} = <ans> {format_answer(sample.answer)}"
 
 
 def shuffled_samples(samples: list[Sample], *, seed: int, kind: str) -> list[Sample]:
@@ -60,19 +68,27 @@ def write_sample(handle: TextIO, sample: Sample) -> None:
 
 def build_exhaustive_binary_samples(spec: KindSpec) -> list[Sample]:
     if spec.op is None:
-        raise ValueError(f"binary kind is missing its operator: {spec}")
+        raise ValueError(f"two-input kind is missing its operator: {spec}")
 
     samples: list[Sample] = []
     for band_names in ordered_band_patterns(spec.band_pattern):
         left_band, right_band = (_BANDS_BY_NAME[name] for name in band_names)
         for left in left_band.values():
             for right in right_band.values():
-                if spec.op == "-" and left < right:
+                if spec.category == "arithmetic" and spec.op == "-" and left < right:
                     continue
-                if spec.op == "/" and (right == 0 or left % right != 0):
+                if (
+                    spec.category == "arithmetic"
+                    and spec.op == "/"
+                    and (right == 0 or left % right != 0)
+                ):
                     continue
 
-                answer = apply_operation(spec.op, left, right)
+                answer = (
+                    apply_comparison(spec.op, left, right)
+                    if spec.category == "comparison"
+                    else apply_operation(spec.op, left, right)
+                )
                 sample = Sample(
                     category=spec.category,
                     kind=spec.name,
@@ -85,6 +101,17 @@ def build_exhaustive_binary_samples(spec: KindSpec) -> list[Sample]:
                 )
                 samples.append(sample)
 
+    if spec.category == "comparison":
+        true_samples = [sample for sample in samples if sample.answer is True]
+        false_samples = [sample for sample in samples if sample.answer is False]
+        balanced_count = min(len(true_samples), len(false_samples))
+        if balanced_count == 0:
+            raise ValueError(f"comparison kind cannot be balanced: {spec.name}")
+        return [
+            *sorted(true_samples, key=format_sample)[:balanced_count],
+            *sorted(false_samples, key=format_sample)[:balanced_count],
+        ]
+
     return samples
 
 
@@ -96,94 +123,6 @@ def random_band_value(
     if start > band.end:
         raise ValueError(f"band {band_name} cannot provide requested values")
     return rng.randint(start, band.end)
-
-
-def random_three_input_candidate(spec: KindSpec, rng: random.Random) -> Sample | None:
-    if spec.op is None:
-        raise ValueError(f"three-input kind is missing its operator: {spec}")
-
-    band_names = rng.choice(ordered_band_patterns(spec.band_pattern))
-    values = tuple(
-        random_band_value(rng, band_name, positive_only=False)
-        for band_name in band_names
-    )
-    left, middle, right = values
-
-    if spec.op == "+":
-        first = left + middle
-        answer = first + right
-    elif spec.op == "-":
-        first = left - middle
-        answer = first - right
-        if first < 0 or answer < 0:
-            return None
-    else:
-        first = left * middle
-        answer = first * right
-
-    if not fits_number_width(first) or not fits_number_width(answer):
-        return None
-
-    return Sample(
-        category=spec.category,
-        kind=spec.name,
-        expression_fields=(
-            format_unsigned_number(left),
-            spec.op,
-            format_unsigned_number(middle),
-            spec.op,
-            format_unsigned_number(right),
-        ),
-        answer=answer,
-    )
-
-
-def random_parentheses_candidate(spec: KindSpec, rng: random.Random) -> Sample | None:
-    if spec.inner_op is None or spec.outer_op is None or spec.shape is None:
-        raise ValueError(f"parentheses kind is incomplete: {spec}")
-
-    band_names = rng.choice(ordered_band_patterns(spec.band_pattern))
-    left, middle, right = tuple(
-        random_band_value(rng, band_name, positive_only=False)
-        for band_name in band_names
-    )
-
-    if spec.shape == "left":
-        first = apply_operation(spec.inner_op, left, middle)
-        answer = apply_operation(spec.outer_op, first, right)
-        expression_fields = (
-            "(",
-            format_unsigned_number(left),
-            spec.inner_op,
-            format_unsigned_number(middle),
-            ")",
-            spec.outer_op,
-            format_unsigned_number(right),
-        )
-    else:
-        first = apply_operation(spec.inner_op, middle, right)
-        answer = apply_operation(spec.outer_op, left, first)
-        expression_fields = (
-            format_unsigned_number(left),
-            spec.outer_op,
-            "(",
-            format_unsigned_number(middle),
-            spec.inner_op,
-            format_unsigned_number(right),
-            ")",
-        )
-
-    if first < 0 or answer < 0:
-        return None
-    if not fits_number_width(first) or not fits_number_width(answer):
-        return None
-
-    return Sample(
-        category=spec.category,
-        kind=spec.name,
-        expression_fields=expression_fields,
-        answer=answer,
-    )
 
 
 def random_negative_candidate(spec: KindSpec, rng: random.Random) -> Sample | None:
@@ -231,11 +170,7 @@ def build_sampled_kind_samples(spec: KindSpec, seed: int) -> list[Sample]:
         if len(samples) >= target_total:
             break
 
-        if spec.category == "three_input":
-            candidate = random_three_input_candidate(spec, rng)
-        elif spec.category == "parentheses":
-            candidate = random_parentheses_candidate(spec, rng)
-        elif spec.category == "negative_input":
+        if spec.category == "negative_input":
             candidate = random_negative_candidate(spec, rng)
         else:
             raise ValueError(f"unexpected sampled category: {spec.category}")

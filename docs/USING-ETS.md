@@ -39,9 +39,9 @@ This writes:
 
 Key format rules:
 
-- each row is `<do> <calc> <expression> = <result>`
-- numbers are 8-digit zero-padded reversed decimals
-- negatives are formatted like `(-60000000)`
+- each row is `<do> <calc> <expression> = <ans> <result>`
+- numbers are 6-digit zero-padded reversed decimals, wrapped as `{xxxxxx}` for non-negative values and `(xxxxxx)` for negative values
+- comparisons use `<` / `>` and produce `true` or `false`
 
 Useful options:
 
@@ -51,10 +51,9 @@ Useful options:
 
 Problem families include:
 
-- `binary`
-- `three_input`
-- `parentheses`
+- `arithmetic`
 - `negative_input`
+- `comparison`
 
 ## 2. Create a training config
 
@@ -112,7 +111,7 @@ Notes:
 ```bash
 uv run eis train predict \
   --checkpoint runs/my-run/checkpoint-best.pt \
-  --prompt "<do> <calc> 03000000 + 03000000 ="
+  --prompt "<do> <calc> {300000} + {300000} = <ans>"
 ```
 
 Useful options:

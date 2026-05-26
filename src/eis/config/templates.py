@@ -40,7 +40,7 @@ max_new_tokens = ""
 
 [training]
 training_mode = ""          # token_stream | examples
-training_format = ""        # final_only | light_scratchpad | parentheses_intermediate | multiply_intermediate
+training_format = ""        # final_only
 skip_overlong_examples = ""
 curriculum_name = ""        # optional; blank disables curriculum
 """
@@ -91,7 +91,7 @@ Each variable below appears in train-config.toml.
 
 [training]
 - training_mode (string, required): "token_stream" or "examples".
-- training_format (string, required): "final_only", "light_scratchpad", "parentheses_intermediate", or "multiply_intermediate".
+- training_format (string, required): "final_only". REDUX removed scratchpad formats.
 - skip_overlong_examples (boolean, required): In example mode, skip sequences longer than model.sequence_length instead of failing.
 - curriculum_name (string, optional): Mixed-curriculum preset. Use "baseline_mixed_v1", "mul_focus_v1", or "".
 

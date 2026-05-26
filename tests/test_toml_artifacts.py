@@ -21,8 +21,8 @@ def test_toml_artifact_writer_omits_none_and_round_trips(tmp_path):
             "optional": None,
             "nested": {"value": 3, "missing": None},
             "records": [
-                {"kind": "binary::small-small::+", "score": 1.0, "note": None},
-                {"kind": "parentheses::small-medium-large::(+)*", "score": 0.5},
+                {"kind": "arithmetic::small-small::+", "score": 1.0, "note": None},
+                {"kind": "comparison::small-medium::<", "score": 0.5},
             ],
         },
     )
@@ -33,7 +33,7 @@ def test_toml_artifact_writer_omits_none_and_round_trips(tmp_path):
     assert "optional" not in loaded
     assert loaded["nested"] == {"value": 3}
     records = cast(list[dict[str, object]], loaded["records"])
-    assert records[0]["kind"] == "binary::small-small::+"
+    assert records[0]["kind"] == "arithmetic::small-small::+"
     assert "note" not in records[0]
 
 

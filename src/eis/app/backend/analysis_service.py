@@ -48,12 +48,14 @@ def _expression_from_prompt(prompt: str) -> str:
         fields = fields[2:]
     if "=" in fields:
         fields = fields[: fields.index("=")]
+    if "<ans>" in fields:
+        fields = fields[: fields.index("<ans>")]
     return " ".join(fields)
 
 
 def _classification_prompt(prompt: str) -> str:
     expression = _expression_from_prompt(prompt)
-    return f"{expression} =" if expression else "="
+    return f"{expression} = <ans>" if expression else "= <ans>"
 
 
 def build_analyze_response(

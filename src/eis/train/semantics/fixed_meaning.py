@@ -6,78 +6,69 @@ import torch
 from torch import Tensor
 
 DIGIT_TOKENS = tuple(str(value) for value in range(10))
-OPERATOR_TOKENS = ("+", "-", "*", "/", "=", "(", ")")
-CONTROL_TOKENS = (
-    "<pad>",
-    "<do>",
-    "<eos>",
-    "<sep>",
-    "<calc>",
-    "<work>",
-    "<step>",
-    "<final>",
-    "undefined",
-    "remainder",
-)
-SPECIAL_FIELD_TOKENS = frozenset(
-    {"<do>", "<calc>", "<work>", "<step>", "<final>", "undefined", "remainder"}
-)
+OPERATOR_TOKENS = ("+", "-", "*", "/", "<", ">", "=", "(", ")", "{", "}")
+CONTROL_TOKENS = ("<pad>", "<do>", "<eos>", "<calc>", "<ans>", "true", "false")
+SPECIAL_FIELD_TOKENS = frozenset({"<do>", "<calc>", "<ans>", "true", "false"})
 INFO_TOKENS = frozenset(CONTROL_TOKENS)
-SEPARATOR_TOKENS = frozenset({"<pad>", "<do>", "<eos>", "<sep>", "<calc>"})
+SEPARATOR_TOKENS = frozenset({"<pad>", "<do>", "<eos>", "<calc>", "<ans>"})
 
 FIXED_MEANING_DIMENSIONS = (
     "act1",
     "act2",
     "how1",
     "how2",
-    "math1",
-    "math2",
-    "math3",
-    "math4",
-    "math5",
-    "math6",
+    "add_sub",
+    "mul_div",
+    "compare_lt_gt",
+    "equals",
+    "digit_value",
+    "digit_place",
+    "wrapper_round",
+    "wrapper_curly",
+    "truth",
+    "answer_phase",
     "form1",
     "form2",
 )
 FIXED_MEANING_WIDTH = len(FIXED_MEANING_DIMENSIONS)
-FIXED_MEANING_DIGIT_VALUE_DIMENSION = FIXED_MEANING_DIMENSIONS.index("math5")
-FIXED_MEANING_DIGIT_PLACE_DIMENSION = FIXED_MEANING_DIMENSIONS.index("math6")
+_DIM = {name: index for index, name in enumerate(FIXED_MEANING_DIMENSIONS)}
+FIXED_MEANING_DIGIT_VALUE_DIMENSION = _DIM["digit_value"]
+FIXED_MEANING_DIGIT_PLACE_DIMENSION = _DIM["digit_place"]
 FIXED_MEANING_MAX_DIGIT_PLACE = 9
 
 
-def _vector(*values: float) -> tuple[float, ...]:
-    if len(values) != FIXED_MEANING_WIDTH:
-        raise ValueError(
-            f"fixed_meaning vectors must have width {FIXED_MEANING_WIDTH}, got {len(values)}"
-        )
-    return tuple(float(value) for value in values)
+def _vector(**values: float) -> tuple[float, ...]:
+    vector = [0.0] * FIXED_MEANING_WIDTH
+    for name, value in values.items():
+        vector[_DIM[name]] = float(value)
+    return tuple(vector)
 
 
 def _digit_vector(value: float) -> tuple[float, ...]:
-    return _vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, value, 0.0, 0.0, 0.0)
+    return _vector(digit_value=value)
 
 
-# Aligned with docs/fixed_meaning_plan.csv. For digit tokens, the authored math6 value is
-# intentionally dynamic and is filled at runtime from the digit's place within each
-# full reversed 8-digit numeral.
+# Digit place is filled dynamically by the tokenizer/runtime. REDUX extends the
+# fixed space with explicit comparison, wrapper, truth, and answer-phase axes.
 FIXED_MEANING_TOKEN_VECTORS: dict[str, tuple[float, ...]] = {
-    "<pad>": _vector(0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.5, 0.0),
-    "<do>": _vector(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.25),
-    "<eos>": _vector(-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.25),
-    "<sep>": _vector(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.5, 0.0),
-    "<calc>": _vector(0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0),
-    "<work>": _vector(0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.5),
-    "<step>": _vector(0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.5),
-    "<final>": _vector(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.5),
-    "undefined": _vector(0.0, 0.0, 0.0, 0.0, -0.2, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0),
-    "remainder": _vector(0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0),
-    "+": _vector(0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0),
-    "-": _vector(0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0),
-    "*": _vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0),
-    "/": _vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0),
-    "=": _vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0),
-    "(": _vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0),
-    ")": _vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0),
+    "<pad>": _vector(how1=-1.0, digit_place=-1.0, form1=0.5),
+    "<do>": _vector(act1=1.0, digit_place=-1.0, form2=0.25),
+    "<eos>": _vector(act1=-1.0, digit_place=-1.0, form2=-0.25),
+    "<calc>": _vector(act2=1.0, digit_place=-1.0),
+    "<ans>": _vector(act2=-1.0, answer_phase=1.0, digit_place=-1.0),
+    "true": _vector(truth=1.0, answer_phase=1.0, digit_place=-1.0),
+    "false": _vector(truth=-1.0, answer_phase=1.0, digit_place=-1.0),
+    "+": _vector(add_sub=1.0, digit_place=-1.0),
+    "-": _vector(add_sub=-1.0, digit_place=-1.0),
+    "*": _vector(mul_div=1.0, digit_place=-1.0),
+    "/": _vector(mul_div=-1.0, digit_place=-1.0),
+    "<": _vector(compare_lt_gt=1.0, digit_place=-1.0),
+    ">": _vector(compare_lt_gt=-1.0, digit_place=-1.0),
+    "=": _vector(equals=1.0, digit_place=-1.0),
+    "(": _vector(wrapper_round=1.0, digit_place=-1.0),
+    ")": _vector(wrapper_round=-1.0, digit_place=-1.0),
+    "{": _vector(wrapper_curly=1.0, digit_place=-1.0),
+    "}": _vector(wrapper_curly=-1.0, digit_place=-1.0),
     "0": _digit_vector(0.0),
     "1": _digit_vector(0.1),
     "2": _digit_vector(0.2),

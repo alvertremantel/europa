@@ -180,8 +180,8 @@ def build_fake_analysis(
         ),
         answer_position=1,
         generated_answer=GeneratedAnswerResponse(
-            text="03000000",
-            tokens=list("03000000"),
+            text="{030000}",
+            tokens=list("{030000}"),
             token_count=8,
             is_correct=True,
             is_valid_canonical=True,
@@ -204,9 +204,9 @@ def build_fake_analysis(
             dropout=0.0,
         ),
         problem=ProblemMetadataResponse(
-            category="binary",
-            kind="binary::small-small::+",
-            curriculum_group="easy_binary_add_sub",
+            category="arithmetic",
+            kind="arithmetic::small-small::+",
+            curriculum_group="easy_arithmetic_add_sub",
         ),
         checkpoint=CheckpointResponse(
             path="runs/fake.pt",
@@ -304,15 +304,15 @@ def test_markdown_summary_includes_unavailable_notes() -> None:
     analysis = build_fake_analysis(attention=False, network=False)
     health = build_fake_health()
     files, manifest = build_bundle_file_map(
-        prompt="<do> <calc> 03000000 + 03000000 =",
+        prompt="<do> <calc> {300000} + {300000} = <ans>",
         analysis=analysis,
         health=health,
         options=ExportOptions(output_mode="zip"),
     )
     summary = files[SUMMARY_PATH].decode("utf-8")
-    assert "<do> <calc> 03000000 + 03000000 =" in summary
+    assert "<do> <calc> {300000} + {300000} = <ans>" in summary
     assert "runs/fake.pt" in summary
-    assert "03000000" in summary
+    assert "{030000}" in summary
     assert "native_pytorch" in summary
     assert manifest.unavailable_sections
     assert "attention_summary" in summary
@@ -336,7 +336,7 @@ def test_writer_supports_directory_and_zip_outputs(tmp_path: Path) -> None:
     health = build_fake_health()
     directory_output = tmp_path / "bundle-dir"
     write_bundle(
-        prompt="<do> <calc> 03000000 + 03000000 =",
+        prompt="<do> <calc> {300000} + {300000} = <ans>",
         analysis=analysis,
         health=health,
         options=ExportOptions(output_mode="directory"),
@@ -347,7 +347,7 @@ def test_writer_supports_directory_and_zip_outputs(tmp_path: Path) -> None:
 
     zip_output = tmp_path / "bundle.zip"
     write_bundle(
-        prompt="<do> <calc> 03000000 + 03000000 =",
+        prompt="<do> <calc> {300000} + {300000} = <ans>",
         analysis=analysis,
         health=health,
         options=ExportOptions(output_mode="zip"),
@@ -384,7 +384,7 @@ def test_cli_single_prompt_and_batch_outputs(
                 "--checkpoint",
                 "runs/fake.pt",
                 "--prompt",
-                "<do> <calc> 03000000 + 03000000 =",
+                "<do> <calc> {300000} + {300000} = <ans>",
                 "--output",
                 str(single_output),
                 "--zip",
@@ -396,7 +396,7 @@ def test_cli_single_prompt_and_batch_outputs(
 
     prompts_file = tmp_path / "prompts.txt"
     prompts_file.write_text(
-        "<do> <calc> 03000000 + 03000000 =\n<do> <calc> 04000000 + 01000000 =\n",
+        "<do> <calc> {300000} + {300000} = <ans>\n<do> <calc> {400000} + {100000} = <ans>\n",
         encoding="utf-8",
     )
     batch_output = tmp_path / "batch"
@@ -437,7 +437,7 @@ def test_cli_missing_checkpoint_fails_clearly(
         cli.main(
             [
                 "--prompt",
-                "<do> <calc> 03000000 + 03000000 =",
+                "<do> <calc> {300000} + {300000} = <ans>",
                 "--output",
                 str(output),
             ]
@@ -476,7 +476,7 @@ def test_cli_config_precedence_device_not_overridden_by_default(
                 "--config",
                 str(config_path),
                 "--prompt",
-                "<do> <calc> 03000000 + 03000000 =",
+                "<do> <calc> {300000} + {300000} = <ans>",
                 "--output",
                 str(output),
                 "--zip",
@@ -522,7 +522,7 @@ def test_cli_config_precedence_output_mode_not_overridden_by_default(
                 "--config",
                 str(config_path),
                 "--prompt",
-                "<do> <calc> 03000000 + 03000000 =",
+                "<do> <calc> {300000} + {300000} = <ans>",
                 "--output",
                 str(out_dir),
             ]
@@ -568,7 +568,7 @@ def test_cli_explicit_flag_overrides_config_output_mode(
                 "--config",
                 str(config_path),
                 "--prompt",
-                "<do> <calc> 03000000 + 03000000 =",
+                "<do> <calc> {300000} + {300000} = <ans>",
                 "--output",
                 str(out_zip),
                 "--zip",
@@ -590,7 +590,7 @@ def test_summary_includes_graph_assets_when_available() -> None:
     analysis = build_fake_analysis(attention=True, network=True)
     health = build_fake_health()
     files, manifest = build_bundle_file_map(
-        prompt="<do> <calc> 03000000 + 03000000 =",
+        prompt="<do> <calc> {300000} + {300000} = <ans>",
         analysis=analysis,
         health=health,
         options=ExportOptions(output_mode="zip"),
@@ -619,7 +619,7 @@ def test_section_behavior_required_paths_always_generated(
     # Ask for no optional sections.
     options = ExportOptions(output_mode="directory", sections=["markdown", "png"])
     manifest = write_bundle(
-        prompt="<do> <calc> 03000000 + 03000000 =",
+        prompt="<do> <calc> {300000} + {300000} = <ans>",
         analysis=analysis,
         health=health,
         options=options,
@@ -649,7 +649,7 @@ def test_section_behavior_optional_tables_gated(tmp_path: Path) -> None:
         output_mode="directory", sections=["tables", "markdown", "png"]
     )
     manifest = write_bundle(
-        prompt="<do> <calc> 03000000 + 03000000 =",
+        prompt="<do> <calc> {300000} + {300000} = <ans>",
         analysis=analysis,
         health=health,
         options=options,

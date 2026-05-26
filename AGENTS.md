@@ -16,7 +16,7 @@ Use the unified `eis` CLI by default — **do not** run `python generate.py` etc
 uv run eis data generate --output-dir data/my-dataset # generate dataset
 uv run eis config new                                # create train-config.toml in CWD
 uv run eis train run train-config.toml               # train from TOML config
-uv run eis train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 ="
+uv run eis train predict --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> {300000} + {300000} = <ans>"
 uv run eis eval run --checkpoint runs/my-run/checkpoint-best.pt --data-dir data/my-dataset
 ```
 
@@ -32,7 +32,7 @@ Canonical training code lives under one `src/eis/` package root:
 
 | Package | Purpose |
 |---|---|
-| `src/eis/data/` | Stratified arithmetic data generation (binary, three_input, parentheses, negative_input categories) |
+| `src/eis/data/` | REDUX arithmetic data generation (arithmetic, negative_input, comparison categories) |
 | `src/eis/train/` | Causal transformer training + inference. Checkpoints stay self-contained for downstream native/runtime analysis |
 | `src/eis/eval/` | Per-stratum evaluation, writes summary TOML, kinds CSV, and errors TOML next to the checkpoint |
 
@@ -43,9 +43,9 @@ Supporting:
 
 ## Dataset format
 
-Each line: `<do> <calc> <expression> = <result>`
+Each line: `<do> <calc> <expression> = <ans> <result>`
 
-Numbers are **8-digit zero-padded decimals, reversed** (e.g. 6 → `60000000`). Negatives: `(-60000000)`. `<do> <calc>` starts calculation prompts; `=` remains followed by a separator in tokenized prompts.
+Numbers are **6-digit zero-padded decimals, reversed** and explicitly wrapped (e.g. 6 → `{600000}`, -6 → `(600000)`). Comparison answers are `true` / `false`. `<do> <calc>` starts calculation prompts; prompts end at `= <ans>`. Whitespace is only for text readability; there is no internal `<sep>` token.
 
 Output files: `train.txt`, `val.txt`, `test.txt`, `meta.toml`.
 

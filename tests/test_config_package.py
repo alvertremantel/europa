@@ -24,7 +24,7 @@ additional_epochs = ""
 
 [model]
 sequence_length = 32
-d_model = 12
+d_model = 16
 n_heads = 4
 n_layers = 1
 mlp_hidden = 64
@@ -86,7 +86,7 @@ def test_load_train_config_rejects_removed_type_place_position_encoding(
 def test_load_train_config_rejects_fixed_meaning_d_model_mismatch(
     tmp_path: Path,
 ) -> None:
-    path = write_config(tmp_path, VALID_TOML.replace("d_model = 12", "d_model = 16"))
+    path = write_config(tmp_path, VALID_TOML.replace("d_model = 16", "d_model = 12"))
 
     with pytest.raises(ValueError, match="fixed_meaning position_encoding"):
         load_train_config(path)

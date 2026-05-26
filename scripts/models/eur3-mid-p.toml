@@ -16,7 +16,7 @@ additional_epochs = "" # optional; blank trains for optimization.epochs total
 
 [model]
 sequence_length = "64"
-d_model = "12"
+d_model = "16"
 n_heads = "2"
 n_layers = "10"
 mlp_hidden = "100"
@@ -36,6 +36,6 @@ max_new_tokens = "32"
 
 [training]
 training_mode = "examples"          # token_stream | examples
-training_format = "light_scratchpad"        # final_only | light_scratchpad | parentheses_intermediate | multiply_intermediate
+training_format = "final_only"        # final_only
 skip_overlong_examples = "false"
 curriculum_name = ""        # optional; blank disables curriculum

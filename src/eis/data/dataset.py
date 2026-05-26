@@ -9,6 +9,7 @@ from eis.artifacts import toml_text, write_toml
 from .config import (
     BANDS,
     BINARY_OPERATIONS,
+    COMPARISON_OPERATIONS,
     COMPOSITE_OPERATIONS,
     NUMBER_WIDTH,
     SPLITS,
@@ -124,14 +125,19 @@ def generate_dataset(config: Config) -> None:
             handle.close()
 
     metadata = {
-        "format": "fixed-width-reversed-infix",
+        "format": "redux-fixed-width-reversed-infix-v1",
         "number_width": NUMBER_WIDTH,
-        "number_encoding": "zero-padded decimal reversed",
-        "categories": ["binary", "three_input", "parentheses", "negative_input"],
+        "number_encoding": "six-digit zero-padded decimal reversed, wrapped as {digits} or (digits)",
+        "categories": ["arithmetic", "negative_input", "comparison"],
         "binary_operations": list(BINARY_OPERATIONS),
+        "comparison_operations": list(COMPARISON_OPERATIONS),
         "composite_operations": list(COMPOSITE_OPERATIONS),
-        "special_tokens": ["<do>", "<calc>"],
-        "operator_tokens": ["+", "-", "*", "/", "=", "(", ")"],
+        "special_tokens": ["<do>", "<calc>", "<ans>", "<eos>"],
+        "reserved_tokens": [
+            "<pad> (batching only; excluded from generated examples and ignored in loss)"
+        ],
+        "operator_tokens": ["+", "-", "*", "/", "<", ">", "=", "(", ")", "{", "}"],
+        "data_mix_note": "arithmetic and negative_input form the computation set; comparison target count is approximately half of computation in REDUX design targets",
         "bands": {band.name: [band.start, band.end] for band in BANDS},
         "kind_definitions": kind_definitions,
         "candidate_counts": candidate_counts,

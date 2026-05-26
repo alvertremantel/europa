@@ -9,12 +9,12 @@
 - Repository utility scripts now live directly under `scripts/` rather than nested `scripts/math/` or `scripts/verify/` paths.
 - Fresh training config now supports only `model.position_encoding = "fixed_meaning"`: token identity embeddings come from the frozen token-meaning table in `src/eis/train/semantics/fixed_meaning.py`, with digit place injected directly into the fixed vectors instead of a separate positional table.
 - Legacy `absolute`, `digit_roles`, and `type_place` checkpoints are intentionally unsupported and should fail with clear loader errors.
-- The dataset/prompt protocol is now `<do> <calc> <expression> = <result>` for lines and `<do> <calc> <expression> =` for prompts; `<bos>` and `<ans>` are unsupported legacy tokens.
+- The REDUX dataset/prompt protocol is now `<do> <calc> <expression> = <ans> <result>` for lines and `<do> <calc> <expression> = <ans>` for prompts; `<bos>` and `<sep>` are unsupported legacy tokens.
 - The backend dashboard uses the native PyTorch runtime for `fixed_meaning` checkpoints and exposes capability-gated core analysis without TransformerLens parity.
 - Frontend API/session state now carries `position_encoding`, `analysis_runtime`, and `capabilities`, and the UI hides unsupported views instead of relying on backend errors.
 
 ## Active work
-- Fixed-meaning dashboard support should be validated end-to-end with a real fresh `fixed_meaning` checkpoint.
+- REDUX fixed-meaning dashboard support should be validated end-to-end with a real fresh checkpoint.
 
 ## Immediate next steps
 - Use canonical imports and commands from `eis.*` / `uv run eis ...` in all future code and docs.
@@ -31,7 +31,7 @@
 - Training-time model selection now uses a fixed 50-problem exact-match probe from `val.txt`; balanced validation and per-epoch validation loss are not part of canonical training.
 - Auto-resume is intentionally unsupported; resumed runs must set `resume.resume_from` explicitly.
 - The canonical embedding experiment is `model.position_encoding = "fixed_meaning"`: frozen token-meaning vectors combine with fixed positional structure.
-- `fixed_meaning` token semantics now live in exactly one authored source file, `src/eis/train/semantics/fixed_meaning.py`; fixed-meaning `d_model` must match that file's vector width.
+- `fixed_meaning` token semantics now live in exactly one authored source file, `src/eis/train/semantics/fixed_meaning.py`; REDUX fixed-meaning `d_model` must currently match that file's vector width (16).
 - Missing or legacy checkpoint `position_encoding` metadata is invalid.
 - Backend runtime capability metadata remains canonical for the dashboard; frontend behavior should branch from structured capability metadata, not error strings or manual mode toggles.
 - ITS export bundles now live under `src/eis/app/export/`; exports always include backend-generated PNG assets, use placeholder PNGs plus manifest notes for unavailable sections, and keep config-file loading isolated for future JSON/TOML compatibility.

@@ -20,20 +20,20 @@ PRESETS: dict[str, tuple[CurriculumStage, ...]] = {
         CurriculumStage(
             name="foundations",
             end_progress=1 / 3,
-            weights={"easy_binary_add_sub": 0.75, "binary_mul_div": 0.25},
+            weights={"easy_arithmetic_add_sub": 0.75, "arithmetic_mul_div": 0.25},
         ),
         CurriculumStage(
             name="mul_div_focus",
             end_progress=2 / 3,
-            weights={"easy_binary_add_sub": 0.35, "binary_mul_div": 0.65},
+            weights={"easy_arithmetic_add_sub": 0.35, "arithmetic_mul_div": 0.65},
         ),
         CurriculumStage(
             name="compositional_mix",
             end_progress=1.0,
             weights={
-                "easy_binary_add_sub": 0.20,
-                "binary_mul_div": 0.35,
-                "compositional_parentheses_three_input": 0.30,
+                "easy_arithmetic_add_sub": 0.30,
+                "arithmetic_mul_div": 0.35,
+                "comparison": 0.20,
                 "negative_input": 0.15,
             },
         ),
@@ -42,15 +42,15 @@ PRESETS: dict[str, tuple[CurriculumStage, ...]] = {
         CurriculumStage(
             name="mul_warmup",
             end_progress=0.5,
-            weights={"easy_binary_add_sub": 0.40, "binary_mul_div": 0.60},
+            weights={"easy_arithmetic_add_sub": 0.40, "arithmetic_mul_div": 0.60},
         ),
         CurriculumStage(
             name="mul_composition",
             end_progress=1.0,
             weights={
-                "easy_binary_add_sub": 0.15,
-                "binary_mul_div": 0.55,
-                "compositional_parentheses_three_input": 0.20,
+                "easy_arithmetic_add_sub": 0.15,
+                "arithmetic_mul_div": 0.55,
+                "comparison": 0.20,
                 "negative_input": 0.10,
             },
         ),
@@ -64,12 +64,12 @@ def curriculum_group(example: ArithmeticExample) -> str:
     op = _kind_operator(kind)
     if category == "negative_input":
         return "negative_input"
-    if category in {"parentheses", "three_input"}:
-        return "compositional_parentheses_three_input"
-    if category == "binary" and op in {"*", "/"}:
-        return "binary_mul_div"
-    if category == "binary" and op in {"+", "-"}:
-        return "easy_binary_add_sub"
+    if category == "comparison":
+        return "comparison"
+    if category == "arithmetic" and op in {"*", "/"}:
+        return "arithmetic_mul_div"
+    if category == "arithmetic" and op in {"+", "-"}:
+        return "easy_arithmetic_add_sub"
     return "other"
 
 
@@ -182,7 +182,7 @@ def _kind_operator(kind: str) -> str | None:
     parts = kind.split("::")
     if not parts:
         return None
-    if parts[0] in {"binary", "three_input"} and len(parts) >= 3:
+    if parts[0] in {"arithmetic", "comparison"} and len(parts) >= 3:
         return parts[2]
     if parts[0] == "negative_input" and len(parts) >= 3:
         return parts[2]

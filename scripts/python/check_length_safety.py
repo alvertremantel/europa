@@ -77,32 +77,9 @@ def load_checkpoint_metadata(
 
 
 def intermediate_abs_value(sample: object) -> int:
-    from eis.data.core import (
-        apply_operation,
-        parse_signed_number,
-        parse_unsigned_number,
-    )
+    from eis.data.core import parse_signed_number
 
     expression_fields = cast(tuple[str, ...], getattr(sample, "expression_fields"))
-    if len(expression_fields) == 5:
-        left = parse_unsigned_number(expression_fields[0])
-        middle = parse_unsigned_number(expression_fields[2])
-        op = expression_fields[1]
-        return abs(apply_operation(op, left, middle))
-
-    if len(expression_fields) == 7:
-        if expression_fields[0] == "(" and expression_fields[4] == ")":
-            left = parse_unsigned_number(expression_fields[1])
-            middle = parse_unsigned_number(expression_fields[3])
-            inner_op = expression_fields[2]
-            return abs(apply_operation(inner_op, left, middle))
-        if expression_fields[2] == "(" and expression_fields[6] == ")":
-            middle = parse_unsigned_number(expression_fields[3])
-            right = parse_unsigned_number(expression_fields[5])
-            inner_op = expression_fields[4]
-            return abs(apply_operation(inner_op, middle, right))
-        raise ValueError(f"unsupported parentheses expression: {expression_fields!r}")
-
     if len(expression_fields) == 3:
         left = parse_signed_number(expression_fields[0])
         right = parse_signed_number(expression_fields[2])
@@ -162,7 +139,10 @@ def analyze_dataset(
                 sample = validate_line(line)
                 prompt = prompt_from_line(line)
                 answer = answer_from_line(line)
-                answer_value = abs(cast(int, getattr(sample, "answer")))
+                raw_answer = getattr(sample, "answer")
+                answer_value = (
+                    0 if isinstance(raw_answer, bool) else abs(cast(int, raw_answer))
+                )
                 intermediate_value = intermediate_abs_value(sample)
 
                 prompt_tokens = len(typed_tokenizer.encode_prompt(prompt))
@@ -205,13 +185,13 @@ def analyze_dataset(
                     stats.eos_context_exceeds_sequence_count += 1
                 if generation_steps > max_new_tokens:
                     stats.generation_steps_exceed_max_new_tokens_count += 1
-                if answer_value >= 100_000_000:
+                if answer_value >= 1_000_000:
                     stats.answer_width_exceeds_count += 1
-                if intermediate_value >= 100_000_000:
+                if intermediate_value >= 1_000_000:
                     stats.intermediate_width_exceeds_count += 1
-                if answer_value >= 99_000_000:
+                if answer_value >= 990_000:
                     stats.answer_width_threshold_count += 1
-                if intermediate_value >= 99_000_000:
+                if intermediate_value >= 990_000:
                     stats.intermediate_width_threshold_count += 1
                 line_count += 1
             split_counts[split] = line_count

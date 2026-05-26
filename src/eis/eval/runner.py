@@ -13,7 +13,7 @@ from eis.train.runtime.utils import (
     device_metadata,
     prompt_from_line,
 )
-from eis.train.inference import generate_completion
+from eis.train.inference import generate_completion_result
 from eis.train.core import load_checkpoint
 
 from .core import BucketStats, SelectedExample, bucket_row, sort_kind_rows
@@ -58,15 +58,18 @@ def run_evaluation(
         for example in selected_examples[kind]:
             prompt = prompt_from_line(example.line)
             expected_answer = answer_from_line(example.line)
-            prediction = generate_completion(
+            completion = generate_completion_result(
                 model=model,
                 tokenizer=tokenizer,
                 prompt=prompt,
                 max_new_tokens=max_new_tokens,
                 device=device,
             )
+            prediction = completion.text
             perfect = prediction == expected_answer
-            canonical_prediction = is_canonical_prediction(prediction)
+            canonical_prediction = completion.terminated and is_canonical_prediction(
+                prediction
+            )
 
             for stats in (category_stats[example.category], kind_stats[example.kind]):
                 stats.evaluated_count += 1
@@ -85,6 +88,7 @@ def run_evaluation(
                     "expected": expected_answer,
                     "prediction": prediction,
                     "prediction_is_canonical": canonical_prediction,
+                    "prediction_terminated": completion.terminated,
                 }
                 errors.append(error_row)
                 failure_examples = kind_stats[example.kind].failure_examples

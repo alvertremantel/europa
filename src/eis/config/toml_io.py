@@ -12,12 +12,7 @@ from .schema import TrainConfig
 
 ALLOWED_TRAINING_MODES = {"token_stream", "examples"}
 ALLOWED_POSITION_ENCODINGS = set(SUPPORTED_POSITION_ENCODINGS)
-ALLOWED_TRAINING_FORMATS = {
-    "final_only",
-    "light_scratchpad",
-    "parentheses_intermediate",
-    "multiply_intermediate",
-}
+ALLOWED_TRAINING_FORMATS = {"final_only"}
 
 SECTION_SPECS: dict[str, dict[str, tuple[str, type, bool]]] = {
     "paths": {

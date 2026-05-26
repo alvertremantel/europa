@@ -55,7 +55,7 @@ class FakeRuntime:
         self.n_layers = 2
         self.n_heads = 2
         self.d_model = 8
-        self._generated_answer_tokens = list("70000000")
+        self._generated_answer_tokens = list("{700000}")
 
     def ensure_prompt_fits(self, token_count: int) -> None:
         if token_count > 64:
@@ -238,7 +238,7 @@ def test_analyze_returns_503_when_resources_fail_to_load(monkeypatch) -> None:
 
     with TestClient(main.app) as client:
         response = client.post(
-            "/api/analyze", json={"prompt": "<do> <calc> 30000000 + 40000000 ="}
+            "/api/analyze", json={"prompt": "<do> <calc> {300000} + {400000} = <ans>"}
         )
 
     assert response.status_code == 503
@@ -246,7 +246,7 @@ def test_analyze_returns_503_when_resources_fail_to_load(monkeypatch) -> None:
 
 
 def test_analyze_returns_full_generated_answer_and_correctness(monkeypatch) -> None:
-    prompt = "<do> <calc> 30000000 + 40000000 ="
+    prompt = "<do> <calc> {300000} + {400000} = <ans>"
     tokenizer = ArithmeticTokenizer()
     runtime = FakeRuntime(
         tokenizer=tokenizer,
@@ -263,12 +263,12 @@ def test_analyze_returns_full_generated_answer_and_correctness(monkeypatch) -> N
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["generated_answer"]["text"] == "70000000"
-    assert payload["generated_answer"]["tokens"] == list("70000000")
+    assert payload["generated_answer"]["text"] == "{700000}"
+    assert payload["generated_answer"]["tokens"] == list("{700000}")
     assert payload["generated_answer"]["is_correct"] is True
     assert payload["generated_answer"]["is_valid_canonical"] is True
     assert len(payload["generated_answer_top_k"]) == 8
-    assert payload["generated_answer_top_k"][0]["token"] == "7"
+    assert payload["generated_answer_top_k"][0]["token"] == "{"
     assert payload["top_predictions"][payload["answer_position"]]["token"] == "7"
     assert payload["analysis_runtime"] == "native_pytorch"
     assert payload["position_encoding"] == "fixed_meaning"
@@ -280,35 +280,26 @@ def test_analyze_returns_full_generated_answer_and_correctness(monkeypatch) -> N
     ("prompt", "answer_text", "expected_problem"),
     [
         (
-            "<do> <calc> 02000000 + 01000000 =",
-            "03000000",
+            "<do> <calc> {020000} + {010000} = <ans>",
+            "{030000}",
             {
-                "category": "binary",
-                "kind": "binary::small-small::+",
-                "curriculum_group": "easy_binary_add_sub",
+                "category": "arithmetic",
+                "kind": "arithmetic::small-small::+",
+                "curriculum_group": "easy_arithmetic_add_sub",
             },
         ),
         (
-            "<do> <calc> 03000000 + 02000000 + 01000000 =",
-            "06000000",
+            "<do> <calc> {300000} < {200000} = <ans>",
+            "false",
             {
-                "category": "three_input",
-                "kind": "three_input::small-small-medium::+",
-                "curriculum_group": "compositional_parentheses_three_input",
+                "category": "comparison",
+                "kind": "comparison::small-small::<",
+                "curriculum_group": "comparison",
             },
         ),
         (
-            "<do> <calc> ( 03000000 + 02000000 ) - 01000000 =",
-            "04000000",
-            {
-                "category": "parentheses",
-                "kind": "parentheses::left::small-small-medium::+-",
-                "curriculum_group": "compositional_parentheses_three_input",
-            },
-        ),
-        (
-            "<do> <calc> (-30000000) + 01000000 =",
-            "70000000",
+            "<do> <calc> (300000) + {010000} = <ans>",
+            "(200000)",
             {
                 "category": "negative_input",
                 "kind": "negative_input::small-small::+::neg_left",
@@ -392,7 +383,7 @@ def test_analyze_fixed_meaning_runtime_reports_limited_capabilities(
         response = client.post(
             "/api/analyze",
             json={
-                "prompt": "<do> <calc> 30000000 + 40000000 =",
+                "prompt": "<do> <calc> {300000} + {400000} = <ans>",
                 "include_network": True,
             },
         )
@@ -426,11 +417,11 @@ def test_export_runner_returns_analysis_and_health(monkeypatch) -> None:
     result = run_export_analysis(
         checkpoint_path=Path("runs/test.pt"),
         device="cpu",
-        prompt="<do> <calc> 30000000 + 40000000 =",
+        prompt="<do> <calc> {300000} + {400000} = <ans>",
         include_network=True,
     )
 
-    assert result.analysis.generated_answer.text == "70000000"
+    assert result.analysis.generated_answer.text == "{700000}"
     assert result.analysis.network is not None
     assert result.health.status == "ok"
     assert result.health.checkpoint.path == "runs/test.pt"
@@ -453,7 +444,7 @@ def test_export_endpoint_returns_zip_bundle(monkeypatch) -> None:
     with TestClient(main.app) as client:
         response = client.post(
             "/api/export",
-            json={"prompt": "<do> <calc> 30000000 + 40000000 ="},
+            json={"prompt": "<do> <calc> {300000} + {400000} = <ans>"},
         )
 
     assert response.status_code == 200
@@ -488,7 +479,7 @@ def test_export_endpoint_native_runtime_uses_placeholder_assets(monkeypatch) -> 
     with TestClient(main.app) as client:
         response = client.post(
             "/api/export",
-            json={"prompt": "<do> <calc> 30000000 + 40000000 ="},
+            json={"prompt": "<do> <calc> {300000} + {400000} = <ans>"},
         )
 
     assert response.status_code == 200

@@ -21,15 +21,8 @@ def resolve_target_epoch(config: TrainConfig, checkpoint_epoch: int) -> int:
 
 
 def scratchpad_fraction(examples: list[ArithmeticExample]) -> float:
-    if not examples:
-        return 0.0
-    scratchpad_count = sum(
-        1
-        for example in examples
-        if example.training_format
-        in {"parentheses_intermediate", "multiply_intermediate"}
-    )
-    return scratchpad_count / len(examples)
+    del examples
+    return 0.0
 
 
 def write_history(path: Path, history: list[dict[str, object]]) -> None:

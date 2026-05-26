@@ -12,7 +12,7 @@ import torch
 from eis.artifacts import read_legacy_json, read_toml
 from eis.data.core import KindSpec, iter_kind_specs
 
-CATEGORY_ORDER = ("binary", "three_input", "parentheses", "negative_input")
+CATEGORY_ORDER = ("arithmetic", "negative_input", "comparison")
 
 
 def spec_to_definition(spec: KindSpec) -> dict[str, object]:

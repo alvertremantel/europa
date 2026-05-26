@@ -23,7 +23,7 @@ additional_epochs = ""
 
 [model]
 sequence_length = 32
-d_model = 12
+d_model = 16
 n_heads = 4
 n_layers = 1
 mlp_hidden = 64

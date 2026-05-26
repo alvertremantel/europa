@@ -91,14 +91,14 @@ If a checkpoint cannot be found or loaded, the backend health endpoint will repo
 
 1. Train or locate a checkpoint with the EIS training commands.
 2. Start ITS with that checkpoint.
-3. Submit arithmetic prompts beginning with `<do> <calc>` and ending at `=`.
+3. Submit arithmetic or comparison prompts beginning with `<do> <calc>` and ending at `= <ans>`.
 4. Inspect predictions, attention, activations, and network summaries.
 5. Use **Dump data** in the dashboard to download a backend-generated export zip.
 
 Example prompt:
 
 ```text
-<do> <calc> 03000000 + 03000000 =
+<do> <calc> {300000} + {300000} = <ans>
 ```
 
 ## Troubleshooting
@@ -112,13 +112,13 @@ Example prompt:
 Single prompt zip:
 
 ```bash
-uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export.zip --zip
+uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> {300000} + {300000} = <ans>" --output /tmp/eis-export.zip --zip
 ```
 
 Single prompt directory bundle:
 
 ```bash
-uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> 03000000 + 03000000 =" --output /tmp/eis-export --directory
+uv run eis export --checkpoint runs/my-run/checkpoint-best.pt --prompt "<do> <calc> {300000} + {300000} = <ans>" --output /tmp/eis-export --directory
 ```
 
 Batch prompt export:

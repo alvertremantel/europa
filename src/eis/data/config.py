@@ -5,8 +5,9 @@ from itertools import combinations_with_replacement
 
 SPLITS = ("train", "val", "test")
 BINARY_OPERATIONS = ("+", "-", "*", "/")
+COMPARISON_OPERATIONS = ("<", ">")
 COMPOSITE_OPERATIONS = ("+", "-", "*")
-NUMBER_WIDTH = 8
+NUMBER_WIDTH = 6
 VAL_SAMPLES_PER_KIND = 16
 TEST_SAMPLES_PER_KIND = 16
 SAMPLED_TRAIN_SAMPLES_PER_KIND = 128
