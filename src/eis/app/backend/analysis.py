@@ -5,7 +5,7 @@ from typing import Any, TypedDict
 
 import numpy as np
 
-from eis.data.answers import format_answer
+from eis.data.answers import format_answer, is_canonical_answer
 from eis.data.core import parse_line
 from eis.data.numbers import parse_signed_number
 from eis.data.parsing import parse_binary_expression
@@ -13,8 +13,6 @@ from eis.data.sampling import apply_comparison, apply_operation
 from eis.train.curriculum import curriculum_group
 from eis.train.data import ArithmeticExample
 from eis.train.formatting import extract_final_answer
-
-ARITHMETIC_MISMATCH_PREFIX = "arithmetic mismatch:"
 
 
 class PredictionSummary(TypedDict):
@@ -88,19 +86,19 @@ def evaluate_generated_answer(
     *, expression_text: str, generated_text: str
 ) -> GeneratedAnswerSummary:
     final_answer = extract_final_answer(generated_text)
+    is_valid_canonical = is_canonical_answer(final_answer)
     line = f"<do> <calc> {expression_text} = <ans> {final_answer}".strip()
 
     try:
         parse_line(line)
     except ValueError as error:
-        message = str(error)
         return {
             "text": final_answer,
             "tokens": list(final_answer),
             "token_count": len(final_answer),
             "is_correct": False,
-            "is_valid_canonical": message.startswith(ARITHMETIC_MISMATCH_PREFIX),
-            "validation_error": message,
+            "is_valid_canonical": is_valid_canonical,
+            "validation_error": str(error),
         }
 
     return {

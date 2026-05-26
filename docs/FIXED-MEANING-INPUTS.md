@@ -109,7 +109,7 @@ Use this in the TOML config:
 
 ```toml
 [model]
-d_model = 12
+d_model = 16
 position_encoding = "fixed_meaning"
 ```
 

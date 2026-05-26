@@ -18,6 +18,7 @@ from .config import (
     VAL_SAMPLES_PER_KIND,
     Config,
 )
+from .kinds import KindSpec
 from .kinds import iter_kind_specs
 from .parsing import validate_line
 from .sampling import (
@@ -32,6 +33,120 @@ from .sampling import (
 
 def ensure_directory(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
+
+
+def _split_kind_samples(
+    spec: KindSpec, samples: list[Sample]
+) -> tuple[list[Sample], list[Sample], list[Sample]]:
+    if spec.category != "comparison":
+        val_samples = samples[:VAL_SAMPLES_PER_KIND]
+        test_samples = samples[
+            VAL_SAMPLES_PER_KIND : VAL_SAMPLES_PER_KIND + TEST_SAMPLES_PER_KIND
+        ]
+        train_samples = samples[VAL_SAMPLES_PER_KIND + TEST_SAMPLES_PER_KIND :]
+        return train_samples, val_samples, test_samples
+
+    if VAL_SAMPLES_PER_KIND % 2 or TEST_SAMPLES_PER_KIND % 2:
+        raise ValueError("comparison holdout sizes must be even")
+
+    by_answer: dict[bool, list[Sample]] = {True: [], False: []}
+    for sample in samples:
+        if not isinstance(sample.answer, bool):
+            raise ValueError(
+                f"comparison sample has non-boolean answer: {format_sample(sample)}"
+            )
+        by_answer[sample.answer].append(sample)
+
+    val_half = VAL_SAMPLES_PER_KIND // 2
+    test_half = TEST_SAMPLES_PER_KIND // 2
+    holdout = val_half + test_half
+    if min(len(bucket) for bucket in by_answer.values()) < holdout:
+        raise ValueError(
+            f"comparison kind cannot supply balanced holdouts: {spec.name}"
+        )
+
+    val_samples = by_answer[True][:val_half] + by_answer[False][:val_half]
+    test_samples = (
+        by_answer[True][val_half:holdout] + by_answer[False][val_half:holdout]
+    )
+    train_samples = by_answer[True][holdout:] + by_answer[False][holdout:]
+    return train_samples, val_samples, test_samples
+
+
+def _build_data_mix_metadata(
+    split_category_counts: Mapping[str, Counter[str]],
+) -> dict[str, object]:
+    train_counts = dict(split_category_counts["train"])
+    arithmetic_count = train_counts.get("arithmetic", 0)
+    negative_input_count = train_counts.get("negative_input", 0)
+    comparison_count = train_counts.get("comparison", 0)
+    computation_count = arithmetic_count + negative_input_count
+    comparison_ratio = (
+        comparison_count / computation_count if computation_count else None
+    )
+
+    return {
+        "train_category_counts": train_counts,
+        "computation_train_count": computation_count,
+        "comparison_train_count": comparison_count,
+        "comparison_to_computation_ratio": comparison_ratio,
+        "generation_policy": {
+            "arithmetic": "exhaustive per kind after fixed validation/test holdouts",
+            "negative_input": (
+                "sampled per kind with fixed train quota plus validation/test holdouts"
+            ),
+            "comparison": (
+                "exhaustive per kind, balanced overall by answer class, and split with equal true/false counts in train/val/test"
+            ),
+        },
+        "note": (
+            "This REDUX baseline records the actual generated category mix instead of claiming a fixed comparison/computation target."
+        ),
+    }
+
+
+def _validate_comparison_balance(
+    split_comparison_answer_counts: Mapping[str, Mapping[str, Counter[bool]]],
+    kind_definitions: Mapping[str, Mapping[str, object]],
+) -> None:
+    comparison_kinds = [
+        kind
+        for kind, definition in kind_definitions.items()
+        if definition["category"] == "comparison"
+    ]
+    for split in SPLITS:
+        for kind in comparison_kinds:
+            counts = split_comparison_answer_counts[split].get(kind, Counter())
+            if counts[True] != counts[False]:
+                raise ValueError(
+                    f"comparison balance mismatch for {split}/{kind}: true={counts[True]} false={counts[False]}"
+                )
+
+
+def _validate_data_mix_metadata(
+    *, metadata: Mapping[str, object], split_category_counts: Mapping[str, Counter[str]]
+) -> None:
+    data_mix = cast(dict[str, object], metadata["data_mix"])
+    expected_train_counts = cast(dict[str, int], data_mix["train_category_counts"])
+    actual_train_counts = dict(split_category_counts["train"])
+    if actual_train_counts != expected_train_counts:
+        raise ValueError(
+            f"data mix train counts mismatch: {actual_train_counts} != {expected_train_counts}"
+        )
+
+    computation_count = actual_train_counts.get(
+        "arithmetic", 0
+    ) + actual_train_counts.get("negative_input", 0)
+    expected_ratio = cast(float | None, data_mix["comparison_to_computation_ratio"])
+    actual_ratio = (
+        actual_train_counts.get("comparison", 0) / computation_count
+        if computation_count
+        else None
+    )
+    if actual_ratio != expected_ratio:
+        raise ValueError(
+            f"data mix comparison ratio mismatch: {actual_ratio} != {expected_ratio}"
+        )
 
 
 def generate_dataset(config: Config) -> None:
@@ -100,11 +215,9 @@ def generate_dataset(config: Config) -> None:
                 continue
 
             samples = candidate_samples[spec.name]
-            val_samples = samples[:VAL_SAMPLES_PER_KIND]
-            test_samples = samples[
-                VAL_SAMPLES_PER_KIND : VAL_SAMPLES_PER_KIND + TEST_SAMPLES_PER_KIND
-            ]
-            train_samples = samples[VAL_SAMPLES_PER_KIND + TEST_SAMPLES_PER_KIND :]
+            train_samples, val_samples, test_samples = _split_kind_samples(
+                spec, samples
+            )
 
             for split, split_samples in (
                 ("train", train_samples),
@@ -137,7 +250,7 @@ def generate_dataset(config: Config) -> None:
             "<pad> (batching only; excluded from generated examples and ignored in loss)"
         ],
         "operator_tokens": ["+", "-", "*", "/", "<", ">", "=", "(", ")", "{", "}"],
-        "data_mix_note": "arithmetic and negative_input form the computation set; comparison target count is approximately half of computation in REDUX design targets",
+        "data_mix": _build_data_mix_metadata(split_category_counts),
         "bands": {band.name: [band.start, band.end] for band in BANDS},
         "kind_definitions": kind_definitions,
         "candidate_counts": candidate_counts,
@@ -167,6 +280,9 @@ def validate_output(*, output_dir: Path, metadata: Mapping[str, object]) -> None
     split_counts = Counter()
     split_category_counts = {split: Counter() for split in SPLITS}
     split_kind_counts = {split: Counter() for split in SPLITS}
+    split_comparison_answer_counts: dict[str, dict[str, Counter[bool]]] = {
+        split: {} for split in SPLITS
+    }
     kind_definitions = cast(dict[str, dict[str, object]], metadata["kind_definitions"])
 
     for split in SPLITS:
@@ -185,6 +301,10 @@ def validate_output(*, output_dir: Path, metadata: Mapping[str, object]) -> None
                 split_counts[split] += 1
                 split_category_counts[split][sample.category] += 1
                 split_kind_counts[split][sample.kind] += 1
+                if sample.category == "comparison":
+                    split_comparison_answer_counts[split].setdefault(
+                        sample.kind, Counter()
+                    )[bool(sample.answer)] += 1
 
     expected_split_counts = metadata["split_counts"]
     if dict(split_counts) != expected_split_counts:
@@ -207,6 +327,11 @@ def validate_output(*, output_dir: Path, metadata: Mapping[str, object]) -> None
         raise ValueError(
             f"kind counts mismatch: {actual_kind_counts} != {expected_kind_counts}"
         )
+
+    _validate_comparison_balance(split_comparison_answer_counts, kind_definitions)
+    _validate_data_mix_metadata(
+        metadata=metadata, split_category_counts=split_category_counts
+    )
 
     summary = {
         "split_counts": dict(split_counts),

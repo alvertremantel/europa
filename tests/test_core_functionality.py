@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+from collections import Counter
+import tomllib
+
 import pytest
 import torch
 
+from eis.data.config import Config, SPLITS
 from eis.eval.core import BucketStats, bucket_row
 from eis.data.core import (
     format_answer,
     format_signed_number,
     format_unsigned_number,
+    generate_dataset,
     is_canonical_answer,
     parse_answer,
     parse_signed_number,
@@ -53,6 +58,48 @@ def test_generator_validates_canonical_lines() -> None:
         parse_signed_number("600000")
     with pytest.raises(ValueError):
         parse_signed_number("(000000)")
+
+
+def test_generated_redux_dataset_balances_comparison_splits_and_records_data_mix(
+    tmp_path,
+) -> None:
+    output_dir = tmp_path / "dataset"
+
+    generate_dataset(Config(output_dir=str(output_dir), validate=True))
+
+    comparison_counts_by_split_and_kind: dict[str, dict[str, Counter[bool]]] = {
+        split: {} for split in SPLITS
+    }
+    for split in SPLITS:
+        lines = (output_dir / f"{split}.txt").read_text(encoding="utf-8").splitlines()
+        for line in lines:
+            sample = validate_line(line)
+            if sample.category != "comparison":
+                continue
+            comparison_counts_by_split_and_kind[split].setdefault(
+                sample.kind, Counter()
+            )[bool(sample.answer)] += 1
+
+    for split, by_kind in comparison_counts_by_split_and_kind.items():
+        assert by_kind
+        for counts in by_kind.values():
+            assert counts[True] == counts[False], split
+
+    metadata = tomllib.loads((output_dir / "meta.toml").read_text(encoding="utf-8"))
+    train_category_counts = metadata["data_mix"]["train_category_counts"]
+    assert train_category_counts == metadata["split_category_counts"]["train"]
+
+    computation_count = (
+        train_category_counts["arithmetic"] + train_category_counts["negative_input"]
+    )
+    assert metadata["data_mix"]["computation_train_count"] == computation_count
+    assert (
+        metadata["data_mix"]["comparison_train_count"]
+        == train_category_counts["comparison"]
+    )
+    assert metadata["data_mix"]["comparison_to_computation_ratio"] == pytest.approx(
+        train_category_counts["comparison"] / computation_count
+    )
 
 
 def test_redux_answers_parse_and_validate_canonicality() -> None:

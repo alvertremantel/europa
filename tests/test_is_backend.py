@@ -14,6 +14,7 @@ from eis.app.backend.analysis import (
     GeneratedAnswerSummary,
     GeneratedAnswerTokenSummary,
     PredictionSummary,
+    evaluate_generated_answer,
 )
 from eis.app.backend import main, model_utils, settings
 from eis.app.backend.runtime import PromptAnalysisResult, RuntimeCapabilities
@@ -331,6 +332,17 @@ def test_analyze_returns_problem_metadata(
 
     assert response.status_code == 200
     assert response.json()["problem"] == expected_problem
+
+
+def test_evaluate_generated_answer_marks_wrong_comparison_as_canonical() -> None:
+    summary = evaluate_generated_answer(
+        expression_text="{100000} < {200000}",
+        generated_text="false",
+    )
+
+    assert summary["is_correct"] is False
+    assert summary["is_valid_canonical"] is True
+    assert summary["validation_error"] is not None
 
 
 def test_health_reports_runtime_mode_and_capabilities(monkeypatch) -> None:
