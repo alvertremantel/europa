@@ -1,0 +1,39 @@
+# Europa ALM-IS training config
+
+[paths]
+data_dir = "data/full-dataset"
+output_dir = "runs/redux-goofy-small-12lb"
+
+[runtime]
+device = "cuda"
+seed = 42
+
+[resume]
+resume_from = ""
+additional_epochs = ""
+
+[model]
+sequence_length = 64
+d_model = 48
+n_heads = 3
+n_layers = 12
+mlp_hidden = 48
+dropout = 0.0001
+position_encoding = "fixed_meaning"
+
+[optimization]
+batch_size = 128
+epochs = 10
+learning_rate = 0.0001
+weight_decay = 0.1
+grad_clip = 0.1
+
+[logging]
+log_interval = 1000
+max_new_tokens = 32
+
+[training]
+training_mode = "examples"
+training_format = "final_only"
+skip_overlong_examples = false
+curriculum_name = ""
